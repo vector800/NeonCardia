@@ -81,6 +81,22 @@ public sealed class DeckManager
         discardPile.Add(card);
     }
 
+    public bool DiscardFromHand(CardInstance card)
+    {
+        if (card == null)
+        {
+            return false;
+        }
+
+        bool removed = Hand.Remove(card);
+        if (removed)
+        {
+            discardPile.Add(card);
+        }
+
+        return removed;
+    }
+
     private void RecycleDiscardPile()
     {
         drawPile.AddRange(discardPile);

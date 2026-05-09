@@ -9,10 +9,19 @@ using UnityEngine.UI;
 public sealed class BattleManager : MonoBehaviour
 {
     private const int MaxHandSize = 5;
+    private const int MaxPlayerActions = 3;
+    private const int MaxAccelGauge = 100;
     private const int PlayerSideIndex = 0;
     private const int EnemySideIndex = 1;
+    private static int previousBattleAccelGauge;
 
+    [SerializeField] private List<CardData> starterDeck = new List<CardData>();
+    [SerializeField] private EnemyType enemyType = EnemyType.NormalEnemy;
+
+    private readonly IAttackPredictionChanceProvider predictionChanceProvider = new TestAttackPredictionChanceProvider();
     private readonly List<CardView> cardViews = new List<CardView>();
+    private readonly List<Button> moveButtons = new List<Button>();
+    private readonly List<QueuedBattleAction> actionQueue = new List<QueuedBattleAction>();
     private readonly Image[,,] gridSlots = new Image[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly Text[,,] gridLabels = new Text[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly List<BattleGridPosition> previewCells = new List<BattleGridPosition>();
@@ -24,15 +33,57 @@ public sealed class BattleManager : MonoBehaviour
     private BattleLog battleLog;
     private EnemyAI enemyAI;
     private bool battleEnded;
+    private bool predictionActive;
+    private int currentRound;
+    private int remainingPlayerActions;
+    private int accelGauge;
+    private int enemyActionsRemaining;
+    private int enemyActionIndex;
+    private EnemyBattleAction pendingEnemyAttack;
 
     private Text playerHpText;
     private Text enemyHpText;
     private Text positionText;
     private Text statusText;
+    private Text actionCountText;
+    private Text actionQueueText;
+    private Text enemyPlanText;
+    private Text predictionText;
     private Text rangeText;
     private Text deckText;
     private Text logText;
-    private Button endTurnButton;
+    private AccelGaugeUI accelGaugeUI;
+    private Button confirmButton;
+    private Button resetSelectionButton;
+    private readonly List<Image> actionPips = new List<Image>();
+
+    private enum QueuedActionType
+    {
+        Card,
+        Move
+    }
+
+    private sealed class QueuedBattleAction
+    {
+        public QueuedBattleAction(CardInstance card)
+        {
+            Type = QueuedActionType.Card;
+            Card = card;
+            DisplayName = card.Data.Name;
+        }
+
+        public QueuedBattleAction(MoveDirection direction, string displayName)
+        {
+            Type = QueuedActionType.Move;
+            MoveDirection = direction;
+            DisplayName = displayName;
+        }
+
+        public QueuedActionType Type { get; private set; }
+        public CardInstance Card { get; private set; }
+        public MoveDirection MoveDirection { get; private set; }
+        public string DisplayName { get; private set; }
+    }
 
     private void Awake()
     {
@@ -139,20 +190,49 @@ public sealed class BattleManager : MonoBehaviour
 
     private void StartBattle()
     {
-        player = new CharacterUnit(BattleText.PlayerName, 32, new BattleGridPosition(GridSide.Player, 1, 1));
-        enemy = new CharacterUnit(BattleText.EnemyName, 36, new BattleGridPosition(GridSide.Enemy, 1, 1));
+        player = new CharacterUnit(BattleText.PlayerName, 180, new BattleGridPosition(GridSide.Player, 1, 1));
+        enemy = new CharacterUnit(BattleText.EnemyName, EnemyAI.GetMaxHp(enemyType), new BattleGridPosition(GridSide.Enemy, 1, 1));
         battleEnded = false;
+        predictionActive = false;
+        currentRound = 1;
+        remainingPlayerActions = MaxPlayerActions;
+        accelGauge = previousBattleAccelGauge >= 50 ? 50 : 0;
+        enemyActionsRemaining = 0;
+        enemyActionIndex = 0;
+        pendingEnemyAttack = null;
+        actionQueue.Clear();
 
         battleLog = new BattleLog(10);
-        enemyAI = new EnemyAI(EnemyType.ShooterEnemy);
-        deck = new DeckManager(CardData.CreateStarterDeck());
+        enemyAI = new EnemyAI(enemyType);
+        deck = new DeckManager(GetStarterDeck());
 
         battleLog.Add("バトル開始");
+        battleLog.Add("アクセルゲージ：" + accelGauge + "％");
+        battleLog.Add("エネミータイプ：" + EnemyAI.GetDisplayName(enemyType));
         battleLog.Add("初期デッキをシャッフルしました。");
         DrawToHandLimit("ターン開始");
         battleLog.Add("プレイヤーの初期位置：" + player.Position);
         battleLog.Add("エネミーの初期位置：" + enemy.Position);
         RefreshUi();
+    }
+
+    private List<CardData> GetStarterDeck()
+    {
+        List<CardData> cards = new List<CardData>();
+        for (int i = 0; i < starterDeck.Count; i++)
+        {
+            if (starterDeck[i] != null && starterDeck[i].Effect != CardEffectType.Move)
+            {
+                cards.Add(starterDeck[i]);
+            }
+        }
+
+        return cards.Count > 0 ? cards : CardData.CreateStarterDeck();
+    }
+
+    private void ConsumePlayerAction()
+    {
+        remainingPlayerActions = Mathf.Max(0, remainingPlayerActions - 1);
     }
 
     private void PlayCard(int handIndex)
@@ -162,32 +242,56 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
-        CardInstance card = deck.Hand[handIndex];
-        string failureMessage;
-        if (!TryResolveCard(card.Data, out failureMessage))
+        if (predictionActive)
         {
-            battleLog.Add(failureMessage);
-            ShowCardPreview(card.Data, failureMessage);
+            ResolvePredictionCard(handIndex);
+            return;
+        }
+
+        if (actionQueue.Count >= MaxPlayerActions)
+        {
+            battleLog.Add("これ以上アクションを選択できません。");
+            battleLog.Add("最大3アクションまで選択できます。");
             RefreshUi();
             return;
         }
 
-        deck.DiscardFromHand(handIndex);
-        battleLog.Add(card.Data.Name + "を捨て札に置きました。");
+        CardInstance card = deck.Hand[handIndex];
+        if (IsCardQueued(card))
+        {
+            battleLog.Add("そのカードはすでに選択中です。");
+            RefreshUi();
+            return;
+        }
 
-        ClearPreview();
-        CheckBattleEnd();
+        actionQueue.Add(new QueuedBattleAction(card));
+        remainingPlayerActions = MaxPlayerActions - actionQueue.Count;
+        battleLog.Add(card.Data.Name + "を行動キューに追加しました。");
+        ShowCardPreview(card.Data, string.Empty);
         RefreshUi();
     }
 
-    private bool TryResolveCard(CardData card, out string failureMessage)
+    private bool IsCardQueued(CardInstance card)
+    {
+        for (int i = 0; i < actionQueue.Count; i++)
+        {
+            if (actionQueue[i].Type == QueuedActionType.Card && actionQueue[i].Card == card)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool TryResolveCard(CardData card, out string failureMessage, bool predictionAction = false)
     {
         switch (card.Effect)
         {
             case CardEffectType.Damage:
                 CharacterUnit target;
                 TryGetDamageTarget(card, out target);
-                battleLog.Add("プレイヤーは" + card.Name + "を使用。");
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
                 if (target == null)
                 {
                     battleLog.Add("しかし攻撃範囲内にエネミーはいなかった。");
@@ -200,8 +304,8 @@ public sealed class BattleManager : MonoBehaviour
                 failureMessage = string.Empty;
                 return true;
             case CardEffectType.Guard:
-                player.Guard += card.Power;
-                battleLog.Add("プレイヤーは" + card.Name + "を使用。");
+                player.AddGuard(card.Power);
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
                 battleLog.Add("ガード +" + card.Power + "。");
                 failureMessage = string.Empty;
                 return true;
@@ -213,7 +317,7 @@ public sealed class BattleManager : MonoBehaviour
                 }
 
                 player.MoveTo(destination);
-                battleLog.Add("プレイヤーは" + card.Name + "を使用。");
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
                 battleLog.Add(destination + "へ移動しました。");
                 failureMessage = string.Empty;
                 return true;
@@ -221,7 +325,7 @@ public sealed class BattleManager : MonoBehaviour
                 int before = player.Hp;
                 player.Heal(card.Power);
                 int recovered = player.Hp - before;
-                battleLog.Add("プレイヤーは" + card.Name + "を使用。");
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
                 if (recovered == 0)
                 {
                     battleLog.Add("HPはすでに最大だった。");
@@ -318,6 +422,68 @@ public sealed class BattleManager : MonoBehaviour
         return true;
     }
 
+    private void HandleMoveCommand(MoveDirection direction)
+    {
+        if (battleEnded)
+        {
+            return;
+        }
+
+        if (predictionActive)
+        {
+            ResolvePredictionMove(direction);
+            return;
+        }
+
+        if (actionQueue.Count >= MaxPlayerActions)
+        {
+            battleLog.Add("これ以上アクションを選択できません。");
+            battleLog.Add("最大3アクションまで選択できます。");
+            RefreshUi();
+            return;
+        }
+
+        actionQueue.Add(new QueuedBattleAction(direction, GetMoveQueueName(direction)));
+        remainingPlayerActions = MaxPlayerActions - actionQueue.Count;
+        battleLog.Add(GetMoveQueueName(direction) + "を行動キューに追加しました。");
+        ClearPreview();
+        RefreshUi();
+    }
+
+    private static string GetMoveQueueName(MoveDirection direction)
+    {
+        switch (direction)
+        {
+            case MoveDirection.Forward:
+                return "前進";
+            case MoveDirection.Back:
+                return "後退";
+            case MoveDirection.Up:
+                return "上移動";
+            case MoveDirection.Down:
+                return "下移動";
+            default:
+                return "移動";
+        }
+    }
+
+    private static string GetMoveCommandLog(MoveDirection direction)
+    {
+        switch (direction)
+        {
+            case MoveDirection.Forward:
+                return "プレイヤーは前進した。";
+            case MoveDirection.Back:
+                return "プレイヤーは後退した。";
+            case MoveDirection.Up:
+                return "プレイヤーは上へ移動した。";
+            case MoveDirection.Down:
+                return "プレイヤーは下へ移動した。";
+            default:
+                return "プレイヤーは移動した。";
+        }
+    }
+
     private bool IsOccupied(BattleGridPosition position)
     {
         return MatchesPosition(player, position) || MatchesPosition(enemy, position);
@@ -357,17 +523,397 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
+        actionQueue.Clear();
+        remainingPlayerActions = 0;
         battleLog.Add("プレイヤーはターンを終了。");
-        enemyAI.Act(player, enemy, GetUnits(), battleLog);
-        CheckBattleEnd();
+        ResolveEnemyTurn();
+    }
 
-        if (!battleEnded)
+    private void ConfirmQueuedActions()
+    {
+        if (battleEnded)
         {
-            DrawToHandLimit("ターン開始");
+            return;
         }
 
+        if (actionQueue.Count == 0)
+        {
+            battleLog.Add("選択中の行動がありません。");
+            RefreshUi();
+            return;
+        }
+
+        battleLog.Add("選択した行動を解決します。");
+        List<QueuedBattleAction> actionsToResolve = new List<QueuedBattleAction>(actionQueue);
+        actionQueue.Clear();
+        remainingPlayerActions = 0;
+
+        for (int i = 0; i < actionsToResolve.Count; i++)
+        {
+            ResolveQueuedAction(actionsToResolve[i]);
+            CheckBattleEnd();
+            if (battleEnded)
+            {
+                ClearPreview();
+                RefreshUi();
+                return;
+            }
+        }
+
+        ResolveEnemyTurn();
+    }
+
+    private void ResolveQueuedAction(QueuedBattleAction action)
+    {
+        if (action.Type == QueuedActionType.Move)
+        {
+            ResolveMoveCommand(action.MoveDirection);
+            return;
+        }
+
+        if (action.Card == null || action.Card.Data == null)
+        {
+            battleLog.Add("カードを解決できませんでした。");
+            return;
+        }
+
+        string failureMessage;
+        if (!TryResolveCard(action.Card.Data, out failureMessage))
+        {
+            battleLog.Add(failureMessage);
+            return;
+        }
+
+        if (deck.DiscardFromHand(action.Card))
+        {
+            battleLog.Add(action.Card.Data.Name + "を捨て札に置きました。");
+        }
+    }
+
+    private void ResolveMoveCommand(MoveDirection direction)
+    {
+        BattleGridPosition destination;
+        string failureMessage;
+        if (!TryGetMoveDestination(direction, out destination, out failureMessage))
+        {
+            battleLog.Add(failureMessage);
+            return;
+        }
+
+        player.MoveTo(destination);
+        battleLog.Add(GetMoveCommandLog(direction));
+    }
+
+    private void ResetQueuedActions()
+    {
+        if (battleEnded)
+        {
+            return;
+        }
+
+        actionQueue.Clear();
+        remainingPlayerActions = MaxPlayerActions;
+        battleLog.Add("選択中の行動をリセットしました。");
         ClearPreview();
         RefreshUi();
+    }
+
+    private void ResolveEnemyTurn()
+    {
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
+
+        predictionActive = false;
+        pendingEnemyAttack = null;
+        enemyAI.BeginTurn();
+        enemyActionsRemaining = EnemyAI.GetActionCount(enemyType);
+        enemyActionIndex = 0;
+        ContinueEnemyTurn();
+    }
+
+    private void ContinueEnemyTurn()
+    {
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
+
+        while (enemyActionsRemaining > 0 && !battleEnded && !predictionActive)
+        {
+            EnemyBattleAction action = enemyAI.CreateNextAction(player, enemy, GetUnits(), enemyActionIndex);
+            enemyActionIndex++;
+
+            if (action.Kind == EnemyActionKind.Attack)
+            {
+                if (ShouldTriggerPrediction())
+                {
+                    StartAttackPrediction(action);
+                    return;
+                }
+
+                ResolveEnemyAttack(action);
+                enemyActionsRemaining--;
+                CheckBattleEnd();
+                continue;
+            }
+
+            ResolveEnemyNonAttackAction(action);
+            enemyActionsRemaining--;
+            CheckBattleEnd();
+        }
+
+        if (battleEnded || predictionActive)
+        {
+            RefreshUi();
+            return;
+        }
+
+        StartNextPlayerTurn();
+    }
+
+    private bool ShouldTriggerPrediction()
+    {
+        float chance = Mathf.Clamp01(predictionChanceProvider.GetPredictionChance(enemyType));
+        return UnityEngine.Random.value <= chance;
+    }
+
+    private void StartAttackPrediction(EnemyBattleAction attackAction)
+    {
+        predictionActive = true;
+        pendingEnemyAttack = attackAction;
+        battleLog.Add("攻撃予測が発生した。");
+        battleLog.Add("予測された攻撃範囲：" + EnemyAI.FormatAttackPattern(attackAction.AttackPattern));
+        RefreshPredictionPreview();
+        RefreshUi();
+    }
+
+    private void ResolveEnemyNonAttackAction(EnemyBattleAction action)
+    {
+        if (action.Kind == EnemyActionKind.Move)
+        {
+            enemy.MoveTo(action.Destination);
+            battleLog.Add(action.ActionText);
+            return;
+        }
+
+        if (action.Kind == EnemyActionKind.Guard)
+        {
+            enemy.AddGuard(action.GuardAmount);
+            battleLog.Add(action.ActionText);
+            battleLog.Add("エネミーのガード +" + action.GuardAmount + "。");
+        }
+    }
+
+    private void ResolveEnemyAttack(EnemyBattleAction attackAction)
+    {
+        battleLog.Add(attackAction.ActionText);
+        if (!IsPlayerInEnemyAttackRange(attackAction))
+        {
+            battleLog.Add("しかし攻撃範囲内にプレイヤーはいなかった。");
+            battleLog.Add("敵の攻撃は外れた。");
+            return;
+        }
+
+        DealDamageToPlayer(attackAction.Damage);
+    }
+
+    private void DealDamageToPlayer(int damage)
+    {
+        int blocked;
+        int actualDamage = player.TakeDamage(damage, out blocked);
+        if (blocked > 0)
+        {
+            battleLog.Add("プレイヤーは" + blocked + "ダメージをガードし、" + actualDamage + "ダメージを受けた。");
+        }
+        else
+        {
+            battleLog.Add("プレイヤーに" + actualDamage + "ダメージ。");
+        }
+    }
+
+    private bool IsPlayerInEnemyAttackRange(EnemyBattleAction attackAction)
+    {
+        switch (attackAction.AttackPattern)
+        {
+            case EnemyAttackPattern.ForwardOnePanel:
+                return enemy.Position.Column == 0 && player.Position.Column == BattleGridPosition.GridSize - 1 && enemy.Position.Row == player.Position.Row;
+            case EnemyAttackPattern.Row:
+            case EnemyAttackPattern.Strong:
+            case EnemyAttackPattern.SameRowNearest:
+                return enemy.Position.Row == player.Position.Row;
+            default:
+                return false;
+        }
+    }
+
+    private void StartNextPlayerTurn()
+    {
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
+
+        currentRound++;
+        remainingPlayerActions = MaxPlayerActions;
+        actionQueue.Clear();
+        DrawToHandLimit("ターン開始");
+        ClearPreview();
+        RefreshUi();
+    }
+
+    private void FinishPrediction(bool skipAttack, bool logCancel)
+    {
+        EnemyBattleAction attackAction = pendingEnemyAttack;
+        predictionActive = false;
+        pendingEnemyAttack = null;
+        ClearPreview();
+
+        CheckBattleEnd();
+        if (!battleEnded)
+        {
+            if (skipAttack)
+            {
+                if (logCancel)
+                {
+                    battleLog.Add("エネミーの行動をキャンセルした。");
+                }
+            }
+            else
+            {
+                ResolveEnemyAttack(attackAction);
+                CheckBattleEnd();
+            }
+        }
+
+        enemyActionsRemaining--;
+
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
+
+        ContinueEnemyTurn();
+    }
+
+    private void ResolvePredictionMove(MoveDirection direction)
+    {
+        BattleGridPosition destination;
+        string failureMessage;
+        if (!TryGetMoveDestination(direction, out destination, out failureMessage))
+        {
+            battleLog.Add(failureMessage);
+            FinishPrediction(false, false);
+            return;
+        }
+
+        player.MoveTo(destination);
+        battleLog.Add(GetPredictionMoveLog(direction));
+
+        if (!IsPlayerInEnemyAttackRange(pendingEnemyAttack))
+        {
+            battleLog.Add("プレイヤーは攻撃範囲から離脱した。");
+            AddAccelGauge(20, "回避成功");
+            battleLog.Add("敵の攻撃は外れた。");
+            FinishPrediction(true, false);
+            return;
+        }
+
+        FinishPrediction(false, false);
+    }
+
+    private void ResolvePredictionCard(int handIndex)
+    {
+        CardInstance card = deck.Hand[handIndex];
+        int enemyHpBefore = enemy.Hp;
+        string failureMessage;
+        if (!TryResolveCard(card.Data, out failureMessage, true))
+        {
+            battleLog.Add(failureMessage);
+            FinishPrediction(false, false);
+            return;
+        }
+
+        if (deck.DiscardFromHand(card))
+        {
+            battleLog.Add(card.Data.Name + "を捨て札へ送った。");
+        }
+
+        bool defeatedByCard = enemyHpBefore > 0 && enemy.IsDefeated;
+        bool weaknessHit = card.Data.Attribute != CardAttribute.Neutral && card.Data.Attribute == EnemyAI.GetWeakness(enemyType);
+        bool isBoss = EnemyAI.IsBoss(enemyType);
+        int accelGain = 0;
+        bool cancelAttack = false;
+
+        if (!isBoss && defeatedByCard)
+        {
+            battleLog.Add("予測行動でエネミーを撃破。");
+            accelGain += 50;
+            cancelAttack = true;
+        }
+
+        if (weaknessHit)
+        {
+            battleLog.Add(isBoss ? "ボスの弱点属性を突いた。" : "弱点属性を突いた。");
+            accelGain += 50;
+            cancelAttack = true;
+        }
+
+        if (accelGain > 0)
+        {
+            AddAccelGauge(accelGain, weaknessHit ? "弱点ヒット" : "予測成功");
+        }
+
+        if (defeatedByCard)
+        {
+            cancelAttack = true;
+        }
+
+        FinishPrediction(cancelAttack, cancelAttack && !defeatedByCard);
+    }
+
+    private static string GetPredictionMoveLog(MoveDirection direction)
+    {
+        switch (direction)
+        {
+            case MoveDirection.Forward:
+                return "プレイヤーは回避行動として前進した。";
+            case MoveDirection.Back:
+                return "プレイヤーは回避行動として後退した。";
+            case MoveDirection.Up:
+                return "プレイヤーは回避行動として上へ移動した。";
+            case MoveDirection.Down:
+                return "プレイヤーは回避行動として下へ移動した。";
+            default:
+                return "プレイヤーは回避行動として移動した。";
+        }
+    }
+
+    private void AddAccelGauge(int amount, string effectLabel = "アクセル上昇")
+    {
+        int before = accelGauge;
+        accelGauge = Mathf.Clamp(accelGauge + amount, 0, MaxAccelGauge);
+        int gained = accelGauge - before;
+        if (gained > 0)
+        {
+            battleLog.Add("アクセルゲージが" + gained + "％上昇。");
+            if (accelGaugeUI != null)
+            {
+                accelGaugeUI.SetValue(accelGauge, gained, effectLabel);
+            }
+            return;
+        }
+
+        battleLog.Add("アクセルゲージは最大です。");
+        if (accelGaugeUI != null)
+        {
+            accelGaugeUI.SetValue(accelGauge);
+        }
     }
 
     private IEnumerable<CharacterUnit> GetUnits()
@@ -378,15 +924,22 @@ public sealed class BattleManager : MonoBehaviour
 
     private void CheckBattleEnd()
     {
+        if (battleEnded)
+        {
+            return;
+        }
+
         if (enemy.IsDefeated)
         {
             battleEnded = true;
+            previousBattleAccelGauge = accelGauge;
             battleLog.Add("エネミーを撃破。");
             battleLog.Add("プレイヤーの勝利。");
         }
         else if (player.IsDefeated)
         {
             battleEnded = true;
+            previousBattleAccelGauge = accelGauge;
             battleLog.Add("プレイヤーは倒れた。");
             battleLog.Add("敗北。");
         }
@@ -395,19 +948,88 @@ public sealed class BattleManager : MonoBehaviour
     private void RefreshUi()
     {
         playerHpText.text = BattleText.PlayerName + "\nHP " + player.Hp + "/" + player.MaxHp + "\nガード " + player.Guard;
-        enemyHpText.text = BattleText.EnemyName + "\nHP " + enemy.Hp + "/" + enemy.MaxHp + "\nガード " + enemy.Guard;
+        enemyHpText.text = BattleText.EnemyName + "\nタイプ " + EnemyAI.GetDisplayName(enemyType) + "\nHP " + enemy.Hp + "/" + enemy.MaxHp + "\nガード " + enemy.Guard;
         positionText.text = "プレイヤー：" + player.Position + "\nエネミー：" + enemy.Position;
-        statusText.text = battleEnded ? (enemy.IsDefeated ? BattleText.Victory : BattleText.Defeat) : BattleText.PlayerTurn;
+        statusText.text = battleEnded ? (enemy.IsDefeated ? BattleText.Victory : BattleText.Defeat) : "ラウンド：" + currentRound + "\n" + BattleText.PlayerTurn;
+        accelGaugeUI.SetValue(accelGauge);
         deckText.text = "山札：" + deck.DrawPileCount + "\n手札：" + deck.HandCount + " / " + MaxHandSize + "\n捨て札：" + deck.DiscardPileCount;
+        actionQueueText.text = BuildActionQueueText();
+        enemyPlanText.text = EnemyAI.GetPlanText(enemyType);
+        predictionText.text = BuildPredictionText();
         logText.text = battleLog.DisplayText;
-        endTurnButton.interactable = !battleEnded;
+        confirmButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
+        resetSelectionButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
+        SetMoveButtonsInteractable(!battleEnded && (predictionActive || actionQueue.Count < MaxPlayerActions));
+        RefreshActionCounter();
 
         RefreshGrid();
 
         for (int i = 0; i < cardViews.Count; i++)
         {
             CardData card = i < deck.Hand.Count ? deck.Hand[i].Data : null;
-            cardViews[i].Refresh(card, battleEnded);
+            cardViews[i].Refresh(card, battleEnded || (!predictionActive && (actionQueue.Count >= MaxPlayerActions || (i < deck.Hand.Count && IsCardQueued(deck.Hand[i])))));
+        }
+    }
+
+    private void RefreshActionCounter()
+    {
+        remainingPlayerActions = battleEnded ? 0 : MaxPlayerActions - actionQueue.Count;
+        if (predictionActive)
+        {
+            actionCountText.text = "攻撃予測：1回だけ即時行動";
+        }
+        else
+        {
+            actionCountText.text = "残り選択可能数  " + remainingPlayerActions + " / " + MaxPlayerActions;
+        }
+
+        for (int i = 0; i < actionPips.Count; i++)
+        {
+            int activePips = predictionActive ? 1 : remainingPlayerActions;
+            actionPips[i].color = i < activePips
+                ? new Color(0.98f, 0.78f, 0.18f, 1f)
+                : new Color(0.18f, 0.18f, 0.2f, 0.95f);
+        }
+    }
+
+    private string BuildPredictionText()
+    {
+        string text = "アクセルゲージ：" + accelGauge + "％"
+            + "\n敵弱点：" + BattleText.FormatAttribute(EnemyAI.GetWeakness(enemyType));
+
+        if (!predictionActive || pendingEnemyAttack == null)
+        {
+            return text + "\n攻撃予測：待機";
+        }
+
+        text += "\n攻撃予測発生中"
+            + "\n予測範囲：" + EnemyAI.FormatAttackPattern(pendingEnemyAttack.AttackPattern)
+            + "\nプレイヤー：" + (IsPlayerInEnemyAttackRange(pendingEnemyAttack) ? "攻撃範囲内" : "攻撃範囲外")
+            + "\n移動またはカード1枚を選択";
+        return text;
+    }
+
+    private string BuildActionQueueText()
+    {
+        if (actionQueue.Count == 0)
+        {
+            return "選択中アクション：なし";
+        }
+
+        string text = "選択中アクション：";
+        for (int i = 0; i < actionQueue.Count; i++)
+        {
+            text += "\n" + (i + 1) + ". " + actionQueue[i].DisplayName;
+        }
+
+        return text;
+    }
+
+    private void SetMoveButtonsInteractable(bool interactable)
+    {
+        for (int i = 0; i < moveButtons.Count; i++)
+        {
+            moveButtons[i].interactable = interactable;
         }
     }
 
@@ -526,6 +1148,36 @@ public sealed class BattleManager : MonoBehaviour
         }
     }
 
+    private void RefreshPredictionPreview()
+    {
+        previewCells.Clear();
+        AddEnemyAttackPreviewCells(pendingEnemyAttack);
+        RefreshGrid();
+    }
+
+    private void AddEnemyAttackPreviewCells(EnemyBattleAction attackAction)
+    {
+        if (attackAction == null)
+        {
+            return;
+        }
+
+        switch (attackAction.AttackPattern)
+        {
+            case EnemyAttackPattern.ForwardOnePanel:
+                previewCells.Add(new BattleGridPosition(GridSide.Player, enemy.Position.Row, BattleGridPosition.GridSize - 1));
+                break;
+            case EnemyAttackPattern.Row:
+            case EnemyAttackPattern.Strong:
+            case EnemyAttackPattern.SameRowNearest:
+                for (int column = 0; column < BattleGridPosition.GridSize; column++)
+                {
+                    previewCells.Add(new BattleGridPosition(GridSide.Player, enemy.Position.Row, column));
+                }
+                break;
+        }
+    }
+
     private void AddPreviewCells(CardData card)
     {
         if (card.Effect == CardEffectType.Move)
@@ -599,28 +1251,79 @@ public sealed class BattleManager : MonoBehaviour
         background.raycastTarget = false;
 
         CreateText("Title", canvasObject.transform, new Vector2(0.03f, 0.91f), new Vector2(0.97f, 0.98f), Vector2.zero, Vector2.zero, "NEON CARDIA - 3x3パネルバトルMVP", 32, TextAnchor.MiddleCenter, Color.white);
+        BuildAccelGaugeUi(canvasObject.transform);
 
         playerHpText = CreateText("Player HP", canvasObject.transform, new Vector2(0.04f, 0.72f), new Vector2(0.2f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 25, TextAnchor.MiddleCenter, Color.white);
         enemyHpText = CreateText("Enemy HP", canvasObject.transform, new Vector2(0.8f, 0.72f), new Vector2(0.96f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 25, TextAnchor.MiddleCenter, Color.white);
 
         statusText = CreateText("Status Text", canvasObject.transform, new Vector2(0.36f, 0.82f), new Vector2(0.64f, 0.89f), Vector2.zero, Vector2.zero, string.Empty, 25, TextAnchor.MiddleCenter, new Color(0.95f, 0.95f, 0.72f));
         positionText = CreateText("Position Text", canvasObject.transform, new Vector2(0.35f, 0.72f), new Vector2(0.65f, 0.81f), Vector2.zero, Vector2.zero, string.Empty, 21, TextAnchor.MiddleCenter, Color.white);
+        BuildActionCounter(canvasObject.transform);
 
         BuildBattleGrid(canvasObject.transform);
 
         rangeText = CreateText("Range Text", canvasObject.transform, new Vector2(0.05f, 0.32f), new Vector2(0.48f, 0.43f), Vector2.zero, Vector2.zero, BattleText.HoverPreview, 20, TextAnchor.UpperLeft, new Color(0.95f, 0.9f, 0.65f));
 
-        deckText = CreateText("Deck Text", canvasObject.transform, new Vector2(0.38f, 0.48f), new Vector2(0.62f, 0.66f), Vector2.zero, Vector2.zero, string.Empty, 22, TextAnchor.MiddleCenter, Color.white);
+        BuildMoveCommands(canvasObject.transform);
 
-        Image logPanel = CreateImage("Log Panel", canvasObject.transform, new Vector2(0.52f, 0.3f), new Vector2(0.95f, 0.45f), Vector2.zero, Vector2.zero, new Color(0.09f, 0.1f, 0.13f, 0.92f));
+        deckText = CreateText("Deck Text", canvasObject.transform, new Vector2(0.38f, 0.48f), new Vector2(0.62f, 0.66f), Vector2.zero, Vector2.zero, string.Empty, 22, TextAnchor.MiddleCenter, Color.white);
+        actionQueueText = CreateText("Action Queue Text", canvasObject.transform, new Vector2(0.39f, 0.3f), new Vector2(0.51f, 0.45f), Vector2.zero, Vector2.zero, string.Empty, 18, TextAnchor.UpperLeft, new Color(0.96f, 0.96f, 0.9f));
+        enemyPlanText = CreateText("Enemy Plan Text", canvasObject.transform, new Vector2(0.66f, 0.72f), new Vector2(0.78f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 18, TextAnchor.MiddleLeft, new Color(0.9f, 0.9f, 0.82f));
+        predictionText = CreateText("Prediction Text", canvasObject.transform, new Vector2(0.82f, 0.3f), new Vector2(0.95f, 0.45f), Vector2.zero, Vector2.zero, string.Empty, 16, TextAnchor.UpperLeft, new Color(0.9f, 0.96f, 1f));
+
+        Image logPanel = CreateImage("Log Panel", canvasObject.transform, new Vector2(0.52f, 0.3f), new Vector2(0.81f, 0.45f), Vector2.zero, Vector2.zero, new Color(0.09f, 0.1f, 0.13f, 0.92f));
         logPanel.raycastTarget = false;
         logText = CreateText("Log Text", logPanel.transform, Vector2.zero, Vector2.one, new Vector2(18f, 10f), new Vector2(-18f, -10f), string.Empty, 18, TextAnchor.UpperLeft, new Color(0.92f, 0.94f, 0.96f));
 
         RectTransform handRoot = CreateRect("Hand", canvasObject.transform, new Vector2(0.03f, 0.04f), new Vector2(0.78f, 0.25f), Vector2.zero, Vector2.zero);
         BuildCardViews(handRoot);
 
-        endTurnButton = CreateButton("End Turn Button", canvasObject.transform, new Vector2(0.82f, 0.08f), new Vector2(0.95f, 0.22f), Vector2.zero, Vector2.zero, BattleText.EndTurn, 26, new Color(0.78f, 0.56f, 0.16f));
-        endTurnButton.onClick.AddListener(EndPlayerTurn);
+        confirmButton = CreateButton("Confirm Actions Button", canvasObject.transform, new Vector2(0.82f, 0.08f), new Vector2(0.95f, 0.22f), Vector2.zero, Vector2.zero, "決定", 26, new Color(0.14f, 0.48f, 0.28f));
+        confirmButton.onClick.AddListener(ConfirmQueuedActions);
+
+        resetSelectionButton = CreateButton("Reset Actions Button", canvasObject.transform, new Vector2(0.82f, 0.225f), new Vector2(0.95f, 0.285f), Vector2.zero, Vector2.zero, "選択リセット", 20, new Color(0.32f, 0.32f, 0.38f));
+        resetSelectionButton.onClick.AddListener(ResetQueuedActions);
+    }
+
+    private void BuildAccelGaugeUi(Transform parent)
+    {
+        GameObject gaugeObject = new GameObject("AccelGaugeUI");
+        accelGaugeUI = gaugeObject.AddComponent<AccelGaugeUI>();
+        accelGaugeUI.Build(parent, uiFont);
+    }
+
+    private void BuildActionCounter(Transform parent)
+    {
+        Image panel = CreateImage("Action Counter Panel", parent, new Vector2(0.37f, 0.655f), new Vector2(0.63f, 0.725f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.12f, 0.16f, 0.96f));
+        panel.raycastTarget = false;
+
+        actionCountText = CreateText("Action Counter Text", panel.transform, new Vector2(0f, 0.35f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-8f, -2f), string.Empty, 30, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
+
+        for (int i = 0; i < MaxPlayerActions; i++)
+        {
+            float minX = 0.18f + i * 0.23f;
+            float maxX = minX + 0.18f;
+            Image pip = CreateImage("Action Pip " + (i + 1), panel.transform, new Vector2(minX, 0.13f), new Vector2(maxX, 0.3f), Vector2.zero, Vector2.zero, new Color(0.98f, 0.78f, 0.18f, 1f));
+            pip.raycastTarget = false;
+            actionPips.Add(pip);
+        }
+    }
+
+    private void BuildMoveCommands(Transform parent)
+    {
+        CreateText("Move Commands Label", parent, new Vector2(0.05f, 0.265f), new Vector2(0.13f, 0.31f), Vector2.zero, Vector2.zero, "移動", 20, TextAnchor.MiddleLeft, Color.white);
+        AddMoveButton(parent, "Move Forward Button", "前進", MoveDirection.Forward, new Vector2(0.13f, 0.265f), new Vector2(0.22f, 0.31f));
+        AddMoveButton(parent, "Move Back Button", "後退", MoveDirection.Back, new Vector2(0.23f, 0.265f), new Vector2(0.32f, 0.31f));
+        AddMoveButton(parent, "Move Up Button", "上", MoveDirection.Up, new Vector2(0.33f, 0.265f), new Vector2(0.41f, 0.31f));
+        AddMoveButton(parent, "Move Down Button", "下", MoveDirection.Down, new Vector2(0.42f, 0.265f), new Vector2(0.5f, 0.31f));
+    }
+
+    private void AddMoveButton(Transform parent, string objectName, string label, MoveDirection direction, Vector2 anchorMin, Vector2 anchorMax)
+    {
+        Button button = CreateButton(objectName, parent, anchorMin, anchorMax, Vector2.zero, Vector2.zero, label, 20, new Color(0.16f, 0.34f, 0.36f));
+        MoveDirection capturedDirection = direction;
+        button.onClick.AddListener(() => HandleMoveCommand(capturedDirection));
+        moveButtons.Add(button);
     }
 
     private void BuildBattleGrid(Transform parent)

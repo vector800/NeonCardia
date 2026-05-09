@@ -52,6 +52,8 @@ public struct BattleGridPosition
 
 public sealed class CharacterUnit
 {
+    public const int MaxGuard = 80;
+
     public CharacterUnit(string name, int maxHp, BattleGridPosition position)
     {
         Name = name;
@@ -70,6 +72,11 @@ public sealed class CharacterUnit
     public void MoveTo(BattleGridPosition position)
     {
         Position = position;
+    }
+
+    public void AddGuard(int amount)
+    {
+        Guard = Mathf.Min(MaxGuard, Guard + Mathf.Max(0, amount));
     }
 
     public int TakeDamage(int damage, out int blocked)

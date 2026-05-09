@@ -1,11 +1,75 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 public enum EnemyType
 {
-    MeleeEnemy,
-    ShooterEnemy,
-    GuardEnemy
+    SmallEnemy,
+    NormalEnemy,
+    HeavyEnemy,
+    Stage1Boss
+}
+
+public enum EnemyCategory
+{
+    Normal,
+    Boss
+}
+
+public enum EnemyActionKind
+{
+    Attack,
+    Move,
+    Guard
+}
+
+public enum EnemyAttackPattern
+{
+    SameRowNearest,
+    ForwardOnePanel,
+    Row,
+    Strong
+}
+
+public sealed class EnemyBattleAction
+{
+    private EnemyBattleAction(EnemyActionKind kind)
+    {
+        Kind = kind;
+    }
+
+    public EnemyActionKind Kind { get; private set; }
+    public BattleGridPosition Destination { get; private set; }
+    public int GuardAmount { get; private set; }
+    public int Damage { get; private set; }
+    public string ActionText { get; private set; }
+    public EnemyAttackPattern AttackPattern { get; private set; }
+
+    public static EnemyBattleAction Move(BattleGridPosition destination, string actionText)
+    {
+        return new EnemyBattleAction(EnemyActionKind.Move)
+        {
+            Destination = destination,
+            ActionText = actionText
+        };
+    }
+
+    public static EnemyBattleAction Guard(int guardAmount, string actionText)
+    {
+        return new EnemyBattleAction(EnemyActionKind.Guard)
+        {
+            GuardAmount = guardAmount,
+            ActionText = actionText
+        };
+    }
+
+    public static EnemyBattleAction Attack(int damage, EnemyAttackPattern attackPattern, string actionText)
+    {
+        return new EnemyBattleAction(EnemyActionKind.Attack)
+        {
+            Damage = damage,
+            AttackPattern = attackPattern,
+            ActionText = actionText
+        };
+    }
 }
 
 public sealed class EnemyAI
@@ -18,88 +82,225 @@ public sealed class EnemyAI
         this.enemyType = enemyType;
     }
 
-    public void Act(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, BattleLog battleLog)
+    public void BeginTurn()
     {
         turnCount++;
+    }
 
+    public static int GetMaxHp(EnemyType enemyType)
+    {
         switch (enemyType)
         {
-            case EnemyType.MeleeEnemy:
-                ActAsMelee(player, enemy, units, battleLog);
-                break;
-            case EnemyType.ShooterEnemy:
-                ActAsShooter(player, enemy, units, battleLog);
-                break;
-            case EnemyType.GuardEnemy:
-                ActAsGuard(player, enemy, units, battleLog);
-                break;
+            case EnemyType.SmallEnemy:
+                return 40;
+            case EnemyType.NormalEnemy:
+                return 70;
+            case EnemyType.HeavyEnemy:
+                return 100;
+            case EnemyType.Stage1Boss:
+                return 300;
             default:
-                ActAsMelee(player, enemy, units, battleLog);
-                break;
+                return 70;
         }
     }
 
-    private void ActAsMelee(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, BattleLog battleLog)
+    public static int GetAttackPower(EnemyType enemyType)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.SmallEnemy:
+                return 15;
+            case EnemyType.NormalEnemy:
+                return 20;
+            case EnemyType.HeavyEnemy:
+                return 25;
+            case EnemyType.Stage1Boss:
+                return 35;
+            default:
+                return 20;
+        }
+    }
+
+    public static int GetActionCount(EnemyType enemyType)
+    {
+        return enemyType == EnemyType.Stage1Boss ? 2 : 1;
+    }
+
+    public static EnemyCategory GetCategory(EnemyType enemyType)
+    {
+        return enemyType == EnemyType.Stage1Boss ? EnemyCategory.Boss : EnemyCategory.Normal;
+    }
+
+    public static bool IsBoss(EnemyType enemyType)
+    {
+        return GetCategory(enemyType) == EnemyCategory.Boss;
+    }
+
+    public static CardAttribute GetWeakness(EnemyType enemyType)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.SmallEnemy:
+                return CardAttribute.Slash;
+            case EnemyType.NormalEnemy:
+                return CardAttribute.Shot;
+            case EnemyType.HeavyEnemy:
+                return CardAttribute.Electric;
+            case EnemyType.Stage1Boss:
+                return CardAttribute.Shot;
+            default:
+                return CardAttribute.Shot;
+        }
+    }
+
+    public static string GetAttackRangeText(EnemyType enemyType)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.HeavyEnemy:
+                return "前方1マス";
+            case EnemyType.Stage1Boss:
+                return "同じ行 / 横一列 / 強攻撃";
+            default:
+                return "同じ行の一番近い相手";
+        }
+    }
+
+    public static string GetPlanText(EnemyType enemyType)
+    {
+        return "敵行動回数：" + GetActionCount(enemyType)
+            + "\n攻撃範囲：" + GetAttackRangeText(enemyType)
+            + "\n弱点：" + BattleText.FormatAttribute(GetWeakness(enemyType));
+    }
+
+    public static string GetDisplayName(EnemyType enemyType)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.SmallEnemy:
+                return "SmallEnemy";
+            case EnemyType.NormalEnemy:
+                return "NormalEnemy";
+            case EnemyType.HeavyEnemy:
+                return "HeavyEnemy";
+            case EnemyType.Stage1Boss:
+                return "Stage1Boss";
+            default:
+                return "NormalEnemy";
+        }
+    }
+
+    public EnemyBattleAction CreateNextAction(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, int actionIndex)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.SmallEnemy:
+                return CreateSmallAction(player, enemy, units);
+            case EnemyType.NormalEnemy:
+                return CreateNormalAction(player, enemy, units);
+            case EnemyType.HeavyEnemy:
+                return CreateHeavyAction();
+            case EnemyType.Stage1Boss:
+                return CreateStage1BossAction(player, enemy, units, actionIndex);
+            default:
+                return CreateNormalAction(player, enemy, units);
+        }
+    }
+
+    public static string FormatAttackPattern(EnemyAttackPattern attackPattern)
+    {
+        switch (attackPattern)
+        {
+            case EnemyAttackPattern.ForwardOnePanel:
+                return "前方1マス";
+            case EnemyAttackPattern.Row:
+                return "横一列";
+            case EnemyAttackPattern.Strong:
+                return "同じ行の強攻撃";
+            default:
+                return "同じ行の一番近い相手";
+        }
+    }
+
+    private EnemyBattleAction CreateSmallAction(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units)
     {
         if (enemy.Position.Row == player.Position.Row)
         {
-            UseAttack(player, true, 6, "エネミーはクローを使用。", battleLog);
-            return;
+            return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.SameRowNearest, "エネミーはクローを使用。");
         }
 
         BattleGridPosition nextPosition = enemy.Position.Offset(enemy.Position.Row < player.Position.Row ? 1 : -1, 0);
-        if (TryMove(enemy, nextPosition, units, battleLog))
+        if (CanMove(enemy, nextPosition, units))
         {
-            return;
+            return EnemyBattleAction.Move(nextPosition, enemy.Name + "は" + nextPosition + "へ移動しました。");
         }
 
-        UseAttack(player, false, 4, "エネミーはクローを使用。", battleLog);
+        return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.SameRowNearest, "エネミーはクローを使用。");
     }
 
-    private void ActAsShooter(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, BattleLog battleLog)
+    private EnemyBattleAction CreateNormalAction(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units)
     {
-        if (enemy.Hp <= 14)
+        if (enemy.Hp <= 25)
         {
             BattleGridPosition retreat = enemy.Position.Offset(0, BattleGridPosition.BackColumnDelta(enemy.Position.Side));
-            if (TryMove(enemy, retreat, units, battleLog))
+            if (CanMove(enemy, retreat, units))
             {
-                return;
+                return EnemyBattleAction.Move(retreat, enemy.Name + "は" + retreat + "へ移動しました。");
             }
         }
 
         if (enemy.Position.Row == player.Position.Row)
         {
-            UseAttack(player, true, 7, "エネミーはショットを使用。", battleLog);
-            return;
+            return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.SameRowNearest, "エネミーはショットを使用。");
         }
 
         BattleGridPosition nextPosition = enemy.Position.Offset(enemy.Position.Row < player.Position.Row ? 1 : -1, 0);
-        if (!TryMove(enemy, nextPosition, units, battleLog))
+        if (CanMove(enemy, nextPosition, units))
         {
-            UseAttack(player, false, 4, "エネミーはショットを使用。", battleLog);
+            return EnemyBattleAction.Move(nextPosition, enemy.Name + "は" + nextPosition + "へ移動しました。");
         }
+
+        return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.SameRowNearest, "エネミーはショットを使用。");
     }
 
-    private void ActAsGuard(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, BattleLog battleLog)
+    private EnemyBattleAction CreateHeavyAction()
     {
-        if (turnCount % 3 == 0 && enemy.Position.Row == player.Position.Row)
+        if (turnCount % 2 == 0)
         {
-            UseAttack(player, true, 8, "エネミーはカウンターショットを使用。", battleLog);
-            return;
+            return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.ForwardOnePanel, "エネミーはヘビーショットを使用。");
         }
 
-        if (turnCount % 3 == 0)
-        {
-            UseAttack(player, false, 8, "エネミーはカウンターショットを使用。", battleLog);
-            return;
-        }
-
-        enemy.Guard += 6;
-        battleLog.Add("エネミーは身構えた。");
-        battleLog.Add("エネミーのガード +6。");
+        return EnemyBattleAction.Guard(20, "エネミーは身構えた。");
     }
 
-    private static bool TryMove(CharacterUnit unit, BattleGridPosition destination, IEnumerable<CharacterUnit> units, BattleLog battleLog)
+    private EnemyBattleAction CreateStage1BossAction(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, int actionIndex)
+    {
+        int pattern = (turnCount + actionIndex - 1) % 3;
+        if (pattern == 1)
+        {
+            return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.Row, "エネミーは横一列攻撃を使用。");
+        }
+
+        if (pattern == 2)
+        {
+            return EnemyBattleAction.Attack(GetAttackPower(enemyType) + 15, EnemyAttackPattern.Strong, "エネミーは強攻撃を使用。");
+        }
+
+        if (enemy.Position.Row == player.Position.Row)
+        {
+            return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.SameRowNearest, "エネミーはボスショットを使用。");
+        }
+
+        BattleGridPosition nextPosition = enemy.Position.Offset(enemy.Position.Row < player.Position.Row ? 1 : -1, 0);
+        if (CanMove(enemy, nextPosition, units))
+        {
+            return EnemyBattleAction.Move(nextPosition, enemy.Name + "は" + nextPosition + "へ移動しました。");
+        }
+
+        return EnemyBattleAction.Attack(GetAttackPower(enemyType), EnemyAttackPattern.SameRowNearest, "エネミーはボスショットを使用。");
+    }
+
+    private static bool CanMove(CharacterUnit unit, BattleGridPosition destination, IEnumerable<CharacterUnit> units)
     {
         if (!destination.IsValid)
         {
@@ -114,35 +315,6 @@ public sealed class EnemyAI
             }
         }
 
-        unit.MoveTo(destination);
-        battleLog.Add(unit.Name + "は" + destination + "へ移動しました。");
         return true;
-    }
-
-    private static void UseAttack(CharacterUnit target, bool hasTarget, int damage, string actionText, BattleLog battleLog)
-    {
-        battleLog.Add(actionText);
-        if (!hasTarget)
-        {
-            battleLog.Add("しかし攻撃範囲内にプレイヤーはいなかった。");
-            battleLog.Add("攻撃は空振りした。");
-            return;
-        }
-
-        DealDamage(target, damage, battleLog);
-    }
-
-    private static void DealDamage(CharacterUnit target, int damage, BattleLog battleLog)
-    {
-        int blocked;
-        int actualDamage = target.TakeDamage(damage, out blocked);
-        if (blocked > 0)
-        {
-            battleLog.Add("プレイヤーは" + blocked + "ダメージをガードし、" + actualDamage + "ダメージを受けた。");
-        }
-        else
-        {
-            battleLog.Add("プレイヤーに" + actualDamage + "ダメージ。");
-        }
     }
 }

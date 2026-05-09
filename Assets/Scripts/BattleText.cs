@@ -35,6 +35,25 @@ public static class BattleText
         }
     }
 
+    public static string FormatAttribute(CardAttribute attribute)
+    {
+        switch (attribute)
+        {
+            case CardAttribute.Slash:
+                return "斬撃";
+            case CardAttribute.Shot:
+                return "射撃";
+            case CardAttribute.Fire:
+                return "火";
+            case CardAttribute.Ice:
+                return "氷";
+            case CardAttribute.Electric:
+                return "電撃";
+            default:
+                return "無属性";
+        }
+    }
+
     public static string DescribeRange(CardData card)
     {
         if (card.Effect == CardEffectType.Move)
