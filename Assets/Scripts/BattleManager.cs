@@ -53,6 +53,7 @@ public sealed class BattleManager : MonoBehaviour
     private Text rangeText;
     private Text deckText;
     private Text logText;
+    private CardHoverDetailView cardHoverDetailView;
     private AccelGaugeUI accelGaugeUI;
     private Button confirmButton;
     private Button resetSelectionButton;
@@ -110,8 +111,8 @@ public sealed class BattleManager : MonoBehaviour
 
     private static Font CreateJapaneseFont()
     {
-        string[] fontNames = { "Yu Gothic", "Meiryo", "MS Gothic", "Noto Sans CJK JP", "Arial" };
-        return Font.CreateDynamicFontFromOSFont(fontNames, 20);
+        string[] fontNames = { "Meiryo UI", "Yu Gothic UI", "Meiryo", "Yu Gothic", "Noto Sans CJK JP", "Arial" };
+        return Font.CreateDynamicFontFromOSFont(fontNames, 28);
     }
 
     private void EnsureCamera()
@@ -998,16 +999,39 @@ public sealed class BattleManager : MonoBehaviour
 
     private void RefreshUi()
     {
-        playerHpText.text = BattleText.PlayerName + "\nHP " + player.Hp + "/" + player.MaxHp + "\nガード " + player.Guard;
-        enemyHpText.text = BattleText.EnemyName + "\nタイプ " + EnemyAI.GetDisplayName(enemyType) + "\nHP " + enemy.Hp + "/" + enemy.MaxHp + "\nガード " + enemy.Guard;
-        positionText.text = "プレイヤー：" + player.Position + "\nエネミー：" + enemy.Position;
-        statusText.text = battleEnded ? (enemy.IsDefeated ? BattleText.Victory : BattleText.Defeat) : "ラウンド：" + currentRound + "\n" + BattleText.PlayerTurn;
+        playerHpText.text = player.Hp.ToString();
+        statusText.text = BuildBattleStatusText();
         accelGaugeUI.SetValue(accelGauge);
-        deckText.text = "山札：" + deck.DrawPileCount + "\n手札：" + deck.HandCount + " / " + MaxHandSize + "\n捨て札：" + deck.DiscardPileCount;
-        actionQueueText.text = BuildActionQueueText();
-        enemyPlanText.text = EnemyAI.GetPlanText(enemyType);
-        predictionText.text = BuildPredictionText();
-        logText.text = battleLog.DisplayText;
+        if (positionText != null)
+        {
+            positionText.text = string.Empty;
+        }
+
+        if (deckText != null)
+        {
+            deckText.text = string.Empty;
+        }
+
+        if (actionQueueText != null)
+        {
+            actionQueueText.text = BuildActionQueueText();
+        }
+
+        if (enemyPlanText != null)
+        {
+            enemyPlanText.text = string.Empty;
+        }
+
+        if (predictionText != null)
+        {
+            predictionText.text = string.Empty;
+        }
+
+        if (logText != null)
+        {
+            logText.text = string.Empty;
+        }
+
         confirmButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
         resetSelectionButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
         int queuedActionCost = GetQueuedActionCost();
@@ -1028,13 +1052,9 @@ public sealed class BattleManager : MonoBehaviour
     private void RefreshActionCounter()
     {
         remainingPlayerActions = battleEnded ? 0 : GetRemainingPlayerActions();
-        if (predictionActive)
+        if (actionCountText != null)
         {
-            actionCountText.text = "攻撃予測：1回だけ即時行動";
-        }
-        else
-        {
-            actionCountText.text = "残り行動権  " + remainingPlayerActions + " / " + MaxPlayerActions;
+            actionCountText.text = string.Empty;
         }
 
         for (int i = 0; i < actionPips.Count; i++)
@@ -1044,6 +1064,17 @@ public sealed class BattleManager : MonoBehaviour
                 ? new Color(0.98f, 0.78f, 0.18f, 1f)
                 : new Color(0.18f, 0.18f, 0.2f, 0.95f);
         }
+    }
+
+    private string BuildBattleStatusText()
+    {
+        if (battleEnded)
+        {
+            return enemy.IsDefeated ? "VICTORY" : "DEFEAT";
+        }
+
+        string turnText = predictionActive || pendingEnemyAttack != null ? "ENEMY TURN" : "PLAYER TURN";
+        return "ROUND：" + currentRound + "\n" + turnText;
     }
 
     private string BuildPredictionText()
@@ -1127,16 +1158,42 @@ public sealed class BattleManager : MonoBehaviour
 
         SetUnitCell(player, "プ", new Color(0.12f, 0.64f, 0.74f, 0.98f));
         SetUnitCell(enemy, "敵", new Color(0.84f, 0.24f, 0.28f, 0.98f));
+        RefreshEnemyHpText();
+    }
+
+    private void RefreshEnemyHpText()
+    {
+        if (enemyHpText == null)
+        {
+            return;
+        }
+
+        bool visible = enemy != null && !enemy.IsDefeated;
+        enemyHpText.gameObject.SetActive(visible);
+        if (!visible)
+        {
+            return;
+        }
+
+        int globalColumn = BattleGridPosition.GridSize + enemy.Position.Column;
+        float xCenter = (globalColumn + 0.5f) / (BattleGridPosition.GridSize * 2f);
+        float yTop = 1f - enemy.Position.Row / (float)BattleGridPosition.GridSize;
+        RectTransform rect = enemyHpText.rectTransform;
+        rect.anchorMin = new Vector2(xCenter, yTop);
+        rect.anchorMax = new Vector2(xCenter, yTop);
+        rect.offsetMin = new Vector2(-42f, -6f);
+        rect.offsetMax = new Vector2(42f, 28f);
+        enemyHpText.text = enemy.Hp.ToString();
     }
 
     private Color GetBaseCellColor(BattleGridPosition position)
     {
         if (position.Side == GridSide.Player)
         {
-            return new Color(0.16f, 0.25f, 0.36f, 0.95f);
+            return new Color(0.16f, 0.28f, 0.42f, 0.96f);
         }
 
-        return new Color(0.35f, 0.18f, 0.22f, 0.95f);
+        return new Color(0.48f, 0.19f, 0.24f, 0.96f);
     }
 
     private void SetUnitCell(CharacterUnit unit, string label, Color color)
@@ -1187,8 +1244,16 @@ public sealed class BattleManager : MonoBehaviour
         previewCells.Clear();
         AddPreviewCells(card);
 
-        string suffix = string.IsNullOrEmpty(reason) ? string.Empty : "\n理由：" + reason;
-        rangeText.text = card.Name + "\n範囲：" + DescribeRange(card) + suffix;
+        if (rangeText != null)
+        {
+            rangeText.text = string.Empty;
+        }
+
+        if (cardHoverDetailView != null)
+        {
+            cardHoverDetailView.Show(card, DescribeRange(card), string.IsNullOrEmpty(reason) ? string.Empty : "理由：" + reason);
+        }
+
         RefreshGrid();
     }
 
@@ -1197,7 +1262,12 @@ public sealed class BattleManager : MonoBehaviour
         previewCells.Clear();
         if (rangeText != null)
         {
-            rangeText.text = BattleText.HoverPreview;
+            rangeText.text = string.Empty;
+        }
+
+        if (cardHoverDetailView != null)
+        {
+            cardHoverDetailView.Hide();
         }
 
         if (player != null && enemy != null)
@@ -1299,39 +1369,27 @@ public sealed class BattleManager : MonoBehaviour
         GameObject canvasObject = new GameObject("Battle MVP Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.pixelPerfect = true;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.referenceResolution = new Vector2(1280f, 720f);
         scaler.matchWidthOrHeight = 0.5f;
 
-        Image background = CreateImage("Background", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.04f, 0.05f, 0.07f));
+        Image background = CreateImage("Background", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.035f, 0.04f, 0.065f));
         background.raycastTarget = false;
 
-        CreateText("Title", canvasObject.transform, new Vector2(0.03f, 0.91f), new Vector2(0.97f, 0.98f), Vector2.zero, Vector2.zero, "NEON CARDIA - 3x3パネルバトルMVP", 32, TextAnchor.MiddleCenter, Color.white);
         BuildAccelGaugeUi(canvasObject.transform);
 
-        playerHpText = CreateText("Player HP", canvasObject.transform, new Vector2(0.04f, 0.72f), new Vector2(0.2f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 25, TextAnchor.MiddleCenter, Color.white);
-        enemyHpText = CreateText("Enemy HP", canvasObject.transform, new Vector2(0.8f, 0.72f), new Vector2(0.96f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 25, TextAnchor.MiddleCenter, Color.white);
+        playerHpText = CreateText("Player HP", canvasObject.transform, new Vector2(0.012f, 0.905f), new Vector2(0.085f, 0.985f), Vector2.zero, Vector2.zero, string.Empty, 46, TextAnchor.MiddleCenter, Color.white);
 
-        statusText = CreateText("Status Text", canvasObject.transform, new Vector2(0.36f, 0.82f), new Vector2(0.64f, 0.89f), Vector2.zero, Vector2.zero, string.Empty, 25, TextAnchor.MiddleCenter, new Color(0.95f, 0.95f, 0.72f));
-        positionText = CreateText("Position Text", canvasObject.transform, new Vector2(0.35f, 0.72f), new Vector2(0.65f, 0.81f), Vector2.zero, Vector2.zero, string.Empty, 21, TextAnchor.MiddleCenter, Color.white);
+        statusText = CreateText("Status Text", canvasObject.transform, new Vector2(0.39f, 0.86f), new Vector2(0.61f, 0.975f), Vector2.zero, Vector2.zero, string.Empty, 30, TextAnchor.MiddleCenter, new Color(0.95f, 1f, 0.78f));
         BuildActionCounter(canvasObject.transform);
 
         BuildBattleGrid(canvasObject.transform);
-
-        rangeText = CreateText("Range Text", canvasObject.transform, new Vector2(0.05f, 0.32f), new Vector2(0.48f, 0.43f), Vector2.zero, Vector2.zero, BattleText.HoverPreview, 20, TextAnchor.UpperLeft, new Color(0.95f, 0.9f, 0.65f));
+        BuildCardHoverDetail(canvasObject.transform);
 
         BuildMoveCommands(canvasObject.transform);
-
-        deckText = CreateText("Deck Text", canvasObject.transform, new Vector2(0.38f, 0.48f), new Vector2(0.62f, 0.66f), Vector2.zero, Vector2.zero, string.Empty, 22, TextAnchor.MiddleCenter, Color.white);
-        actionQueueText = CreateText("Action Queue Text", canvasObject.transform, new Vector2(0.39f, 0.3f), new Vector2(0.51f, 0.45f), Vector2.zero, Vector2.zero, string.Empty, 18, TextAnchor.UpperLeft, new Color(0.96f, 0.96f, 0.9f));
-        enemyPlanText = CreateText("Enemy Plan Text", canvasObject.transform, new Vector2(0.66f, 0.72f), new Vector2(0.78f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 18, TextAnchor.MiddleLeft, new Color(0.9f, 0.9f, 0.82f));
-        predictionText = CreateText("Prediction Text", canvasObject.transform, new Vector2(0.82f, 0.3f), new Vector2(0.95f, 0.45f), Vector2.zero, Vector2.zero, string.Empty, 16, TextAnchor.UpperLeft, new Color(0.9f, 0.96f, 1f));
-
-        Image logPanel = CreateImage("Log Panel", canvasObject.transform, new Vector2(0.52f, 0.3f), new Vector2(0.81f, 0.45f), Vector2.zero, Vector2.zero, new Color(0.09f, 0.1f, 0.13f, 0.92f));
-        logPanel.raycastTarget = false;
-        logText = CreateText("Log Text", logPanel.transform, Vector2.zero, Vector2.one, new Vector2(18f, 10f), new Vector2(-18f, -10f), string.Empty, 18, TextAnchor.UpperLeft, new Color(0.92f, 0.94f, 0.96f));
 
         RectTransform handRoot = CreateRect("Hand", canvasObject.transform, new Vector2(0.03f, 0.04f), new Vector2(0.78f, 0.25f), Vector2.zero, Vector2.zero);
         BuildCardViews(handRoot);
@@ -1350,18 +1408,22 @@ public sealed class BattleManager : MonoBehaviour
         accelGaugeUI.Build(parent, uiFont);
     }
 
+    private void BuildCardHoverDetail(Transform parent)
+    {
+        cardHoverDetailView = new CardHoverDetailView();
+        cardHoverDetailView.Build(parent, uiFont);
+    }
+
     private void BuildActionCounter(Transform parent)
     {
-        Image panel = CreateImage("Action Counter Panel", parent, new Vector2(0.37f, 0.655f), new Vector2(0.63f, 0.725f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.12f, 0.16f, 0.96f));
+        Image panel = CreateImage("Action Gauge Panel", parent, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(128f, -112f), new Vector2(452f, -88f), new Color(0.015f, 0.018f, 0.025f, 0.96f));
         panel.raycastTarget = false;
-
-        actionCountText = CreateText("Action Counter Text", panel.transform, new Vector2(0f, 0.35f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-8f, -2f), string.Empty, 30, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
 
         for (int i = 0; i < MaxPlayerActions; i++)
         {
-            float minX = 0.18f + i * 0.23f;
-            float maxX = minX + 0.18f;
-            Image pip = CreateImage("Action Pip " + (i + 1), panel.transform, new Vector2(minX, 0.13f), new Vector2(maxX, 0.3f), Vector2.zero, Vector2.zero, new Color(0.98f, 0.78f, 0.18f, 1f));
+            float minX = i / (float)MaxPlayerActions;
+            float maxX = (i + 1) / (float)MaxPlayerActions;
+            Image pip = CreateImage("Action Pip " + (i + 1), panel.transform, new Vector2(minX, 0f), new Vector2(maxX, 1f), new Vector2(4f, 4f), new Vector2(-4f, -4f), new Color(0.98f, 0.78f, 0.18f, 1f));
             pip.raycastTarget = false;
             actionPips.Add(pip);
         }
@@ -1369,11 +1431,10 @@ public sealed class BattleManager : MonoBehaviour
 
     private void BuildMoveCommands(Transform parent)
     {
-        CreateText("Move Commands Label", parent, new Vector2(0.05f, 0.265f), new Vector2(0.13f, 0.31f), Vector2.zero, Vector2.zero, "移動", 20, TextAnchor.MiddleLeft, Color.white);
-        AddMoveButton(parent, "Move Forward Button", "前進", MoveDirection.Forward, new Vector2(0.13f, 0.265f), new Vector2(0.22f, 0.31f));
-        AddMoveButton(parent, "Move Back Button", "後退", MoveDirection.Back, new Vector2(0.23f, 0.265f), new Vector2(0.32f, 0.31f));
-        AddMoveButton(parent, "Move Up Button", "上", MoveDirection.Up, new Vector2(0.33f, 0.265f), new Vector2(0.41f, 0.31f));
-        AddMoveButton(parent, "Move Down Button", "下", MoveDirection.Down, new Vector2(0.42f, 0.265f), new Vector2(0.5f, 0.31f));
+        AddMoveButton(parent, "Move Forward Button", "前進", MoveDirection.Forward, new Vector2(0.04f, 0.265f), new Vector2(0.14f, 0.31f));
+        AddMoveButton(parent, "Move Back Button", "後退", MoveDirection.Back, new Vector2(0.15f, 0.265f), new Vector2(0.25f, 0.31f));
+        AddMoveButton(parent, "Move Up Button", "上", MoveDirection.Up, new Vector2(0.26f, 0.265f), new Vector2(0.36f, 0.31f));
+        AddMoveButton(parent, "Move Down Button", "下", MoveDirection.Down, new Vector2(0.37f, 0.265f), new Vector2(0.47f, 0.31f));
     }
 
     private void AddMoveButton(Transform parent, string objectName, string label, MoveDirection direction, Vector2 anchorMin, Vector2 anchorMax)
@@ -1386,11 +1447,16 @@ public sealed class BattleManager : MonoBehaviour
 
     private void BuildBattleGrid(Transform parent)
     {
-        CreateText("Player Panel Label", parent, new Vector2(0.08f, 0.66f), new Vector2(0.36f, 0.71f), Vector2.zero, Vector2.zero, BattleText.PlayerPanel, 20, TextAnchor.MiddleCenter, Color.white);
-        CreateText("Enemy Panel Label", parent, new Vector2(0.64f, 0.66f), new Vector2(0.92f, 0.71f), Vector2.zero, Vector2.zero, BattleText.EnemyPanel, 20, TextAnchor.MiddleCenter, Color.white);
+        Image field = CreateImage("Battle Field", parent, new Vector2(0.19f, 0.43f), new Vector2(0.81f, 0.72f), Vector2.zero, Vector2.zero, new Color(0.015f, 0.02f, 0.035f, 0.96f));
+        field.raycastTarget = false;
 
-        BuildPanel(parent, GridSide.Player, new Vector2(0.08f, 0.46f), new Vector2(0.36f, 0.66f));
-        BuildPanel(parent, GridSide.Enemy, new Vector2(0.64f, 0.46f), new Vector2(0.92f, 0.66f));
+        BuildPanel(field.transform, GridSide.Player, new Vector2(0f, 0f), new Vector2(0.5f, 1f));
+        BuildPanel(field.transform, GridSide.Enemy, new Vector2(0.5f, 0f), new Vector2(1f, 1f));
+
+        Image divider = CreateImage("Battle Field Divider", field.transform, new Vector2(0.497f, 0f), new Vector2(0.503f, 1f), Vector2.zero, Vector2.zero, new Color(0.85f, 0.95f, 1f, 0.7f));
+        divider.raycastTarget = false;
+
+        enemyHpText = CreateText("Enemy Floating HP", field.transform, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, string.Empty, 26, TextAnchor.MiddleCenter, Color.white);
     }
 
     private void BuildPanel(Transform parent, GridSide side, Vector2 anchorMin, Vector2 anchorMax)
@@ -1407,8 +1473,8 @@ public sealed class BattleManager : MonoBehaviour
                 float maxY = 1f - row / (float)BattleGridPosition.GridSize;
                 float minY = 1f - (row + 1) / (float)BattleGridPosition.GridSize;
 
-                Image slot = CreateImage(side + " Cell " + row + "-" + column, panelRoot, new Vector2(minX, minY), new Vector2(maxX, maxY), new Vector2(4f, 4f), new Vector2(-4f, -4f), side == GridSide.Player ? new Color(0.16f, 0.25f, 0.36f, 0.95f) : new Color(0.35f, 0.18f, 0.22f, 0.95f));
-                Text label = CreateText(side + " Cell Label " + row + "-" + column, slot.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, string.Empty, 34, TextAnchor.MiddleCenter, Color.white);
+                Image slot = CreateImage(side + " Cell " + row + "-" + column, panelRoot, new Vector2(minX, minY), new Vector2(maxX, maxY), new Vector2(2f, 2f), new Vector2(-2f, -2f), side == GridSide.Player ? new Color(0.16f, 0.28f, 0.42f, 0.96f) : new Color(0.48f, 0.19f, 0.24f, 0.96f));
+                Text label = CreateText(side + " Cell Label " + row + "-" + column, slot.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, string.Empty, 40, TextAnchor.MiddleCenter, Color.white);
                 gridSlots[sideIndex, row, column] = slot;
                 gridLabels[sideIndex, row, column] = label;
             }
@@ -1455,10 +1521,21 @@ public sealed class BattleManager : MonoBehaviour
         label.text = text;
         label.font = uiFont;
         label.fontSize = fontSize;
+        label.fontStyle = FontStyle.Bold;
         label.alignment = alignment;
         label.color = color;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
+        label.raycastTarget = false;
+
+        Shadow shadow = rectTransform.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.78f);
+        shadow.effectDistance = new Vector2(2f, -2f);
+
+        Outline outline = rectTransform.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.72f);
+        outline.effectDistance = new Vector2(1f, -1f);
+
         return label;
     }
 

@@ -10,6 +10,7 @@ public sealed class DeckBuildManager : MonoBehaviour
 {
     private readonly List<CardData> ownedCards = new List<CardData>();
     private readonly List<CardData> editingDeck = new List<CardData>();
+    private readonly List<CardData> entryDeck = new List<CardData>();
     private readonly List<Button> collectionButtons = new List<Button>();
 
     private Font uiFont;
@@ -20,6 +21,7 @@ public sealed class DeckBuildManager : MonoBehaviour
     private Text messageText;
     private Button saveButton;
     private Button battleButton;
+    private Button restoreButton;
 
     private void Awake()
     {
@@ -125,6 +127,9 @@ public sealed class DeckBuildManager : MonoBehaviour
         {
             editingDeck.AddRange(savedDeck);
         }
+
+        entryDeck.Clear();
+        entryDeck.AddRange(editingDeck);
     }
 
     private void BuildUi()
@@ -132,40 +137,38 @@ public sealed class DeckBuildManager : MonoBehaviour
         GameObject canvasObject = new GameObject("Deck Build Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.pixelPerfect = true;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.referenceResolution = new Vector2(1280f, 720f);
         scaler.matchWidthOrHeight = 0.5f;
 
         Image background = CreateImage("Background", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.04f, 0.05f, 0.07f));
         background.raycastTarget = false;
 
-        CreateText("Title", canvasObject.transform, new Vector2(0.03f, 0.92f), new Vector2(0.97f, 0.985f), Vector2.zero, Vector2.zero, "NEON CARDIA - デッキビルドMVP", 32, TextAnchor.MiddleCenter, Color.white);
-        CreateText("Collection Title", canvasObject.transform, new Vector2(0.04f, 0.84f), new Vector2(0.45f, 0.9f), Vector2.zero, Vector2.zero, "所持カード一覧", 24, TextAnchor.MiddleLeft, Color.white);
-        CreateText("Deck Title", canvasObject.transform, new Vector2(0.52f, 0.84f), new Vector2(0.94f, 0.9f), Vector2.zero, Vector2.zero, "現在のデッキ", 24, TextAnchor.MiddleLeft, Color.white);
+        CreateText("Collection Title", canvasObject.transform, new Vector2(0.035f, 0.91f), new Vector2(0.48f, 0.97f), Vector2.zero, Vector2.zero, "所持カード一覧", 28, TextAnchor.MiddleLeft, Color.white);
+        CreateText("Deck Title", canvasObject.transform, new Vector2(0.515f, 0.91f), new Vector2(0.65f, 0.97f), Vector2.zero, Vector2.zero, "現在のデッキ", 28, TextAnchor.MiddleLeft, Color.white);
+        deckSummaryText = CreateText("Deck Summary", canvasObject.transform, new Vector2(0.64f, 0.91f), new Vector2(0.965f, 0.97f), Vector2.zero, Vector2.zero, string.Empty, 24, TextAnchor.MiddleRight, new Color(0.9f, 1f, 0.82f));
 
-        Image collectionPanel = CreateImage("Collection Panel", canvasObject.transform, new Vector2(0.04f, 0.18f), new Vector2(0.48f, 0.84f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.1f, 0.14f, 0.92f));
-        Image deckPanel = CreateImage("Deck Panel", canvasObject.transform, new Vector2(0.52f, 0.18f), new Vector2(0.94f, 0.84f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.1f, 0.14f, 0.92f));
+        Image collectionPanel = CreateImage("Collection Panel", canvasObject.transform, new Vector2(0.035f, 0.145f), new Vector2(0.485f, 0.905f), Vector2.zero, Vector2.zero, new Color(0.035f, 0.065f, 0.075f, 0.98f));
+        Image deckPanel = CreateImage("Deck Panel", canvasObject.transform, new Vector2(0.515f, 0.145f), new Vector2(0.965f, 0.905f), Vector2.zero, Vector2.zero, new Color(0.035f, 0.065f, 0.075f, 0.98f));
 
-        collectionListRoot = CreateRect("Collection List", collectionPanel.transform, Vector2.zero, Vector2.one, new Vector2(14f, 12f), new Vector2(-14f, -12f));
-        deckListRoot = CreateRect("Deck List", deckPanel.transform, Vector2.zero, Vector2.one, new Vector2(14f, 12f), new Vector2(-14f, -12f));
+        collectionListRoot = CreateRect("Collection List", collectionPanel.transform, Vector2.zero, Vector2.one, new Vector2(10f, 8f), new Vector2(-10f, -8f));
+        deckListRoot = CreateRect("Deck List", deckPanel.transform, Vector2.zero, Vector2.one, new Vector2(10f, 8f), new Vector2(-10f, -8f));
 
-        deckSummaryText = CreateText("Deck Summary", canvasObject.transform, new Vector2(0.04f, 0.08f), new Vector2(0.28f, 0.17f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.UpperLeft, Color.white);
-        validationText = CreateText("Validation Text", canvasObject.transform, new Vector2(0.3f, 0.08f), new Vector2(0.56f, 0.17f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.UpperLeft, new Color(1f, 0.9f, 0.55f));
-        messageText = CreateText("Message Text", canvasObject.transform, new Vector2(0.58f, 0.08f), new Vector2(0.94f, 0.17f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.UpperLeft, new Color(0.9f, 0.96f, 1f));
+        CreateImage("Status Panel", canvasObject.transform, new Vector2(0.035f, 0.098f), new Vector2(0.965f, 0.135f), Vector2.zero, Vector2.zero, new Color(0.015f, 0.025f, 0.032f, 0.9f)).raycastTarget = false;
+        validationText = CreateText("Validation Text", canvasObject.transform, new Vector2(0.045f, 0.098f), new Vector2(0.485f, 0.135f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleLeft, new Color(1f, 0.9f, 0.55f));
+        messageText = CreateText("Message Text", canvasObject.transform, new Vector2(0.515f, 0.098f), new Vector2(0.955f, 0.135f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleRight, new Color(0.92f, 1f, 1f));
 
-        Button defaultButton = CreateButton("Default Deck Button", canvasObject.transform, new Vector2(0.04f, 0.015f), new Vector2(0.2f, 0.065f), Vector2.zero, Vector2.zero, "デフォルトデッキ作成", 18, new Color(0.16f, 0.34f, 0.36f));
-        defaultButton.onClick.AddListener(SetDefaultDeck);
-
-        Button clearButton = CreateButton("Clear Deck Button", canvasObject.transform, new Vector2(0.22f, 0.015f), new Vector2(0.34f, 0.065f), Vector2.zero, Vector2.zero, "デッキ初期化", 18, new Color(0.34f, 0.22f, 0.24f));
-        clearButton.onClick.AddListener(ClearDeck);
-
-        saveButton = CreateButton("Save Deck Button", canvasObject.transform, new Vector2(0.58f, 0.015f), new Vector2(0.7f, 0.065f), Vector2.zero, Vector2.zero, "デッキ保存", 18, new Color(0.14f, 0.42f, 0.27f));
+        saveButton = CreateButton("Save Deck Button", canvasObject.transform, new Vector2(0.28f, 0.025f), new Vector2(0.43f, 0.08f), Vector2.zero, Vector2.zero, "デッキ保存", 22, new Color(0.08f, 0.34f, 0.18f));
         saveButton.onClick.AddListener(SaveDeck);
 
-        battleButton = CreateButton("Go Battle Button", canvasObject.transform, new Vector2(0.72f, 0.015f), new Vector2(0.94f, 0.065f), Vector2.zero, Vector2.zero, "BattleSceneへ進む", 18, new Color(0.58f, 0.36f, 0.08f));
+        battleButton = CreateButton("Go Battle Button", canvasObject.transform, new Vector2(0.45f, 0.025f), new Vector2(0.61f, 0.08f), Vector2.zero, Vector2.zero, "バトルへ進む", 22, new Color(0.5f, 0.27f, 0.05f));
         battleButton.onClick.AddListener(GoToBattleScene);
+
+        restoreButton = CreateButton("Restore Deck Button", canvasObject.transform, new Vector2(0.63f, 0.025f), new Vector2(0.78f, 0.08f), Vector2.zero, Vector2.zero, "元に戻す", 22, new Color(0.22f, 0.24f, 0.32f));
+        restoreButton.onClick.AddListener(RestoreEntryDeck);
     }
 
     private void RefreshUi(string message)
@@ -173,14 +176,16 @@ public sealed class DeckBuildManager : MonoBehaviour
         DeckValidationResult result = DeckValidator.Validate(editingDeck);
         DeckValidationResult counts = DeckValidator.Count(editingDeck);
 
-        deckSummaryText.text = "デッキ枚数：" + counts.TotalCount + " / " + DeckValidator.RequiredDeckCount
-            + "\nN：" + counts.NormalCount
-            + "\nHC：" + counts.HighClassCount + " / " + DeckValidator.MaxHighClassCount
-            + "\nG：" + counts.GigantCount + " / " + DeckValidator.MaxGigantCount;
-        validationText.text = result.Message;
+        deckSummaryText.text = counts.TotalCount + "/" + DeckValidator.RequiredDeckCount
+            + "   N:" + counts.NormalCount
+            + "   HC:" + counts.HighClassCount
+            + "   G:" + counts.GigantCount;
+        validationText.text = FormatValidationMessage(result);
+        validationText.color = result.IsValid ? new Color(0.65f, 1f, 0.48f) : new Color(1f, 0.84f, 0.38f);
         messageText.text = message;
         saveButton.interactable = true;
         battleButton.interactable = result.IsValid;
+        restoreButton.interactable = true;
 
         RebuildCollectionList();
         RebuildDeckList();
@@ -194,9 +199,9 @@ public sealed class DeckBuildManager : MonoBehaviour
         for (int i = 0; i < ownedCards.Count; i++)
         {
             CardData card = ownedCards[i];
-            float maxY = 1f - i * 0.071f;
-            float minY = maxY - 0.065f;
-            Button button = CreateButton("Collection " + card.CardId, collectionListRoot, new Vector2(0f, minY), new Vector2(1f, maxY), Vector2.zero, Vector2.zero, FormatCollectionCard(card), 16, GetCardColor(card));
+            float maxY = 1f - i * 0.074f;
+            float minY = maxY - 0.067f;
+            Button button = CreateButton("Collection " + card.CardId, collectionListRoot, new Vector2(0f, minY), new Vector2(1f, maxY), Vector2.zero, Vector2.zero, FormatCollectionCard(card), 18, GetCardColor(card));
             CardData capturedCard = card;
             button.onClick.AddListener(() => AddCard(capturedCard));
             collectionButtons.Add(button);
@@ -211,9 +216,9 @@ public sealed class DeckBuildManager : MonoBehaviour
         for (int i = 0; i < uniqueCards.Count; i++)
         {
             CardData card = uniqueCards[i];
-            float maxY = 1f - i * 0.071f;
-            float minY = maxY - 0.065f;
-            Button button = CreateButton("Deck " + card.CardId, deckListRoot, new Vector2(0f, minY), new Vector2(1f, maxY), Vector2.zero, Vector2.zero, FormatDeckCard(card), 16, GetCardColor(card));
+            float maxY = 1f - i * 0.074f;
+            float minY = maxY - 0.067f;
+            Button button = CreateButton("Deck " + card.CardId, deckListRoot, new Vector2(0f, minY), new Vector2(1f, maxY), Vector2.zero, Vector2.zero, FormatDeckCard(card), 18, GetCardColor(card));
             CardData capturedCard = card;
             button.onClick.AddListener(() => RemoveCard(capturedCard));
         }
@@ -253,13 +258,12 @@ public sealed class DeckBuildManager : MonoBehaviour
     private string FormatCollectionCard(CardData card)
     {
         return BattleText.FormatCardTags(card) + " " + card.Name
-            + "\n" + FormatPower(card)
-            + "\nデッキ内：" + CountInDeck(card.CardId) + "枚";
+            + "\n" + FormatPower(card) + " / デッキ内:" + CountInDeck(card.CardId);
     }
 
     private string FormatDeckCard(CardData card)
     {
-        return BattleText.FormatCardTags(card) + " " + card.Name + " × " + CountInDeck(card.CardId)
+        return BattleText.FormatCardTags(card) + " " + card.Name + " ×" + CountInDeck(card.CardId)
             + "\nクリックで1枚削除";
     }
 
@@ -320,17 +324,11 @@ public sealed class DeckBuildManager : MonoBehaviour
         }
     }
 
-    private void SetDefaultDeck()
+    private void RestoreEntryDeck()
     {
         editingDeck.Clear();
-        editingDeck.AddRange(CardData.CreateStarterDeck());
-        RefreshUi("デフォルトデッキを作成しました");
-    }
-
-    private void ClearDeck()
-    {
-        editingDeck.Clear();
-        RefreshUi("デッキを初期化しました");
+        editingDeck.AddRange(entryDeck);
+        RefreshUi("デッキを入場時の状態に戻しました");
     }
 
     private void SaveDeck()
@@ -364,12 +362,27 @@ public sealed class DeckBuildManager : MonoBehaviour
         switch (card.DeckType)
         {
             case CardDeckType.HC:
-                return new Color(0.22f, 0.22f, 0.42f);
+                return card.IsClearCard ? new Color(0.24f, 0.32f, 0.48f) : new Color(0.12f, 0.16f, 0.42f);
             case CardDeckType.G:
-                return new Color(0.42f, 0.22f, 0.16f);
+                return card.IsClearCard ? new Color(0.48f, 0.28f, 0.14f) : new Color(0.42f, 0.08f, 0.06f);
             default:
-                return new Color(0.16f, 0.24f, 0.3f);
+                return card.IsClearCard ? new Color(0.12f, 0.32f, 0.28f) : new Color(0.08f, 0.2f, 0.19f);
         }
+    }
+
+    private static string FormatValidationMessage(DeckValidationResult result)
+    {
+        if (result.IsValid)
+        {
+            return "有効";
+        }
+
+        if (result.Errors.Count == 0)
+        {
+            return "無効";
+        }
+
+        return "無効：" + result.Errors[0];
     }
 
     private static void ClearChildren(Transform parent)
@@ -411,6 +424,16 @@ public sealed class DeckBuildManager : MonoBehaviour
         label.color = color;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
+        label.resizeTextForBestFit = false;
+        label.raycastTarget = false;
+
+        Outline outline = rectTransform.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.95f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        Shadow shadow = rectTransform.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.9f);
+        shadow.effectDistance = new Vector2(2.5f, -2.5f);
         return label;
     }
 
@@ -428,10 +451,8 @@ public sealed class DeckBuildManager : MonoBehaviour
         colors.disabledColor = new Color(0.18f, 0.18f, 0.2f, 0.55f);
         button.colors = colors;
 
-        Text label = CreateText(name + " Text", image.transform, Vector2.zero, Vector2.one, new Vector2(8f, 4f), new Vector2(-8f, -4f), labelText, fontSize, TextAnchor.MiddleLeft, Color.white);
-        label.resizeTextForBestFit = true;
-        label.resizeTextMinSize = 10;
-        label.resizeTextMaxSize = fontSize;
+        Text label = CreateText(name + " Text", image.transform, Vector2.zero, Vector2.one, new Vector2(10f, 3f), new Vector2(-10f, -3f), labelText, fontSize, TextAnchor.MiddleLeft, Color.white);
+        label.resizeTextForBestFit = false;
 
         return button;
     }

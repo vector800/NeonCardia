@@ -3,7 +3,7 @@
 ## Implemented
 
 - Added `BattleScene` and registered it in Build Settings.
-- Added one player, one enemy, HP/Guard display, and current grid position display.
+- Added one player, one enemy, battle HP display, and internal grid position tracking.
 - Added a 5-card hand, clickable card effects, and an end-turn button.
 - Added simple enemy AI, victory/defeat checks, and an action log.
 - Added a side-view 3x3 player panel and 3x3 enemy panel.
@@ -15,7 +15,7 @@
 - Removed movement cards from the starter deck. Movement is now handled by always-available basic move commands.
 - Added 3 player action points per turn. Normal cards and movement consume 1 action point.
 - Added Clear Cards. `Guard`, `Repair`, and `Charge` are N cards that do not consume action points during normal player turns.
-- Added a dedicated remaining-action UI panel with a large count and three action markers.
+- Added action point UI. The current battle screen shows action points as a three-part gauge.
 - Changed player turns from immediate action resolution to queued action planning.
 - Added a temporary attack prediction interrupt system and Accel Gauge.
 - Added a top-left Accel Gauge bar UI with gain effects and MAX blinking.
@@ -23,13 +23,65 @@
 - Added `MenuScene` as the game entry menu with battle, deck edit, and placeholder RPG options.
 - Added card attributes and enemy weakness attributes.
 - Adjusted early battle balance around 1-2 turn normal fights and roughly 3 turn stage boss fights.
+- Reorganized the BattleScene UI so the battle screen shows fewer persistent debug labels and uses larger, clearer text.
 - Uses only generated rectangles, `Text`, and `Button`; no external assets are required.
+
+## BattleScene UI Cleanup
+
+The BattleScene UI has been reorganized to reduce always-visible debug information and make the panel battle easier to read.
+
+- Removed the old `NEON CARDIA - 3x3パネルバトルMVP` title from BattleScene.
+- Improved font readability with a lower Canvas reference resolution, larger text, stronger contrast, and generated shadow/outline effects.
+- Changed the top-center turn display to `ROUND：1` plus `PLAYER TURN` / `ENEMY TURN`.
+- Player HP is shown at the top-left as a number only.
+- The Accel Gauge is placed next to the HP number and uses the label `ACCEEL`.
+- Action points are shown below the ACCEEL gauge as a three-part gauge only. No `残り行動権`, `ACTION`, or `3/3` text is shown there.
+- Draw pile, hand, and discard count text are hidden from the battle screen. The deck, hand, discard, draw, discard, and reshuffle logic still runs internally.
+- The player-side and enemy-side 3x3 panels are visually connected into one 6-column by 3-row battle field. Internal `GridSide.Player` / `GridSide.Enemy` position management is unchanged.
+- Removed `プレイヤーパネル` / `エネミーパネル` labels from BattleScene.
+- Removed persistent right-side debug text such as enemy action count, enemy attack range, weakness, enemy type, Accel text, and attack prediction state. Enemy AI, weakness, attack prediction, and Accel logic are still active internally.
+- Kept hand cards, movement buttons, `決定`, `選択リセット`, hover range preview, and the compact action log.
+
+Changed files:
+
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/AccelGaugeUI.cs`
+- `README.md`
+
+## Battle Card UI And Hover Detail
+
+The BattleScene hand cards now use a compact visual card layout instead of long text labels.
+
+- Moved the action point gauge farther below the ACCEEL gauge so the two gauges do not visually crowd each other.
+- Enemy HP is now shown as a floating number above the enemy panel cell and follows the enemy when it moves.
+- Battle log UI is hidden during normal BattleScene play. `BattleLog` still records messages internally for debugging and logic flow.
+- Hand cards no longer show `[N]`, `[HC]`, `[G]`, or `[CLEAR]` text.
+- Hand card display is limited to card name, value, and a mini attribute icon.
+- Card font sizes are larger than the previous text-heavy card layout.
+- Card type is represented by color:
+  - N: pale gray.
+  - HC: sky blue.
+  - G: pale red.
+  - Clear Card: pale green background with the N / HC / G strip still visible at the edge.
+- Attribute text is replaced by mini icons loaded from `Assets/Resources/UI/AttributeIcons`.
+- Hovering a hand card opens a left-center detail panel with card name, placeholder artwork, effect text, value, attribute icon, range text, and any preview reason.
+- Placeholder card artwork is loaded from `Assets/Resources/Cards/Placeholders`.
+- The icon and artwork PNGs are simple original placeholder assets generated for this project. They are intended to be replaced later with production art.
+- Runtime resolvers in `CardView.cs` create Sprites from those Resources textures, so replacing an asset only requires keeping the same file name or updating the resolver path.
+
+Changed files and assets:
+
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/CardView.cs`
+- `Assets/Resources/UI/AttributeIcons/*.png`
+- `Assets/Resources/Cards/Placeholders/*.png`
+- `README.md`
 
 ## Japanese UI Text
 
 The current MVP uses fixed Japanese display text. It does not include a full localization or language switching system yet.
 
-- Main battle labels use Japanese text such as `プレイヤー`, `エネミー`, `プレイヤーターン`, `ターン終了`, `プレイヤーパネル`, and `エネミーパネル`.
+- BattleScene now keeps persistent battle labels minimal. Cards, buttons, logs, and deck builder text use Japanese, while the battle turn header uses `ROUND`, `PLAYER TURN`, and `ENEMY TURN`.
 - Card names and descriptions are displayed in Japanese.
 - Action logs are displayed in Japanese.
 - Empty hand slots display `空き`.
@@ -64,8 +116,8 @@ The player starts each turn with 3 action points. Actions are not resolved immed
 - Clear Cards can still be selected while action points are 0, as long as the card is in hand and is not already queued.
 - `選択リセット` clears the current queue without consuming cards or changing position.
 - The old `ターン終了` button is hidden in the queued action UI. `決定` is the button that resolves selected actions and advances the turn.
-- Remaining action points are shown in a dedicated center UI panel as `残り行動権 3 / 3` plus three action markers.
-- The action queue UI shows current action point cost and marks Clear Cards as `[CLEAR / 行動権消費なし]`.
+- Remaining action points are shown as a three-part gauge below the ACCEEL gauge. The battle screen no longer shows a text label such as `残り行動権 3 / 3`.
+- The old persistent action queue debug text is hidden to keep the battle screen lighter. The queued action model still resolves selected actions in order after `決定`.
 
 Basic movement commands are always shown during the player turn:
 
@@ -82,7 +134,7 @@ Player turn flow:
 
 1. Draw until hand reaches 5.
 2. Select actions from cards and basic movement commands. Up to 3 selected actions may consume action points; Clear Cards do not count toward that limit.
-3. Review the `選択中アクション` queue.
+3. Review the latest selection feedback in the action log.
 4. Press `決定`.
 5. Queued actions resolve from top to bottom.
 6. Resolved card actions move the card from hand to discard.
@@ -209,16 +261,26 @@ Deck UI:
 
 `DeckBuildScene` is a functional MVP deck editor for the 30-card deck rule. The scene is registered in Build Settings and creates its temporary UI at runtime through `DeckBuildManager`.
 
+Readability and layout updates:
+
+- The old `NEON CARDIA - デッキビルドMVP` title is removed.
+- The left owned-card list and right current-deck list now use most of the screen width and height.
+- Canvas pixel-perfect rendering is enabled.
+- All runtime text uses larger font sizes with Unity UI `Outline` and `Shadow`.
+- Dark backing panels are used behind status text and list content.
+- The deck count moved next to `現在のデッキ` and uses compact notation: `30/30   N:24   HC:5   G:1`.
+- The label `デッキ枚数：` is no longer shown.
+- TextMeshPro is not used; the improvement uses Unity standard UI only.
+
 Main UI:
 
 - Owned card list.
 - Current deck list.
-- Deck count and N / HC / G counts.
-- Validation and message text.
-- `デフォルトデッキ作成` button.
-- `デッキ初期化` button.
+- Compact deck count and N / HC / G counts next to the current deck heading.
+- Compact validation and message text.
 - `デッキ保存` button.
-- `BattleSceneへ進む` button.
+- `バトルへ進む` button.
+- `元に戻す` button.
 
 Current MVP assumptions:
 
@@ -227,6 +289,8 @@ Current MVP assumptions:
 - The owned list displays card name, deck type, `CLEAR` tag, effect value, attribute, and current deck count.
 - Clicking an owned card attempts to add it to the editing deck.
 - Clicking a deck row removes one copy of that card.
+- `元に戻す` restores the editing deck to the state it had when entering `DeckBuildScene`.
+- `デフォルトデッキ作成` and `デッキ初期化` are no longer shown.
 
 Deck rules are centralized in `DeckValidator`:
 
@@ -253,16 +317,26 @@ Saving and BattleScene linkage:
 - `DeckBuildScene`
 - `BattleScene`
 
-The menu UI is generated at runtime by `MainMenuController.cs` and uses only Unity UI `Text`, `Image`, and `Button` objects. No external assets, logos, character images, or fonts are used.
+The menu UI is generated at runtime by `MainMenuController.cs` and uses only Unity UI `Text`, `Image`, and `Button` objects. No TextMeshPro package, external assets, logos, character images, or external fonts are used.
 
 Main layout:
 
 - Large title display: `NEON CARDIA`.
 - Subtitle: `ネオンカーディア / PANEL CARD BATTLE RPG`.
 - Vertical menu buttons: `バトルへ`, `デッキ編集へ`, `RPGへ`.
-- Top progress marker area with placeholder labels: `STAGE`, `DECK`, `BOSS`, `CLEAR`, `???`.
+- Top progress marker objects exist as `Progress Marker Root`, but are hidden by default until the future RPG progression system is implemented.
 - Dark digital background with generated grid lines, circuit-like line decoration, translucent panels, and large symbol motifs.
 - Footer text: `© 2026 NEON CARDIA PROJECT / PROTOTYPE VERSION / MVP BUILD`.
+
+Readability adjustments:
+
+- Canvas pixel-perfect rendering is enabled.
+- Title, subtitle, menu items, message text, footer, and marker text use larger font sizes.
+- Readable menu text uses Unity UI `Outline` and `Shadow`.
+- Title, menu, message, and footer text have dark backing panels so grid lines do not sit directly behind the letters.
+- The background grid and circuit decoration opacity is lower than the first menu MVP.
+- `ShowProgressMarkers(bool visible)` can reveal or hide the future RPG progress marker group.
+- The initial `↑ / ↓ で選択、Enterで決定` help text is hidden; message text appears only when needed, such as the RPG placeholder notice.
 
 Menu behavior:
 
@@ -343,10 +417,10 @@ The UI is built only from Unity UI objects and uses no external assets:
 
 Display behavior:
 
-- Shows `アクセル 0%` through `アクセル 100%`.
+- Shows the `ACCEEL` label and a horizontal Fill bar. The persistent percent text is hidden in the cleaned BattleScene UI.
 - Fill width follows the 0-100 Accel Gauge value.
 - Battle start and temporary carryover values are reflected immediately.
-- If the value decreases in future systems, the Fill width and percent text will also decrease.
+- If the value decreases in future systems, the Fill width will also decrease.
 - When the gauge increases, the whole gauge pops slightly.
 - Increase text such as `+20%`, `+50%`, or `+100%` floats near the gauge and fades out.
 - Prediction success labels such as `回避成功`, `弱点ヒット`, or `予測成功` are shown with the gain text.
@@ -480,7 +554,7 @@ Removed files:
 - `PlayerCardCollection.cs`: MVP owned-card provider that loads all non-movement card assets from `Assets/Resources/Cards`.
 - `DeckBuildManager.cs`: Runtime UI and editing flow for `DeckBuildScene`.
 - `MainMenuController.cs`: Runtime UI, keyboard/mouse menu selection, placeholder progress markers, and scene navigation for `MenuScene`.
-- `CardView.cs`: One hand card button, label, color state, click callback, and hover preview callback.
+- `CardView.cs`: Compact hand card visuals, card color rules, attribute icon resolver, placeholder artwork resolver, hover detail panel, click callback, and hover preview callback.
 - `EnemyAI.cs`: Enemy type HP/attack/weakness profile selection and 3x3 panel movement/attack planning.
 - `BattleLog.cs`: Bounded action log storage and display text formatting.
 - `BattleText.cs`: Japanese display text, range descriptions, and grid position formatting.
@@ -493,69 +567,90 @@ Removed files:
 2. Open `Assets/Scenes/MenuScene.unity`.
 3. Enter Play Mode.
 4. Confirm that the `NEON CARDIA` title, subtitle, digital grid background, circuit-like decorations, and footer are visible.
-5. Confirm that the top progress marker area shows `STAGE`, `DECK`, `BOSS`, `CLEAR`, and `???`.
-6. Confirm that `バトルへ`, `デッキ編集へ`, and `RPGへ` are shown as vertical menu buttons.
-7. Confirm that mouse hover or `↑` / `↓` changes the selected menu and the `▶` marker moves.
-8. Confirm that `RPGへ` shows `RPGモードはまだ未実装です` and does not transition.
-9. Confirm that `バトルへ` loads `BattleScene`.
-10. Return to `MenuScene`, then confirm that `デッキ編集へ` loads `DeckBuildScene`.
-11. Open `Assets/Scenes/BattleScene.unity`.
-12. Enter Play Mode.
-13. Confirm that the left 3x3 grid shows the player and the right 3x3 grid shows the enemy.
-14. Confirm that visible UI labels, enemy type, round count, remaining actions, card names, card descriptions, and action logs are displayed in Japanese.
-15. Confirm that the dedicated `残り行動権 3 / 3` panel and three action markers are easy to see near the center of the screen.
-16. Confirm that `前進`, `後退`, `上`, and `下` movement buttons are visible outside the hand area.
-17. Confirm that the old `ターン終了` button is not shown and only `決定` / `選択リセット` are shown in that command area.
-18. Confirm that `Step Forward`, `Step Back`, `Step Up`, and `Step Down` do not appear in hand.
-19. Confirm that the default deck is a 30-card deck and movement cards are not included.
-20. Click a card and confirm that no damage, healing, Guard, discard, or turn advance happens immediately.
-21. Click a movement button and confirm that the player does not move immediately.
-22. Confirm that selected actions appear in `選択中アクション` in selection order.
-23. Confirm that Guard, Repair, and Charge show `[N][CLEAR]`.
-24. Confirm that selecting Guard, Repair, or Charge does not reduce remaining action points.
-25. Confirm that selecting Strike, Heavy Shot, or a movement command reduces remaining action points by 1.
-26. Confirm that the queue can contain Clear Cards plus up to 3 action-point-consuming actions.
-27. Confirm that Clear Cards are shown in the queue with `[CLEAR / 行動権消費なし]`.
-28. Press `選択リセット` and confirm the queue clears without consuming cards.
-29. Select actions and press `決定`; confirm actions resolve in order.
-30. Confirm that resolved Clear Cards move to discard.
-31. Queue Charge before an attack and confirm that the next attack gains +20 damage.
-32. Move off the enemy row and queue `ストライク`; press `決定` and confirm that it misses, is discarded, and discard count increases.
-33. Queue movement, press `決定`, and confirm movement resolves at that timing.
-34. Try an invalid queued movement and confirm the failure reason appears when `決定` resolves it.
-35. Confirm that player action resolution is followed by enemy action.
-36. Confirm that the enemy action count and attack range description are visible.
-37. Confirm that Accel Gauge, attack prediction state, predicted enemy range, enemy weakness, and range-in/out state are visible.
-38. Confirm that the top-left Accel Gauge bar is visible with frame, background, Fill, and percent text.
-39. Confirm that 0% is empty, 20% is around one fifth, 50% is around half, and 100% is full.
-40. Confirm that enemy attacks trigger attack prediction every time in the current test build.
-41. During attack prediction, click a movement command and confirm it resolves immediately instead of entering the normal queue.
-42. During attack prediction, click one card, including a Clear Card if available, and confirm the prediction action ends after that one card.
-43. Move out of the predicted enemy attack range and confirm Accel Gauge increases by 20%, `+20%` appears, the gauge flashes, and the enemy attack misses.
-44. Use a weakness card during prediction and confirm Accel Gauge increases by 50%, `+50%` appears, and the current enemy attack is canceled.
-45. Defeat a normal enemy with a prediction card and confirm Accel Gauge increases by 50%.
-46. Confirm that Accel Gauge never exceeds 100%.
-47. Confirm that the gauge blinks and shows `MAX` at 100%.
-48. Confirm that draw pile, hand, and discard counts update after resolved card actions.
-49. Use cards over several turns and confirm that hand refills to 5 at turn start.
-50. Empty the draw pile and confirm that discard is shuffled back into the draw pile.
-51. Confirm that the current enemy has the new HP balance value.
-52. Reduce enemy HP to 0 and confirm `勝利`.
-53. Let player HP reach 0 and confirm `敗北`.
-54. Open `Assets/Scenes/DeckBuildScene.unity`.
-55. Enter Play Mode and confirm that the owned card list and current deck list are visible.
-56. Confirm that Guard, Repair, and Charge show `[N][CLEAR]` in the deck builder.
-57. Click owned cards and confirm that they are added to the editing deck.
-58. Click deck rows and confirm that one copy is removed.
-59. Confirm that deck count, N count, HC count, and G count update immediately.
-60. Confirm that Guard, Repair, and Charge are still limited as N cards with 4 copies per card.
-61. Confirm that N cards cannot exceed 4 copies of the same card.
-62. Confirm that HC cards cannot exceed 5 total and cannot include duplicate card IDs.
-63. Confirm that G cards cannot exceed 1 total.
-64. Confirm that decks below 30 cards are invalid.
-65. Press `デフォルトデッキ作成` and confirm that a valid 30-card deck is created.
-66. Press `デッキ保存` and confirm that the save message appears.
-67. Press `BattleSceneへ進む` and confirm that BattleScene starts with the saved deck.
+5. Confirm that the title, subtitle, menu items, message text, and footer are sharp and readable.
+6. Confirm that text is not buried in the grid because dark backing panels are behind the text areas.
+7. Confirm that the top progress marker labels are not visible on initial display.
+8. Confirm that `バトルへ`, `デッキ編集へ`, and `RPGへ` are shown as vertical menu buttons.
+9. Confirm that mouse hover or `↑` / `↓` changes the selected menu and the `▶` marker moves.
+10. Confirm that `RPGへ` shows `RPGモードはまだ未実装です` and does not transition.
+11. Confirm that `バトルへ` loads `BattleScene`.
+12. Return to `MenuScene`, then confirm that `デッキ編集へ` loads `DeckBuildScene`.
+13. Open `Assets/Scenes/BattleScene.unity`.
+14. Enter Play Mode.
+15. Confirm that the old `NEON CARDIA - 3x3パネルバトルMVP` title is not shown.
+16. Confirm that the top-center display shows `ROUND：1` and `PLAYER TURN` or `ENEMY TURN`.
+17. Confirm that player HP is shown at the top-left as a number only.
+18. Confirm that the `ACCEEL` gauge is to the right of the HP number.
+19. Confirm that the action point gauge is below the ACCEEL gauge, has visible spacing from it, and has no text label.
+20. Confirm that the player and enemy 3x3 panels are connected visually as one 6-column by 3-row field.
+21. Confirm that `プレイヤーパネル` and `エネミーパネル` labels are not shown.
+22. Confirm that draw pile, hand, and discard count text are not shown.
+23. Confirm that enemy action count, attack range, weakness, enemy type, and attack prediction debug text are not shown on the right side.
+24. Confirm that visible BattleScene text is sharper and easier to read.
+25. Confirm that BattleScene does not show the battle log UI.
+26. Confirm that enemy HP appears as a number above the enemy unit.
+27. Move the enemy through enemy actions if possible and confirm the enemy HP number follows the enemy cell.
+28. Confirm that hand cards do not show `[N]`, `[HC]`, `[G]`, or `[CLEAR]` text.
+29. Confirm that N cards are pale gray, HC cards are sky blue, G cards are pale red, and Clear Cards are pale green with an edge strip.
+30. Confirm that hand cards show only card name, value, and a mini attribute icon.
+31. Confirm that attribute text is not shown on hand cards.
+32. Confirm that card font size is larger than the old text-heavy card layout.
+33. Hover a card and confirm that the left-center detail panel appears.
+34. Confirm that the detail panel shows card name, placeholder artwork, rules text, value, attribute icon, and range text.
+35. Move the cursor off the card and confirm the detail panel hides.
+36. Confirm that `前進`, `後退`, `上`, and `下` movement buttons are visible outside the hand area.
+37. Confirm that the old `ターン終了` button is not shown and only `決定` / `選択リセット` are shown in that command area.
+38. Confirm that `Step Forward`, `Step Back`, `Step Up`, and `Step Down` do not appear in hand.
+39. Confirm that the default deck is a 30-card deck and movement cards are not included.
+40. Click a card and confirm that no damage, healing, Guard, discard, or turn advance happens immediately.
+41. Click a movement button and confirm that the player does not move immediately.
+42. Confirm that selecting Guard, Repair, or Charge does not reduce remaining action points.
+43. Confirm that selecting Strike, Heavy Shot, or a movement command reduces remaining action points by 1.
+44. Confirm that the queue can contain Clear Cards plus up to 3 action-point-consuming actions.
+45. Press `選択リセット` and confirm the queue clears without consuming cards.
+46. Select actions and press `決定`; confirm actions resolve in order.
+47. Confirm that resolved Clear Cards move to discard internally by seeing later hand refill behavior.
+48. Queue Charge before an attack and confirm that the next attack gains +20 damage.
+49. Move off the enemy row and queue `ストライク`; press `決定` and confirm that it misses and is discarded internally.
+50. Queue movement, press `決定`, and confirm movement resolves at that timing.
+51. Try an invalid queued movement and confirm the player does not move.
+52. Confirm that player action resolution is followed by enemy action.
+53. Confirm that Accel Gauge, attack prediction state, predicted enemy range, enemy weakness, and range-in/out logic still work internally even though their debug text is hidden.
+54. Confirm that the top-left ACCEEL Gauge bar is visible with frame, background, and Fill.
+55. Confirm that 0% is empty, 20% is around one fifth, 50% is around half, and 100% is full.
+56. Confirm that enemy attacks trigger attack prediction every time in the current test build.
+57. During attack prediction, click a movement command and confirm it resolves immediately instead of entering the normal queue.
+58. During attack prediction, click one card, including a Clear Card if available, and confirm the prediction action ends after that one card.
+59. Move out of the predicted enemy attack range and confirm Accel Gauge increases by 20%, `+20%` appears, the gauge flashes, and the enemy attack misses.
+60. Use a weakness card during prediction and confirm Accel Gauge increases by 50%, `+50%` appears, and the current enemy attack is canceled.
+61. Defeat a normal enemy with a prediction card and confirm Accel Gauge increases by 50%.
+62. Confirm that Accel Gauge never exceeds 100%.
+63. Confirm that the gauge blinks and shows `MAX` at 100%.
+64. Confirm that draw pile, hand, and discard count text stays hidden, while resolved card actions still discard cards and refill the hand on later turns.
+65. Use cards over several turns and confirm that hand refills to 5 at turn start.
+66. Empty the draw pile and confirm that discard is shuffled back into the draw pile.
+67. Confirm that the current enemy has the new HP balance value.
+68. Reduce enemy HP to 0 and confirm `VICTORY`.
+69. Let player HP reach 0 and confirm `DEFEAT`.
+70. Open `Assets/Scenes/DeckBuildScene.unity`.
+71. Enter Play Mode and confirm that all deck builder text is sharper and easier to read.
+72. Confirm that `NEON CARDIA - デッキビルドMVP` is not shown.
+73. Confirm that the owned card list is large on the left and the current deck list is large on the right.
+74. Confirm that `デフォルトデッキ作成` and `デッキ初期化` are not shown.
+75. Confirm that `デッキ保存`, `バトルへ進む`, and `元に戻す` are shown.
+76. Confirm that `現在のデッキ` has compact counts next to it, such as `30/30   N:24   HC:5   G:1`.
+77. Confirm that the label `デッキ枚数：` is not shown.
+78. Confirm that Guard, Repair, and Charge show `[N][CLEAR]` in the deck builder.
+79. Click owned cards and confirm that they are added to the editing deck.
+80. Click deck rows and confirm that one copy is removed.
+81. Press `元に戻す` and confirm that the editing deck returns to the state it had when entering DeckBuildScene.
+82. Confirm that Guard, Repair, and Charge are still limited as N cards with 4 copies per card.
+83. Confirm that N cards cannot exceed 4 copies of the same card.
+84. Confirm that HC cards cannot exceed 5 total and cannot include duplicate card IDs.
+85. Confirm that G cards cannot exceed 1 total.
+86. Confirm that decks below 30 cards are invalid.
+87. Press `デッキ保存` and confirm that the save message appears.
+88. Press `バトルへ進む` and confirm that BattleScene starts with the saved deck.
 
 ## Not Implemented Yet
 

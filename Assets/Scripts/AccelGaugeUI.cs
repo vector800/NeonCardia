@@ -24,13 +24,13 @@ public sealed class AccelGaugeUI : MonoBehaviour
 
     public void Build(Transform parent, Font font)
     {
-        root = CreateRect("AccelGaugeRoot", parent, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(320f, 78f), new Vector2(24f, -18f));
+        root = CreateRect("AccelGaugeRoot", parent, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(342f, 64f), new Vector2(116f, -12f));
         gameObject.transform.SetParent(root, false);
 
         Image panel = CreateImage("GaugePanel", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.04f, 0.07f, 0.1f, 0.94f));
         panel.raycastTarget = false;
 
-        frameImage = CreateImage("GaugeFrame", root, new Vector2(0.03f, 0.18f), new Vector2(0.97f, 0.58f), Vector2.zero, Vector2.zero, baseFrameColor);
+        frameImage = CreateImage("GaugeFrame", root, new Vector2(0.04f, 0.18f), new Vector2(0.97f, 0.52f), Vector2.zero, Vector2.zero, baseFrameColor);
         frameImage.raycastTarget = false;
 
         Image background = CreateImage("GaugeBackground", frameImage.transform, Vector2.zero, Vector2.one, new Vector2(4f, 4f), new Vector2(-4f, -4f), new Color(0.02f, 0.03f, 0.04f, 1f));
@@ -43,16 +43,16 @@ public sealed class AccelGaugeUI : MonoBehaviour
         flashImage = CreateImage("GaugeFlashImage", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(1f, 1f, 1f, 0f));
         flashImage.raycastTarget = false;
 
-        Text label = CreateText("GaugeLabelText", root, new Vector2(0.04f, 0.58f), new Vector2(0.48f, 0.96f), Vector2.zero, Vector2.zero, "アクセル", 22, TextAnchor.MiddleLeft, baseFrameColor, font);
+        Text label = CreateText("GaugeLabelText", root, new Vector2(0.04f, 0.54f), new Vector2(0.48f, 0.98f), Vector2.zero, Vector2.zero, "ACCEEL", 21, TextAnchor.MiddleLeft, baseFrameColor, font);
         label.raycastTarget = false;
 
-        percentText = CreateText("GaugePercentText", root, new Vector2(0.42f, 0.58f), new Vector2(0.96f, 0.96f), Vector2.zero, Vector2.zero, "0%", 24, TextAnchor.MiddleRight, Color.white, font);
+        percentText = CreateText("GaugePercentText", root, new Vector2(0.42f, 0.58f), new Vector2(0.96f, 0.96f), Vector2.zero, Vector2.zero, string.Empty, 18, TextAnchor.MiddleRight, new Color(1f, 1f, 1f, 0f), font);
         percentText.raycastTarget = false;
 
-        gainText = CreateText("GaugeGainText", root, new Vector2(0.52f, 0.03f), new Vector2(0.98f, 0.45f), Vector2.zero, Vector2.zero, string.Empty, 22, TextAnchor.MiddleRight, new Color(1f, 0.94f, 0.28f, 0f), font);
+        gainText = CreateText("GaugeGainText", root, new Vector2(0.52f, 0.02f), new Vector2(0.98f, 0.48f), Vector2.zero, Vector2.zero, string.Empty, 21, TextAnchor.MiddleRight, new Color(1f, 0.94f, 0.28f, 0f), font);
         gainText.raycastTarget = false;
 
-        maxText = CreateText("GaugeMaxText", root, new Vector2(0.04f, 0.02f), new Vector2(0.44f, 0.46f), Vector2.zero, Vector2.zero, "MAX", 20, TextAnchor.MiddleLeft, new Color(1f, 0.86f, 0.2f, 0f), font);
+        maxText = CreateText("GaugeMaxText", root, new Vector2(0.04f, 0.02f), new Vector2(0.44f, 0.48f), Vector2.zero, Vector2.zero, "MAX", 19, TextAnchor.MiddleLeft, new Color(1f, 0.86f, 0.2f, 0f), font);
         maxText.raycastTarget = false;
 
         SetValue(0);
@@ -65,7 +65,7 @@ public sealed class AccelGaugeUI : MonoBehaviour
         fillRect.anchorMax = new Vector2(fill, 1f);
         fillRect.offsetMin = Vector2.zero;
         fillRect.offsetMax = Vector2.zero;
-        percentText.text = currentValue + "%";
+        percentText.text = string.Empty;
 
         if (gain > 0)
         {
@@ -206,6 +206,7 @@ public sealed class AccelGaugeUI : MonoBehaviour
         label.text = text;
         label.font = font;
         label.fontSize = fontSize;
+        label.fontStyle = FontStyle.Bold;
         label.alignment = alignment;
         label.color = color;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -213,6 +214,15 @@ public sealed class AccelGaugeUI : MonoBehaviour
         label.resizeTextForBestFit = true;
         label.resizeTextMinSize = 12;
         label.resizeTextMaxSize = fontSize;
+
+        Shadow shadow = rectTransform.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.78f);
+        shadow.effectDistance = new Vector2(2f, -2f);
+
+        Outline outline = rectTransform.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.72f);
+        outline.effectDistance = new Vector2(1f, -1f);
+
         return label;
     }
 }

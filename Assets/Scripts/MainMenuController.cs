@@ -19,6 +19,8 @@ public sealed class MainMenuController : MonoBehaviour
 
     private Font uiFont;
     private Text messageText;
+    private Image messagePanel;
+    private GameObject progressMarkerRoot;
     private int selectedIndex;
 
     private void Awake()
@@ -38,7 +40,7 @@ public sealed class MainMenuController : MonoBehaviour
         EnsureEventSystem();
         BuildUi();
         SelectMenu(MenuBattle);
-        SetMessage("↑ / ↓ で選択、Enterで決定");
+        SetMessage(string.Empty);
     }
 
     private void Update()
@@ -146,10 +148,11 @@ public sealed class MainMenuController : MonoBehaviour
         GameObject canvasObject = new GameObject("Main Menu Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.pixelPerfect = true;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.referenceResolution = new Vector2(1280f, 720f);
         scaler.matchWidthOrHeight = 0.5f;
 
         Image background = CreateImage("Background", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.025f, 0.035f, 0.055f));
@@ -161,13 +164,17 @@ public sealed class MainMenuController : MonoBehaviour
         BuildTitle(canvasObject.transform);
         BuildMenuButtons(canvasObject.transform);
 
-        messageText = CreateText("Message Text", canvasObject.transform, new Vector2(0.32f, 0.14f), new Vector2(0.68f, 0.19f), Vector2.zero, Vector2.zero, string.Empty, 22, TextAnchor.MiddleCenter, new Color(0.95f, 1f, 0.78f));
-        CreateText("Footer", canvasObject.transform, new Vector2(0.03f, 0.025f), new Vector2(0.97f, 0.065f), Vector2.zero, Vector2.zero, "© 2026 NEON CARDIA PROJECT  /  PROTOTYPE VERSION  /  MVP BUILD", 20, TextAnchor.MiddleCenter, new Color(0.75f, 0.9f, 0.92f));
+        messagePanel = CreateImage("Message Readability Panel", canvasObject.transform, new Vector2(0.31f, 0.135f), new Vector2(0.69f, 0.195f), Vector2.zero, Vector2.zero, new Color(0.01f, 0.025f, 0.035f, 0.88f));
+        messagePanel.raycastTarget = false;
+        messageText = CreateText("Message Text", canvasObject.transform, new Vector2(0.32f, 0.14f), new Vector2(0.68f, 0.19f), Vector2.zero, Vector2.zero, string.Empty, 26, TextAnchor.MiddleCenter, new Color(1f, 1f, 0.82f));
+
+        CreateImage("Footer Readability Panel", canvasObject.transform, new Vector2(0.23f, 0.02f), new Vector2(0.77f, 0.075f), Vector2.zero, Vector2.zero, new Color(0.01f, 0.025f, 0.035f, 0.86f)).raycastTarget = false;
+        CreateText("Footer", canvasObject.transform, new Vector2(0.03f, 0.025f), new Vector2(0.97f, 0.07f), Vector2.zero, Vector2.zero, "© 2026 NEON CARDIA PROJECT  /  PROTOTYPE VERSION  /  MVP BUILD", 22, TextAnchor.MiddleCenter, new Color(0.92f, 1f, 1f));
     }
 
     private void BuildGrid(Transform parent)
     {
-        Color gridColor = new Color(0.14f, 0.78f, 0.48f, 0.16f);
+        Color gridColor = new Color(0.14f, 0.78f, 0.48f, 0.1f);
         for (int i = 0; i <= 24; i++)
         {
             float x = i / 24f;
@@ -183,12 +190,12 @@ public sealed class MainMenuController : MonoBehaviour
 
     private void BuildCircuitDecor(Transform parent)
     {
-        CreateText("Back Motif", parent, new Vector2(0.24f, 0.24f), new Vector2(0.76f, 0.84f), Vector2.zero, Vector2.zero, "◎", 360, TextAnchor.MiddleCenter, new Color(0.2f, 0.45f, 0.9f, 0.16f));
-        CreateText("Back Symbol", parent, new Vector2(0.38f, 0.32f), new Vector2(0.62f, 0.7f), Vector2.zero, Vector2.zero, "◇", 220, TextAnchor.MiddleCenter, new Color(0.85f, 0.95f, 0.2f, 0.14f));
+        CreateText("Back Motif", parent, new Vector2(0.24f, 0.24f), new Vector2(0.76f, 0.84f), Vector2.zero, Vector2.zero, "◎", 360, TextAnchor.MiddleCenter, new Color(0.2f, 0.45f, 0.9f, 0.12f), false);
+        CreateText("Back Symbol", parent, new Vector2(0.38f, 0.32f), new Vector2(0.62f, 0.7f), Vector2.zero, Vector2.zero, "◇", 220, TextAnchor.MiddleCenter, new Color(0.85f, 0.95f, 0.2f, 0.1f), false);
 
-        Color cyan = new Color(0.12f, 0.95f, 1f, 0.45f);
-        Color lime = new Color(0.58f, 1f, 0.18f, 0.45f);
-        Color amber = new Color(1f, 0.76f, 0.2f, 0.36f);
+        Color cyan = new Color(0.12f, 0.95f, 1f, 0.34f);
+        Color lime = new Color(0.58f, 1f, 0.18f, 0.34f);
+        Color amber = new Color(1f, 0.76f, 0.2f, 0.28f);
 
         CreateCircuitLine(parent, "Circuit A", 0.08f, 0.78f, 0.22f, 3f, cyan);
         CreateCircuitLine(parent, "Circuit B", 0.08f, 0.78f, 0.055f, 3f, cyan);
@@ -216,33 +223,40 @@ public sealed class MainMenuController : MonoBehaviour
 
     private void BuildProgressMarkers(Transform parent)
     {
+        RectTransform root = CreateRect("Progress Marker Root", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        progressMarkerRoot = root.gameObject;
+
         string[] markers = { "STAGE", "DECK", "BOSS", "CLEAR", "???" };
         for (int i = 0; i < markers.Length; i++)
         {
             float minX = 0.25f + i * 0.105f;
             float maxX = minX + 0.088f;
-            Image panel = CreateImage("Progress Marker " + i, parent, new Vector2(minX, 0.9f), new Vector2(maxX, 0.96f), Vector2.zero, Vector2.zero, new Color(0.06f, 0.16f, 0.18f, 0.82f));
+            Image panel = CreateImage("Progress Marker " + i, root, new Vector2(minX, 0.9f), new Vector2(maxX, 0.96f), Vector2.zero, Vector2.zero, new Color(0.06f, 0.16f, 0.18f, 0.92f));
             panel.raycastTarget = false;
             CreateImage("Progress Marker Top " + i, panel.transform, new Vector2(0f, 0.85f), Vector2.one, Vector2.zero, Vector2.zero, i < 2 ? new Color(0.34f, 1f, 0.42f, 0.9f) : new Color(0.35f, 0.38f, 0.42f, 0.85f)).raycastTarget = false;
-            CreateText("Progress Marker Text " + i, panel.transform, Vector2.zero, Vector2.one, new Vector2(6f, 0f), new Vector2(-6f, -2f), markers[i], 17, TextAnchor.MiddleCenter, i < 2 ? Color.white : new Color(0.58f, 0.68f, 0.7f));
+            CreateText("Progress Marker Text " + i, panel.transform, Vector2.zero, Vector2.one, new Vector2(6f, 0f), new Vector2(-6f, -2f), markers[i], 19, TextAnchor.MiddleCenter, i < 2 ? Color.white : new Color(0.72f, 0.82f, 0.85f));
         }
+
+        ShowProgressMarkers(false);
     }
 
     private void BuildTitle(Transform parent)
     {
-        CreateText("Title Shadow", parent, new Vector2(0.12f, 0.62f), new Vector2(0.88f, 0.82f), new Vector2(9f, -9f), new Vector2(9f, -9f), "NEON CARDIA", 76, TextAnchor.MiddleCenter, new Color(0f, 0f, 0f, 0.82f));
-        CreateText("Title Main", parent, new Vector2(0.12f, 0.62f), new Vector2(0.88f, 0.82f), Vector2.zero, Vector2.zero, "NEON CARDIA", 76, TextAnchor.MiddleCenter, new Color(0.7f, 1f, 0.18f));
-        CreateText("Title Sub", parent, new Vector2(0.16f, 0.56f), new Vector2(0.84f, 0.63f), Vector2.zero, Vector2.zero, "ネオンカーディア  /  PANEL CARD BATTLE RPG", 28, TextAnchor.MiddleCenter, new Color(0.78f, 1f, 1f));
-        CreateImage("Title Underline", parent, new Vector2(0.28f, 0.565f), new Vector2(0.72f, 0.565f), Vector2.zero, new Vector2(0f, 5f), new Color(0.12f, 0.95f, 1f, 0.8f)).raycastTarget = false;
+        CreateImage("Title Readability Panel", parent, new Vector2(0.18f, 0.56f), new Vector2(0.82f, 0.82f), Vector2.zero, Vector2.zero, new Color(0.005f, 0.02f, 0.028f, 0.82f)).raycastTarget = false;
+        CreateText("Title Shadow", parent, new Vector2(0.12f, 0.64f), new Vector2(0.88f, 0.82f), new Vector2(6f, -6f), new Vector2(6f, -6f), "NEON CARDIA", 86, TextAnchor.MiddleCenter, new Color(0f, 0f, 0f, 0.9f));
+        CreateText("Title Main", parent, new Vector2(0.12f, 0.64f), new Vector2(0.88f, 0.82f), Vector2.zero, Vector2.zero, "NEON CARDIA", 86, TextAnchor.MiddleCenter, new Color(0.82f, 1f, 0.18f));
+        CreateText("Title Sub", parent, new Vector2(0.16f, 0.565f), new Vector2(0.84f, 0.63f), Vector2.zero, Vector2.zero, "ネオンカーディア  /  PANEL CARD BATTLE RPG", 30, TextAnchor.MiddleCenter, new Color(0.9f, 1f, 1f));
+        CreateImage("Title Underline", parent, new Vector2(0.26f, 0.565f), new Vector2(0.74f, 0.565f), Vector2.zero, new Vector2(0f, 5f), new Color(0.12f, 0.95f, 1f, 0.9f)).raycastTarget = false;
     }
 
     private void BuildMenuButtons(Transform parent)
     {
+        CreateImage("Menu Readability Panel", parent, new Vector2(0.32f, 0.27f), new Vector2(0.68f, 0.53f), Vector2.zero, Vector2.zero, new Color(0.005f, 0.02f, 0.028f, 0.72f)).raycastTarget = false;
         for (int i = 0; i < menuTexts.Length; i++)
         {
-            float top = 0.49f - i * 0.09f;
-            float bottom = top - 0.068f;
-            Button button = CreateButton("Menu Button " + i, parent, new Vector2(0.35f, bottom), new Vector2(0.65f, top), Vector2.zero, Vector2.zero, menuTexts[i], 32, new Color(0.06f, 0.16f, 0.19f, 0.95f));
+            float top = 0.5f - i * 0.092f;
+            float bottom = top - 0.075f;
+            Button button = CreateButton("Menu Button " + i, parent, new Vector2(0.34f, bottom), new Vector2(0.66f, top), Vector2.zero, Vector2.zero, menuTexts[i], 38, new Color(0.02f, 0.08f, 0.1f, 0.98f));
             int capturedIndex = i;
             button.onClick.AddListener(() => ActivateMenu(capturedIndex));
             AddPointerEnter(button.gameObject, () => SelectMenu(capturedIndex));
@@ -283,11 +297,19 @@ public sealed class MainMenuController : MonoBehaviour
         {
             bool selected = i == selectedIndex;
             menuLabels[i].text = (selected ? "▶ " : "   ") + menuTexts[i];
-            menuLabels[i].color = i == MenuRpg ? new Color(0.48f, 0.56f, 0.58f) : Color.white;
-            menuLabels[i].fontSize = selected ? 36 : 32;
+            menuLabels[i].color = i == MenuRpg ? new Color(0.66f, 0.76f, 0.78f) : Color.white;
+            menuLabels[i].fontSize = selected ? 42 : 38;
             menuBackgrounds[i].color = selected
-                ? new Color(0.12f, 0.45f, 0.5f, 0.98f)
-                : new Color(0.06f, 0.16f, 0.19f, 0.95f);
+                ? new Color(0.08f, 0.44f, 0.5f, 1f)
+                : new Color(0.01f, 0.055f, 0.07f, 0.98f);
+        }
+    }
+
+    public void ShowProgressMarkers(bool visible)
+    {
+        if (progressMarkerRoot != null)
+        {
+            progressMarkerRoot.SetActive(visible);
         }
     }
 
@@ -315,8 +337,15 @@ public sealed class MainMenuController : MonoBehaviour
 
     private void SetMessage(string message)
     {
+        bool hasMessage = !string.IsNullOrEmpty(message);
+        if (messagePanel != null)
+        {
+            messagePanel.gameObject.SetActive(hasMessage);
+        }
+
         if (messageText != null)
         {
+            messageText.gameObject.SetActive(hasMessage);
             messageText.text = message;
         }
     }
@@ -341,7 +370,7 @@ public sealed class MainMenuController : MonoBehaviour
         return image;
     }
 
-    private Text CreateText(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, string text, int fontSize, TextAnchor alignment, Color color)
+    private Text CreateText(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, string text, int fontSize, TextAnchor alignment, Color color, bool addEffects = true)
     {
         RectTransform rectTransform = CreateRect(name, parent, anchorMin, anchorMax, offsetMin, offsetMax);
         Text label = rectTransform.gameObject.AddComponent<Text>();
@@ -352,9 +381,19 @@ public sealed class MainMenuController : MonoBehaviour
         label.color = color;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
-        label.resizeTextForBestFit = true;
-        label.resizeTextMinSize = 12;
-        label.resizeTextMaxSize = fontSize;
+        label.resizeTextForBestFit = false;
+
+        if (addEffects)
+        {
+            Outline outline = rectTransform.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.95f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            Shadow shadow = rectTransform.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            shadow.effectDistance = new Vector2(3f, -3f);
+        }
+
         return label;
     }
 
