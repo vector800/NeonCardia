@@ -54,6 +54,29 @@ public static class BattleText
         }
     }
 
+    public static string FormatDeckType(CardDeckType deckType)
+    {
+        switch (deckType)
+        {
+            case CardDeckType.HC:
+                return "HC";
+            case CardDeckType.G:
+                return "G";
+            default:
+                return "N";
+        }
+    }
+
+    public static string FormatCardTags(CardData card)
+    {
+        if (card == null)
+        {
+            return string.Empty;
+        }
+
+        return "[" + FormatDeckType(card.DeckType) + "]" + (card.IsClearCard ? "[CLEAR]" : string.Empty);
+    }
+
     public static string DescribeRange(CardData card)
     {
         if (card.Effect == CardEffectType.Move)

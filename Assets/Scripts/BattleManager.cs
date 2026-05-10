@@ -39,6 +39,7 @@ public sealed class BattleManager : MonoBehaviour
     private int accelGauge;
     private int enemyActionsRemaining;
     private int enemyActionIndex;
+    private int pendingPlayerAttackBonus;
     private EnemyBattleAction pendingEnemyAttack;
 
     private Text playerHpText;
@@ -70,6 +71,7 @@ public sealed class BattleManager : MonoBehaviour
             Type = QueuedActionType.Card;
             Card = card;
             DisplayName = card.Data.Name;
+            ConsumesAction = !card.Data.IsClearCard;
         }
 
         public QueuedBattleAction(MoveDirection direction, string displayName)
@@ -77,12 +79,14 @@ public sealed class BattleManager : MonoBehaviour
             Type = QueuedActionType.Move;
             MoveDirection = direction;
             DisplayName = displayName;
+            ConsumesAction = true;
         }
 
         public QueuedActionType Type { get; private set; }
         public CardInstance Card { get; private set; }
         public MoveDirection MoveDirection { get; private set; }
         public string DisplayName { get; private set; }
+        public bool ConsumesAction { get; private set; }
     }
 
     private void Awake()
@@ -199,6 +203,7 @@ public sealed class BattleManager : MonoBehaviour
         accelGauge = previousBattleAccelGauge >= 50 ? 50 : 0;
         enemyActionsRemaining = 0;
         enemyActionIndex = 0;
+        pendingPlayerAttackBonus = 0;
         pendingEnemyAttack = null;
         actionQueue.Clear();
 
@@ -218,6 +223,19 @@ public sealed class BattleManager : MonoBehaviour
 
     private List<CardData> GetStarterDeck()
     {
+        List<CardData> savedDeck;
+        if (DeckStorage.TryLoadDeck(out savedDeck))
+        {
+            DeckValidationResult savedResult = DeckValidator.Validate(savedDeck);
+            if (savedResult.IsValid)
+            {
+                battleLog.Add("保存済みデッキを読み込みました。");
+                return savedDeck;
+            }
+
+            battleLog.Add("保存済みデッキが無効なためデフォルトデッキを使用します。");
+        }
+
         List<CardData> cards = new List<CardData>();
         for (int i = 0; i < starterDeck.Count; i++)
         {
@@ -227,12 +245,12 @@ public sealed class BattleManager : MonoBehaviour
             }
         }
 
-        return cards.Count > 0 ? cards : CardData.CreateStarterDeck();
-    }
+        if (cards.Count > 0 && DeckValidator.Validate(cards).IsValid)
+        {
+            return cards;
+        }
 
-    private void ConsumePlayerAction()
-    {
-        remainingPlayerActions = Mathf.Max(0, remainingPlayerActions - 1);
+        return CardData.CreateStarterDeck();
     }
 
     private void PlayCard(int handIndex)
@@ -248,14 +266,6 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
-        if (actionQueue.Count >= MaxPlayerActions)
-        {
-            battleLog.Add("これ以上アクションを選択できません。");
-            battleLog.Add("最大3アクションまで選択できます。");
-            RefreshUi();
-            return;
-        }
-
         CardInstance card = deck.Hand[handIndex];
         if (IsCardQueued(card))
         {
@@ -264,11 +274,38 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
+        if (!card.Data.IsClearCard && GetQueuedActionCost() >= MaxPlayerActions)
+        {
+            battleLog.Add("これ以上アクションを選択できません。");
+            battleLog.Add("行動権を消費するアクションは最大3回まで選択できます。");
+            RefreshUi();
+            return;
+        }
+
         actionQueue.Add(new QueuedBattleAction(card));
-        remainingPlayerActions = MaxPlayerActions - actionQueue.Count;
-        battleLog.Add(card.Data.Name + "を行動キューに追加しました。");
+        remainingPlayerActions = GetRemainingPlayerActions();
+        battleLog.Add(card.Data.Name + (card.Data.IsClearCard ? "（CLEAR）" : string.Empty) + "を行動キューに追加しました。");
         ShowCardPreview(card.Data, string.Empty);
         RefreshUi();
+    }
+
+    private int GetQueuedActionCost()
+    {
+        int cost = 0;
+        for (int i = 0; i < actionQueue.Count; i++)
+        {
+            if (actionQueue[i].ConsumesAction)
+            {
+                cost++;
+            }
+        }
+
+        return cost;
+    }
+
+    private int GetRemainingPlayerActions()
+    {
+        return Mathf.Max(0, MaxPlayerActions - GetQueuedActionCost());
     }
 
     private bool IsCardQueued(CardInstance card)
@@ -292,6 +329,14 @@ public sealed class BattleManager : MonoBehaviour
                 CharacterUnit target;
                 TryGetDamageTarget(card, out target);
                 battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
+                int attackBonus = pendingPlayerAttackBonus;
+                int damage = card.Power + attackBonus;
+                if (attackBonus > 0)
+                {
+                    battleLog.Add("チャージ効果で攻撃ダメージ +" + attackBonus + "。");
+                    pendingPlayerAttackBonus = 0;
+                }
+
                 if (target == null)
                 {
                     battleLog.Add("しかし攻撃範囲内にエネミーはいなかった。");
@@ -300,7 +345,7 @@ public sealed class BattleManager : MonoBehaviour
                     return true;
                 }
 
-                DealDamageToEnemy(target, card.Power);
+                DealDamageToEnemy(target, damage);
                 failureMessage = string.Empty;
                 return true;
             case CardEffectType.Guard:
@@ -334,6 +379,12 @@ public sealed class BattleManager : MonoBehaviour
                 {
                     battleLog.Add("HPを" + recovered + "回復。");
                 }
+                failureMessage = string.Empty;
+                return true;
+            case CardEffectType.Charge:
+                pendingPlayerAttackBonus += card.Power;
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
+                battleLog.Add("次の攻撃カードのダメージ +" + card.Power + "。");
                 failureMessage = string.Empty;
                 return true;
             default:
@@ -435,16 +486,16 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
-        if (actionQueue.Count >= MaxPlayerActions)
+        if (GetQueuedActionCost() >= MaxPlayerActions)
         {
             battleLog.Add("これ以上アクションを選択できません。");
-            battleLog.Add("最大3アクションまで選択できます。");
+            battleLog.Add("行動権を消費するアクションは最大3回まで選択できます。");
             RefreshUi();
             return;
         }
 
         actionQueue.Add(new QueuedBattleAction(direction, GetMoveQueueName(direction)));
-        remainingPlayerActions = MaxPlayerActions - actionQueue.Count;
+        remainingPlayerActions = GetRemainingPlayerActions();
         battleLog.Add(GetMoveQueueName(direction) + "を行動キューに追加しました。");
         ClearPreview();
         RefreshUi();
@@ -959,7 +1010,8 @@ public sealed class BattleManager : MonoBehaviour
         logText.text = battleLog.DisplayText;
         confirmButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
         resetSelectionButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
-        SetMoveButtonsInteractable(!battleEnded && (predictionActive || actionQueue.Count < MaxPlayerActions));
+        int queuedActionCost = GetQueuedActionCost();
+        SetMoveButtonsInteractable(!battleEnded && (predictionActive || queuedActionCost < MaxPlayerActions));
         RefreshActionCounter();
 
         RefreshGrid();
@@ -967,20 +1019,22 @@ public sealed class BattleManager : MonoBehaviour
         for (int i = 0; i < cardViews.Count; i++)
         {
             CardData card = i < deck.Hand.Count ? deck.Hand[i].Data : null;
-            cardViews[i].Refresh(card, battleEnded || (!predictionActive && (actionQueue.Count >= MaxPlayerActions || (i < deck.Hand.Count && IsCardQueued(deck.Hand[i])))));
+            bool cardQueued = i < deck.Hand.Count && IsCardQueued(deck.Hand[i]);
+            bool actionLimitReached = !predictionActive && card != null && !card.IsClearCard && queuedActionCost >= MaxPlayerActions;
+            cardViews[i].Refresh(card, battleEnded || (!predictionActive && (cardQueued || actionLimitReached)));
         }
     }
 
     private void RefreshActionCounter()
     {
-        remainingPlayerActions = battleEnded ? 0 : MaxPlayerActions - actionQueue.Count;
+        remainingPlayerActions = battleEnded ? 0 : GetRemainingPlayerActions();
         if (predictionActive)
         {
             actionCountText.text = "攻撃予測：1回だけ即時行動";
         }
         else
         {
-            actionCountText.text = "残り選択可能数  " + remainingPlayerActions + " / " + MaxPlayerActions;
+            actionCountText.text = "残り行動権  " + remainingPlayerActions + " / " + MaxPlayerActions;
         }
 
         for (int i = 0; i < actionPips.Count; i++)
@@ -1016,10 +1070,14 @@ public sealed class BattleManager : MonoBehaviour
             return "選択中アクション：なし";
         }
 
-        string text = "選択中アクション：";
+        string text = "選択中アクション：\n消費行動権：" + GetQueuedActionCost() + " / " + MaxPlayerActions;
         for (int i = 0; i < actionQueue.Count; i++)
         {
             text += "\n" + (i + 1) + ". " + actionQueue[i].DisplayName;
+            if (!actionQueue[i].ConsumesAction)
+            {
+                text += " [CLEAR / 行動権消費なし]";
+            }
         }
 
         return text;

@@ -39,7 +39,7 @@ public sealed class CardView : MonoBehaviour, IPointerEnterHandler, IPointerExit
             return;
         }
 
-        label.text = card.Name + "\n属性 " + BattleText.FormatAttribute(card.Attribute) + "\n\n" + card.RulesText;
+        label.text = BattleText.FormatCardTags(card) + " " + card.Name + "\n属性 " + BattleText.FormatAttribute(card.Attribute) + "\n\n" + card.RulesText;
         image.color = new Color(0.18f, 0.23f, 0.32f);
     }
 

@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fd404db3a404d04a825792a8a09012f, type: 3}
-  m_Name: Guard
+  m_Name: HealField
   m_EditorClassIdentifier: 
-  cardId: Guard
-  cardName: ガード
-  rulesText: 次に受けるダメージを40軽減する。
-  deckType: 0
-  isClearCard: 1
-  effect: 1
-  power: 40
-  cost: 1
+  cardId: HealField
+  cardName: ヒールフィールド
+  rulesText: HPを65回復する。
+  deckType: 1
+  isClearCard: 0
+  effect: 3
+  power: 65
+  cost: 2
   attribute: 0
   usablePosition: 0
   targetType: 2

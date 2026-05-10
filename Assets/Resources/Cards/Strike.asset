@@ -12,8 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fd404db3a404d04a825792a8a09012f, type: 3}
   m_Name: Strike
   m_EditorClassIdentifier: 
+  cardId: Strike
   cardName: ストライク
   rulesText: 同じ行の一番近い敵に35ダメージを与える。
+  deckType: 0
+  isClearCard: 0
   effect: 0
   power: 35
   cost: 1
