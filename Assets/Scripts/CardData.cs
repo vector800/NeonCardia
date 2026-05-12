@@ -49,7 +49,10 @@ public enum CardAttribute
     Shot,
     Fire,
     Ice,
-    Electric
+    Electric,
+    Water,
+    Grass,
+    Break
 }
 
 public enum MoveDirection

@@ -49,6 +49,12 @@ public static class BattleText
                 return "氷";
             case CardAttribute.Electric:
                 return "電撃";
+            case CardAttribute.Water:
+                return "水";
+            case CardAttribute.Grass:
+                return "草";
+            case CardAttribute.Break:
+                return "ブレイク";
             default:
                 return "無属性";
         }

@@ -6,6 +6,30 @@ public enum GridSide
     Enemy
 }
 
+public enum PanelType
+{
+    Normal,
+    Cracked,
+    Hole,
+    Ice,
+    Grass,
+    Magma,
+    Poison
+}
+
+public enum UnitElement
+{
+    Neutral,
+    Fire,
+    Grass
+}
+
+public enum AttackTravelType
+{
+    Ground,
+    Air
+}
+
 public struct BattleGridPosition
 {
     public const int GridSize = 3;
@@ -67,6 +91,10 @@ public sealed class CharacterUnit
     public int Hp { get; private set; }
     public int Guard { get; set; }
     public BattleGridPosition Position { get; private set; }
+    public UnitElement Element { get; set; }
+    public bool HasFloatAbility { get; set; }
+    public bool IsFrozen { get; private set; }
+    public int FrozenTurnCount { get; private set; }
     public bool IsDefeated { get { return Hp <= 0; } }
 
     public void MoveTo(BattleGridPosition position)
@@ -89,8 +117,52 @@ public sealed class CharacterUnit
         return actualDamage;
     }
 
+    public int TakeDirectDamage(int damage)
+    {
+        int incoming = Mathf.Max(0, damage);
+        int before = Hp;
+        Hp = Mathf.Max(0, Hp - incoming);
+        return before - Hp;
+    }
+
     public void Heal(int amount)
     {
         Hp = Mathf.Min(MaxHp, Hp + Mathf.Max(0, amount));
+    }
+
+    public bool ApplyFrozen()
+    {
+        if (Element == UnitElement.Fire)
+        {
+            return false;
+        }
+
+        IsFrozen = true;
+        FrozenTurnCount = 0;
+        return true;
+    }
+
+    public void ClearFrozen()
+    {
+        IsFrozen = false;
+        FrozenTurnCount = 0;
+    }
+
+    public bool ConsumeFrozenTurn(out bool released)
+    {
+        released = false;
+        if (!IsFrozen)
+        {
+            return false;
+        }
+
+        FrozenTurnCount++;
+        if (FrozenTurnCount >= 2)
+        {
+            ClearFrozen();
+            released = true;
+        }
+
+        return true;
     }
 }

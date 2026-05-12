@@ -17,6 +17,10 @@ public sealed class BattleManager : MonoBehaviour
 
     [SerializeField] private List<CardData> starterDeck = new List<CardData>();
     [SerializeField] private EnemyType enemyType = EnemyType.NormalEnemy;
+    [SerializeField] private UnitElement playerElement = UnitElement.Neutral;
+    [SerializeField] private UnitElement enemyElement = UnitElement.Neutral;
+    [SerializeField] private bool playerHasFloatAbility;
+    [SerializeField] private bool enemyHasFloatAbility;
 
     private readonly IAttackPredictionChanceProvider predictionChanceProvider = new TestAttackPredictionChanceProvider();
     private readonly List<CardView> cardViews = new List<CardView>();
@@ -24,6 +28,7 @@ public sealed class BattleManager : MonoBehaviour
     private readonly List<QueuedBattleAction> actionQueue = new List<QueuedBattleAction>();
     private readonly Image[,,] gridSlots = new Image[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly Text[,,] gridLabels = new Text[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
+    private readonly PanelType[,,] panelTypes = new PanelType[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly List<BattleGridPosition> previewCells = new List<BattleGridPosition>();
 
     private Font uiFont;
@@ -41,6 +46,10 @@ public sealed class BattleManager : MonoBehaviour
     private int enemyActionIndex;
     private int pendingPlayerAttackBonus;
     private EnemyBattleAction pendingEnemyAttack;
+    private CardAttribute currentPlayerAttackAttribute = CardAttribute.Neutral;
+    private bool resolvingAttackPathEffects;
+    private CharacterUnit currentPlayerAttackTarget;
+    private PanelType currentPlayerAttackTargetPanelBeforePath;
 
     private Text playerHpText;
     private Text enemyHpText;
@@ -197,6 +206,10 @@ public sealed class BattleManager : MonoBehaviour
     {
         player = new CharacterUnit(BattleText.PlayerName, 180, new BattleGridPosition(GridSide.Player, 1, 1));
         enemy = new CharacterUnit(BattleText.EnemyName, EnemyAI.GetMaxHp(enemyType), new BattleGridPosition(GridSide.Enemy, 1, 1));
+        player.Element = playerElement;
+        enemy.Element = enemyElement;
+        player.HasFloatAbility = playerHasFloatAbility;
+        enemy.HasFloatAbility = enemyHasFloatAbility;
         battleEnded = false;
         predictionActive = false;
         currentRound = 1;
@@ -211,6 +224,7 @@ public sealed class BattleManager : MonoBehaviour
         battleLog = new BattleLog(10);
         enemyAI = new EnemyAI(enemyType);
         deck = new DeckManager(GetStarterDeck());
+        InitializePanels();
 
         battleLog.Add("バトル開始");
         battleLog.Add("アクセルゲージ：" + accelGauge + "％");
@@ -252,6 +266,48 @@ public sealed class BattleManager : MonoBehaviour
         }
 
         return CardData.CreateStarterDeck();
+    }
+
+    private void InitializePanels()
+    {
+        for (int side = 0; side < 2; side++)
+        {
+            for (int row = 0; row < BattleGridPosition.GridSize; row++)
+            {
+                for (int column = 0; column < BattleGridPosition.GridSize; column++)
+                {
+                    panelTypes[side, row, column] = PanelType.Normal;
+                }
+            }
+        }
+
+        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 0), PanelType.Cracked);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 2), PanelType.Ice);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 0), PanelType.Grass);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 1), PanelType.Magma);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 2), PanelType.Poison);
+
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 0), PanelType.Hole);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 2), PanelType.Cracked);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 2), PanelType.Ice);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 0), PanelType.Grass);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 1), PanelType.Magma);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 2), PanelType.Poison);
+    }
+
+    private PanelType GetPanelType(BattleGridPosition position)
+    {
+        return panelTypes[GetSideIndex(position.Side), position.Row, position.Column];
+    }
+
+    private void SetPanelType(BattleGridPosition position, PanelType panelType)
+    {
+        if (!position.IsValid)
+        {
+            return;
+        }
+
+        panelTypes[GetSideIndex(position.Side), position.Row, position.Column] = panelType;
     }
 
     private void PlayCard(int handIndex)
@@ -328,7 +384,10 @@ public sealed class BattleManager : MonoBehaviour
         {
             case CardEffectType.Damage:
                 CharacterUnit target;
+                currentPlayerAttackAttribute = card.Attribute;
+                resolvingAttackPathEffects = true;
                 TryGetDamageTarget(card, out target);
+                resolvingAttackPathEffects = false;
                 battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
                 int attackBonus = pendingPlayerAttackBonus;
                 int damage = card.Power + attackBonus;
@@ -362,9 +421,8 @@ public sealed class BattleManager : MonoBehaviour
                     return false;
                 }
 
-                player.MoveTo(destination);
                 battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
-                battleLog.Add(destination + "へ移動しました。");
+                TryMoveUnitTo(player, destination, destination + "へ移動しました。");
                 failureMessage = string.Empty;
                 return true;
             case CardEffectType.Repair:
@@ -395,6 +453,7 @@ public sealed class BattleManager : MonoBehaviour
 
     private void DealDamageToEnemy(CharacterUnit target, int damage)
     {
+        damage = CalculatePanelAdjustedDamage(target, damage, currentPlayerAttackAttribute);
         int blocked;
         int actualDamage = target.TakeDamage(damage, out blocked);
         if (blocked > 0)
@@ -405,6 +464,50 @@ public sealed class BattleManager : MonoBehaviour
         {
             battleLog.Add("エネミーに" + actualDamage + "ダメージ。");
         }
+
+        currentPlayerAttackTarget = null;
+        currentPlayerAttackTargetPanelBeforePath = PanelType.Normal;
+    }
+
+    private int CalculatePanelAdjustedDamage(CharacterUnit target, int baseDamage, CardAttribute attribute)
+    {
+        int damage = Mathf.Max(0, baseDamage);
+        PanelType targetPanel = target == currentPlayerAttackTarget
+            ? currentPlayerAttackTargetPanelBeforePath
+            : GetPanelType(target.Position);
+
+        if (targetPanel == PanelType.Ice && attribute == CardAttribute.Electric)
+        {
+            damage *= 2;
+            battleLog.Add("氷パネル効果で電気属性ダメージが2倍になりました。");
+        }
+
+        if (targetPanel == PanelType.Grass && attribute == CardAttribute.Fire)
+        {
+            damage *= 2;
+            battleLog.Add("草パネル効果で炎属性ダメージが2倍になりました。");
+        }
+
+        if (targetPanel == PanelType.Ice && attribute == CardAttribute.Water)
+        {
+            if (target.ApplyFrozen())
+            {
+                battleLog.Add(target.Name + "は凍結しました。");
+            }
+            else
+            {
+                battleLog.Add(target.Name + "は炎属性のため凍結しません。");
+            }
+        }
+
+        if (target.IsFrozen && attribute == CardAttribute.Break)
+        {
+            damage *= 2;
+            target.ClearFrozen();
+            battleLog.Add("ブレイク属性で凍結中の対象に2倍ダメージ。凍結を解除しました。");
+        }
+
+        return damage;
     }
 
     private bool TryGetDamageTarget(CardData card, out CharacterUnit target)
@@ -433,10 +536,150 @@ public sealed class BattleManager : MonoBehaviour
                 break;
         }
 
+        if (resolvingAttackPathEffects)
+        {
+            currentPlayerAttackTarget = target;
+            currentPlayerAttackTargetPanelBeforePath = target != null ? GetPanelType(target.Position) : PanelType.Normal;
+            List<BattleGridPosition> attackPath = BuildPlayerAttackPath(card, target);
+            if (ApplyAttackPathPanelEffects(card.Attribute, AttackTravelType.Ground, attackPath))
+            {
+                target = null;
+                currentPlayerAttackTarget = null;
+            }
+        }
+
         return target != null;
     }
 
+    private List<BattleGridPosition> BuildPlayerAttackPath(CardData card, CharacterUnit target)
+    {
+        List<BattleGridPosition> path = new List<BattleGridPosition>();
+
+        switch (card.TargetPattern)
+        {
+            case CardTargetPattern.SameRowNearestEnemy:
+            case CardTargetPattern.Row:
+                for (int column = player.Position.Column + 1; column < BattleGridPosition.GridSize; column++)
+                {
+                    path.Add(new BattleGridPosition(GridSide.Player, player.Position.Row, column));
+                }
+
+                int maxColumn = target != null && target.Position.Side == GridSide.Enemy ? target.Position.Column : BattleGridPosition.GridSize - 1;
+                for (int column = 0; column <= maxColumn; column++)
+                {
+                    path.Add(new BattleGridPosition(GridSide.Enemy, player.Position.Row, column));
+                }
+                break;
+            case CardTargetPattern.ForwardOnePanel:
+                if (player.Position.Column < BattleGridPosition.GridSize - 1)
+                {
+                    path.Add(new BattleGridPosition(GridSide.Player, player.Position.Row, player.Position.Column + 1));
+                }
+                else
+                {
+                    path.Add(new BattleGridPosition(GridSide.Enemy, player.Position.Row, 0));
+                }
+                break;
+            case CardTargetPattern.SingleTarget:
+                if (target != null)
+                {
+                    path.Add(target.Position);
+                }
+                else
+                {
+                    for (int column = 0; column < BattleGridPosition.GridSize; column++)
+                    {
+                        path.Add(new BattleGridPosition(GridSide.Enemy, player.Position.Row, column));
+                    }
+                }
+                break;
+            case CardTargetPattern.AroundSelf:
+                if (target != null)
+                {
+                    path.Add(target.Position);
+                }
+                break;
+        }
+
+        return path;
+    }
+
+    private List<BattleGridPosition> BuildEnemyAttackPath(EnemyBattleAction attackAction)
+    {
+        List<BattleGridPosition> path = new List<BattleGridPosition>();
+        if (attackAction == null)
+        {
+            return path;
+        }
+
+        switch (attackAction.AttackPattern)
+        {
+            case EnemyAttackPattern.ForwardOnePanel:
+                path.Add(new BattleGridPosition(GridSide.Player, enemy.Position.Row, BattleGridPosition.GridSize - 1));
+                break;
+            case EnemyAttackPattern.Row:
+            case EnemyAttackPattern.Strong:
+            case EnemyAttackPattern.SameRowNearest:
+                for (int column = enemy.Position.Column - 1; column >= 0; column--)
+                {
+                    path.Add(new BattleGridPosition(GridSide.Enemy, enemy.Position.Row, column));
+                }
+
+                int minColumn = player.Position.Row == enemy.Position.Row ? player.Position.Column : 0;
+                for (int column = BattleGridPosition.GridSize - 1; column >= minColumn; column--)
+                {
+                    path.Add(new BattleGridPosition(GridSide.Player, enemy.Position.Row, column));
+                }
+                break;
+        }
+
+        return path;
+    }
+
+    private bool ApplyAttackPathPanelEffects(CardAttribute attribute, AttackTravelType travelType, List<BattleGridPosition> path)
+    {
+        bool blockedByHole = false;
+        for (int i = 0; i < path.Count; i++)
+        {
+            BattleGridPosition position = path[i];
+            if (!position.IsValid)
+            {
+                continue;
+            }
+
+            PanelType panelType = GetPanelType(position);
+            if (attribute == CardAttribute.Fire && panelType == PanelType.Grass)
+            {
+                SetPanelType(position, PanelType.Normal);
+                battleLog.Add("炎属性攻撃が草パネルをノーマルパネルに変化させました。");
+                Debug.Log("Fire attack changed Grass panel to Normal: " + position);
+                panelType = PanelType.Normal;
+            }
+            else if (attribute == CardAttribute.Water && panelType == PanelType.Magma)
+            {
+                SetPanelType(position, PanelType.Normal);
+                battleLog.Add("水属性攻撃がマグマパネルをノーマルパネルに変化させました。");
+                Debug.Log("Water attack changed Magma panel to Normal: " + position);
+                panelType = PanelType.Normal;
+            }
+
+            if (travelType == AttackTravelType.Ground && panelType == PanelType.Hole)
+            {
+                battleLog.Add("地上判定攻撃は穴パネルで止まりました。");
+                blockedByHole = true;
+                break;
+            }
+        }
+
+        return blockedByHole;
+    }
+
     private bool TryGetMoveDestination(MoveDirection direction, out BattleGridPosition destination, out string failureMessage)
+    {
+        return TryGetMoveDestination(player, direction, out destination, out failureMessage);
+    }
+
+    private bool TryGetMoveDestination(CharacterUnit unit, MoveDirection direction, out BattleGridPosition destination, out string failureMessage)
     {
         int rowDelta = 0;
         int columnDelta = 0;
@@ -444,10 +687,10 @@ public sealed class BattleManager : MonoBehaviour
         switch (direction)
         {
             case MoveDirection.Forward:
-                columnDelta = BattleGridPosition.ForwardColumnDelta(player.Position.Side);
+                columnDelta = BattleGridPosition.ForwardColumnDelta(unit.Position.Side);
                 break;
             case MoveDirection.Back:
-                columnDelta = BattleGridPosition.BackColumnDelta(player.Position.Side);
+                columnDelta = BattleGridPosition.BackColumnDelta(unit.Position.Side);
                 break;
             case MoveDirection.Up:
                 rowDelta = -1;
@@ -457,7 +700,7 @@ public sealed class BattleManager : MonoBehaviour
                 break;
         }
 
-        destination = player.Position.Offset(rowDelta, columnDelta);
+        destination = unit.Position.Offset(rowDelta, columnDelta);
         if (!destination.IsValid)
         {
             failureMessage = "移動先がパネル外です。";
@@ -470,8 +713,85 @@ public sealed class BattleManager : MonoBehaviour
             return false;
         }
 
+        if (!CanUnitEnterPanel(unit, destination, out failureMessage))
+        {
+            return false;
+        }
+
         failureMessage = string.Empty;
         return true;
+    }
+
+    private bool CanUnitEnterPanel(CharacterUnit unit, BattleGridPosition destination, out string failureMessage)
+    {
+        if (GetPanelType(destination) == PanelType.Hole && !unit.HasFloatAbility)
+        {
+            failureMessage = "穴パネルには移動できません。";
+            return false;
+        }
+
+        failureMessage = string.Empty;
+        return true;
+    }
+
+    private bool TryMoveUnitTo(CharacterUnit unit, BattleGridPosition destination, string successLog)
+    {
+        if (!destination.IsValid)
+        {
+            battleLog.Add("移動先がパネル外です。");
+            return false;
+        }
+
+        if (IsOccupied(destination))
+        {
+            battleLog.Add("移動先にユニットがいます。");
+            return false;
+        }
+
+        string failureMessage;
+        if (!CanUnitEnterPanel(unit, destination, out failureMessage))
+        {
+            battleLog.Add(failureMessage);
+            return false;
+        }
+
+        BattleGridPosition origin = unit.Position;
+        unit.MoveTo(destination);
+        battleLog.Add(successLog);
+        ApplyDeparturePanelEffect(origin);
+        ApplyArrivalPanelEffect(unit, destination);
+        return true;
+    }
+
+    private void ApplyDeparturePanelEffect(BattleGridPosition origin)
+    {
+        if (GetPanelType(origin) != PanelType.Cracked)
+        {
+            return;
+        }
+
+        SetPanelType(origin, PanelType.Hole);
+        battleLog.Add("ヒビパネルが穴パネルに変化しました。");
+        Debug.Log("Cracked panel changed to Hole: " + origin);
+    }
+
+    private void ApplyArrivalPanelEffect(CharacterUnit unit, BattleGridPosition destination)
+    {
+        if (GetPanelType(destination) != PanelType.Magma)
+        {
+            return;
+        }
+
+        if (unit.Element == UnitElement.Fire)
+        {
+            int before = unit.Hp;
+            unit.Heal(50);
+            battleLog.Add(unit.Name + "はマグマパネルで" + (unit.Hp - before) + "回復しました。");
+            return;
+        }
+
+        int actualDamage = unit.TakeDirectDamage(50);
+        battleLog.Add(unit.Name + "はマグマパネルで" + actualDamage + "ダメージを受けました。");
     }
 
     private void HandleMoveCommand(MoveDirection direction)
@@ -652,8 +972,7 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
-        player.MoveTo(destination);
-        battleLog.Add(GetMoveCommandLog(direction));
+        TryMoveUnitTo(player, destination, GetMoveCommandLog(direction));
     }
 
     private void ResetQueuedActions()
@@ -680,6 +999,20 @@ public sealed class BattleManager : MonoBehaviour
 
         predictionActive = false;
         pendingEnemyAttack = null;
+        ApplyTurnStartPanelEffects(enemy);
+        CheckBattleEnd();
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
+
+        if (TrySkipFrozenTurn(enemy))
+        {
+            StartNextPlayerTurn();
+            return;
+        }
+
         enemyAI.BeginTurn();
         enemyActionsRemaining = EnemyAI.GetActionCount(enemyType);
         enemyActionIndex = 0;
@@ -747,8 +1080,7 @@ public sealed class BattleManager : MonoBehaviour
     {
         if (action.Kind == EnemyActionKind.Move)
         {
-            enemy.MoveTo(action.Destination);
-            battleLog.Add(action.ActionText);
+            TryMoveUnitTo(enemy, action.Destination, action.ActionText);
             return;
         }
 
@@ -775,6 +1107,7 @@ public sealed class BattleManager : MonoBehaviour
 
     private void DealDamageToPlayer(int damage)
     {
+        damage = CalculatePanelAdjustedDamage(player, damage, CardAttribute.Neutral);
         int blocked;
         int actualDamage = player.TakeDamage(damage, out blocked);
         if (blocked > 0)
@@ -789,17 +1122,71 @@ public sealed class BattleManager : MonoBehaviour
 
     private bool IsPlayerInEnemyAttackRange(EnemyBattleAction attackAction)
     {
+        bool inRange;
         switch (attackAction.AttackPattern)
         {
             case EnemyAttackPattern.ForwardOnePanel:
-                return enemy.Position.Column == 0 && player.Position.Column == BattleGridPosition.GridSize - 1 && enemy.Position.Row == player.Position.Row;
+                inRange = enemy.Position.Column == 0 && player.Position.Column == BattleGridPosition.GridSize - 1 && enemy.Position.Row == player.Position.Row;
+                break;
             case EnemyAttackPattern.Row:
             case EnemyAttackPattern.Strong:
             case EnemyAttackPattern.SameRowNearest:
-                return enemy.Position.Row == player.Position.Row;
+                inRange = enemy.Position.Row == player.Position.Row;
+                break;
             default:
                 return false;
         }
+
+        return inRange && !IsEnemyAttackBlockedByHole(attackAction);
+    }
+
+    private bool IsEnemyAttackBlockedByHole(EnemyBattleAction attackAction)
+    {
+        List<BattleGridPosition> path = BuildEnemyAttackPath(attackAction);
+        for (int i = 0; i < path.Count; i++)
+        {
+            if (path[i].IsValid && GetPanelType(path[i]) == PanelType.Hole)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ApplyTurnStartPanelEffects(CharacterUnit unit)
+    {
+        PanelType panelType = GetPanelType(unit.Position);
+        if (panelType == PanelType.Poison)
+        {
+            int damage = Mathf.Max(1, Mathf.CeilToInt(unit.MaxHp * 0.2f));
+            int actualDamage = unit.TakeDirectDamage(damage);
+            battleLog.Add(unit.Name + "は毒パネルで" + actualDamage + "ダメージを受けました。");
+        }
+
+        if (panelType == PanelType.Grass && unit.Element == UnitElement.Grass)
+        {
+            int before = unit.Hp;
+            unit.Heal(Mathf.Max(1, Mathf.CeilToInt(unit.MaxHp * 0.2f)));
+            battleLog.Add(unit.Name + "は草パネルで" + (unit.Hp - before) + "回復しました。");
+        }
+    }
+
+    private bool TrySkipFrozenTurn(CharacterUnit unit)
+    {
+        bool released;
+        if (!unit.ConsumeFrozenTurn(out released))
+        {
+            return false;
+        }
+
+        battleLog.Add(unit.Name + "は凍結状態で行動できません。");
+        if (released)
+        {
+            battleLog.Add(unit.Name + "の凍結が解除されました。");
+        }
+
+        return true;
     }
 
     private void StartNextPlayerTurn()
@@ -813,6 +1200,21 @@ public sealed class BattleManager : MonoBehaviour
         currentRound++;
         remainingPlayerActions = MaxPlayerActions;
         actionQueue.Clear();
+        ApplyTurnStartPanelEffects(player);
+        CheckBattleEnd();
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
+
+        if (TrySkipFrozenTurn(player))
+        {
+            RefreshUi();
+            ResolveEnemyTurn();
+            return;
+        }
+
         DrawToHandLimit("ターン開始");
         ClearPreview();
         RefreshUi();
@@ -864,8 +1266,13 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
-        player.MoveTo(destination);
-        battleLog.Add(GetPredictionMoveLog(direction));
+        TryMoveUnitTo(player, destination, GetPredictionMoveLog(direction));
+        CheckBattleEnd();
+        if (battleEnded)
+        {
+            RefreshUi();
+            return;
+        }
 
         if (!IsPlayerInEnemyAttackRange(pendingEnemyAttack))
         {
@@ -1188,6 +1595,22 @@ public sealed class BattleManager : MonoBehaviour
 
     private Color GetBaseCellColor(BattleGridPosition position)
     {
+        switch (GetPanelType(position))
+        {
+            case PanelType.Cracked:
+                return new Color(0.72f, 0.55f, 0.22f, 0.98f);
+            case PanelType.Hole:
+                return new Color(0.015f, 0.018f, 0.026f, 1f);
+            case PanelType.Ice:
+                return new Color(0.42f, 0.82f, 0.95f, 0.98f);
+            case PanelType.Grass:
+                return new Color(0.22f, 0.62f, 0.28f, 0.98f);
+            case PanelType.Magma:
+                return new Color(0.88f, 0.28f, 0.08f, 0.98f);
+            case PanelType.Poison:
+                return new Color(0.52f, 0.2f, 0.68f, 0.98f);
+        }
+
         if (position.Side == GridSide.Player)
         {
             return new Color(0.16f, 0.28f, 0.42f, 0.96f);

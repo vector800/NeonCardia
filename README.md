@@ -206,6 +206,41 @@ Cards now carry a `CardTargetPattern` so more range shapes can be added without 
 
 Position itself is only a coordinate. Tactical meaning comes from card ranges and movement effects.
 
+## Special Panels
+
+BattleScene now has a basic special panel system layered onto the existing 3x3 player grid and 3x3 enemy grid. The field still behaves as two sides internally, but each panel stores a `PanelType` and updates its color immediately when the type changes.
+
+Panel types:
+
+- `Normal`: movable, no special effect.
+- `Cracked`: movable. When a unit successfully moves away from it, the origin panel changes into `Hole`.
+- `Hole`: normally not movable. Units with the temporary `HasFloatAbility` flag can enter it. Ground attacks stop when their route reaches a hole panel.
+- `Ice`: movable. Electric attacks deal double damage to units on it. Water attacks freeze units on it unless the unit is Fire element.
+- `Grass`: movable. Fire attacks deal double damage to units on it. Fire attacks that pass through grass panels change those panels to `Normal`. Grass-element units heal 20% of max HP when their turn starts on grass.
+- `Magma`: movable. Entering it deals 50 direct damage to normal units. Fire-element units heal 50 instead. Water attacks that pass through magma panels change those panels to `Normal`.
+- `Poison`: movable. A unit starting its own turn on poison takes 20% of max HP as direct damage.
+
+Status and attribute notes:
+
+- `CardAttribute` now includes `Water`, `Grass`, and `Break`.
+- `UnitElement` is currently `Neutral`, `Fire`, or `Grass`, and is exposed on `BattleManager` for player/enemy test setup.
+- Frozen units skip their own turns. The first frozen turn is skipped, and the second frozen turn also skips while clearing Frozen afterward.
+- Fire-element units cannot be frozen.
+- Break attacks deal double damage to Frozen units and clear Frozen.
+- Existing player card attacks are treated as `AttackTravelType.Ground` for now. `AttackTravelType.Air` exists as a future extension point.
+- Player and enemy floating movement is a temporary boolean setting on `BattleManager`; a full ability system is not implemented yet.
+
+Current MVP attack-route support:
+
+- Same-row and row attacks process panels from the attacker forward through the lane.
+- Forward-one-panel attacks process the immediate forward panel.
+- Single-target attacks process the target panel.
+- Around-self attacks process the target panel only when a target exists.
+- Fire/Water route changes can occur even if no unit is hit, as long as the attack route passes through the panel.
+
+Initial BattleScene test placement includes Cracked, Hole, Ice, Grass, Magma, and Poison panels so each color/effect can be checked in Play Mode.
+The current default deck has Fire and Electric attack cards, but Water and Break should be checked by temporarily changing a test card's `CardAttribute` in the ScriptableObject Inspector or by adding a test card asset.
+
 ## Deck System
 
 The player deck is managed by `DeckManager` and split into three zones:
@@ -632,25 +667,39 @@ Removed files:
 67. Confirm that the current enemy has the new HP balance value.
 68. Reduce enemy HP to 0 and confirm `VICTORY`.
 69. Let player HP reach 0 and confirm `DEFEAT`.
-70. Open `Assets/Scenes/DeckBuildScene.unity`.
-71. Enter Play Mode and confirm that all deck builder text is sharper and easier to read.
-72. Confirm that `NEON CARDIA - デッキビルドMVP` is not shown.
-73. Confirm that the owned card list is large on the left and the current deck list is large on the right.
-74. Confirm that `デフォルトデッキ作成` and `デッキ初期化` are not shown.
-75. Confirm that `デッキ保存`, `バトルへ進む`, and `元に戻す` are shown.
-76. Confirm that `現在のデッキ` has compact counts next to it, such as `30/30   N:24   HC:5   G:1`.
-77. Confirm that the label `デッキ枚数：` is not shown.
-78. Confirm that Guard, Repair, and Charge show `[N][CLEAR]` in the deck builder.
-79. Click owned cards and confirm that they are added to the editing deck.
-80. Click deck rows and confirm that one copy is removed.
-81. Press `元に戻す` and confirm that the editing deck returns to the state it had when entering DeckBuildScene.
-82. Confirm that Guard, Repair, and Charge are still limited as N cards with 4 copies per card.
-83. Confirm that N cards cannot exceed 4 copies of the same card.
-84. Confirm that HC cards cannot exceed 5 total and cannot include duplicate card IDs.
-85. Confirm that G cards cannot exceed 1 total.
-86. Confirm that decks below 30 cards are invalid.
-87. Press `デッキ保存` and confirm that the save message appears.
-88. Press `バトルへ進む` and confirm that BattleScene starts with the saved deck.
+70. Confirm that special panels are visible by color in BattleScene: Cracked, Hole, Ice, Grass, Magma, and Poison.
+71. Move a unit away from a Cracked panel and confirm the origin panel changes to Hole.
+72. Try to move a normal unit onto a Hole panel and confirm movement fails.
+73. Enable `playerHasFloatAbility` or `enemyHasFloatAbility` in the `BattleManager` Inspector and confirm that floating movement can enter Hole panels.
+74. Move onto a Magma panel and confirm normal units take 50 direct damage; set the unit element to Fire and confirm Magma heals 50 instead.
+75. Start a turn on Poison and confirm the unit takes 20% max HP damage.
+76. Set a unit element to Grass, start its turn on Grass, and confirm it heals 20% max HP.
+77. Use a Fire attack through Grass and confirm the Grass panel changes to Normal.
+78. Temporarily set a test attack card to Water, use it through Magma, and confirm the Magma panel changes to Normal.
+79. Put a target on Ice and use an Electric attack to confirm damage is doubled.
+80. Put a target on Ice and use a temporary Water attack to confirm Frozen is applied unless the target is Fire element.
+81. Confirm that a Frozen unit skips its turn and clears Frozen on the second skipped frozen turn.
+82. Temporarily set a test attack card to Break, use it on a Frozen unit, and confirm damage is doubled and Frozen is cleared.
+83. Put a Hole panel in a ground attack route and confirm the attack stops at the hole.
+84. Open `Assets/Scenes/DeckBuildScene.unity`.
+85. Enter Play Mode and confirm that all deck builder text is sharper and easier to read.
+86. Confirm that `NEON CARDIA - デッキビルドMVP` is not shown.
+87. Confirm that the owned card list is large on the left and the current deck list is large on the right.
+88. Confirm that `デフォルトデッキ作成` and `デッキ初期化` are not shown.
+89. Confirm that `デッキ保存`, `バトルへ進む`, and `元に戻す` are shown.
+90. Confirm that `現在のデッキ` has compact counts next to it, such as `30/30   N:24   HC:5   G:1`.
+91. Confirm that the label `デッキ枚数：` is not shown.
+92. Confirm that Guard, Repair, and Charge show `[N][CLEAR]` in the deck builder.
+93. Click owned cards and confirm that they are added to the editing deck.
+94. Click deck rows and confirm that one copy is removed.
+95. Press `元に戻す` and confirm that the editing deck returns to the state it had when entering DeckBuildScene.
+96. Confirm that Guard, Repair, and Charge are still limited as N cards with 4 copies per card.
+97. Confirm that N cards cannot exceed 4 copies of the same card.
+98. Confirm that HC cards cannot exceed 5 total and cannot include duplicate card IDs.
+99. Confirm that G cards cannot exceed 1 total.
+100. Confirm that decks below 30 cards are invalid.
+101. Press `デッキ保存` and confirm that the save message appears.
+102. Press `バトルへ進む` and confirm that BattleScene starts with the saved deck.
 
 ## Not Implemented Yet
 
@@ -667,7 +716,8 @@ Removed files:
 - Production-quality effect sprites, sound effects, and animation polish for Accel Gauge.
 - Multiple units per side, clickable target selection, panel ownership, panel breaking, obstacles, traps, and summons.
 - Full use of all range patterns by real cards.
-- Status effects, buffs, and debuffs.
+- Additional status effects beyond the temporary Frozen MVP, plus full buff/debuff UI.
+- Dedicated Water and Break card assets in the default deck.
 - Animations, sound effects, card art, and polish.
 - Card acquisition, rewards, multiple deck slots, ability-based HC/G limit increases, and post-battle flow.
 - Dedicated Clear Card deck-building limits or advanced Clear Card-specific rules.
