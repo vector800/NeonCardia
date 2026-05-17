@@ -21,7 +21,8 @@ public enum UnitElement
 {
     Neutral,
     Fire,
-    Grass
+    Grass,
+    Ice
 }
 
 public enum AttackTravelType

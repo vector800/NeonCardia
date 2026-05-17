@@ -1,0 +1,520 @@
+fileFormatVersion: 2
+guid: af6c78d9fd74aaa46845991dffaf1df2
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2406617905876377666
+    second: Placeholder_WaterHit_0
+  - first:
+      213: -8973599167720803567
+    second: Placeholder_WaterHit_1
+  - first:
+      213: -8157122232190376661
+    second: Placeholder_WaterHit_2
+  - first:
+      213: 5081048386949159849
+    second: Placeholder_WaterHit_3
+  - first:
+      213: -3346923971802781076
+    second: Placeholder_WaterHit_4
+  - first:
+      213: -7379058350389860191
+    second: Placeholder_WaterHit_5
+  - first:
+      213: -7189584648051494298
+    second: Placeholder_WaterHit_6
+  - first:
+      213: 8177958578147525297
+    second: Placeholder_WaterHit_7
+  - first:
+      213: -5674455717329854470
+    second: Placeholder_WaterHit_8
+  - first:
+      213: -6042349909332003934
+    second: Placeholder_WaterHit_9
+  - first:
+      213: -7840065507889286896
+    second: Placeholder_WaterHit_10
+  - first:
+      213: 6338153159321949070
+    second: Placeholder_WaterHit_11
+  - first:
+      213: 6811787244584337268
+    second: Placeholder_WaterHit_12
+  - first:
+      213: 3380798709442209925
+    second: Placeholder_WaterHit_13
+  - first:
+      213: 1993484236623221167
+    second: Placeholder_WaterHit_14
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_0
+      rect:
+        serializedVersion: 2
+        x: 40
+        y: 422
+        width: 50
+        height: 50
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ebfd422f3c9f99ed0800000000000000
+      internalID: -2406617905876377666
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_1
+      rect:
+        serializedVersion: 2
+        x: 165
+        y: 419
+        width: 56
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 113b243e91f577380800000000000000
+      internalID: -8973599167720803567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_2
+      rect:
+        serializedVersion: 2
+        x: 290
+        y: 416
+        width: 62
+        height: 62
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b25e9d05c841cce80800000000000000
+      internalID: -8157122232190376661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_3
+      rect:
+        serializedVersion: 2
+        x: 415
+        y: 413
+        width: 68
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ab1dae5692838640800000000000000
+      internalID: 5081048386949159849
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_4
+      rect:
+        serializedVersion: 2
+        x: 29
+        y: 283
+        width: 72
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6aa47261665d81d0800000000000000
+      internalID: -3346923971802781076
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_5
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 280
+        width: 78
+        height: 78
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a8e128b681589990800000000000000
+      internalID: -7379058350389860191
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_6
+      rect:
+        serializedVersion: 2
+        x: 279
+        y: 277
+        width: 84
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 662f94acad6793c90800000000000000
+      internalID: -7189584648051494298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_7
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 274
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b287568ff1fd7170800000000000000
+      internalID: 8177958578147525297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_8
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 143
+        width: 96
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aff9ed2f6984041b0800000000000000
+      internalID: -5674455717329854470
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_9
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 140
+        width: 102
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a3f6ad65c2452ca0800000000000000
+      internalID: -6042349909332003934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_10
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 137
+        width: 108
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 011777285fd723390800000000000000
+      internalID: -7840065507889286896
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_11
+      rect:
+        serializedVersion: 2
+        x: 393
+        y: 135
+        width: 112
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e839769a7b4a5f750800000000000000
+      internalID: 6338153159321949070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_12
+      rect:
+        serializedVersion: 2
+        x: 6
+        y: 4
+        width: 118
+        height: 118
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 47f7cf69864588e50800000000000000
+      internalID: 6811787244584337268
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_13
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 1
+        width: 124
+        height: 124
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 588e66593820bee20800000000000000
+      internalID: 3380798709442209925
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Placeholder_WaterHit_14
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 256
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa1944de9574aab10800000000000000
+      internalID: 1993484236623221167
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Placeholder_WaterHit_0: -2406617905876377666
+      Placeholder_WaterHit_1: -8973599167720803567
+      Placeholder_WaterHit_10: -7840065507889286896
+      Placeholder_WaterHit_11: 6338153159321949070
+      Placeholder_WaterHit_12: 6811787244584337268
+      Placeholder_WaterHit_13: 3380798709442209925
+      Placeholder_WaterHit_14: 1993484236623221167
+      Placeholder_WaterHit_2: -8157122232190376661
+      Placeholder_WaterHit_3: 5081048386949159849
+      Placeholder_WaterHit_4: -3346923971802781076
+      Placeholder_WaterHit_5: -7379058350389860191
+      Placeholder_WaterHit_6: -7189584648051494298
+      Placeholder_WaterHit_7: 8177958578147525297
+      Placeholder_WaterHit_8: -5674455717329854470
+      Placeholder_WaterHit_9: -6042349909332003934
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

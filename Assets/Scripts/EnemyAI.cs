@@ -2,10 +2,14 @@ using System.Collections.Generic;
 
 public enum EnemyType
 {
-    SmallEnemy,
-    NormalEnemy,
-    HeavyEnemy,
-    Stage1Boss
+    SmallEnemy = 0,
+    NormalEnemy = 1,
+    HeavyEnemy = 2,
+    Stage1Boss = 3,
+    FireEnemy = 4,
+    GrassEnemy = 5,
+    IceEnemy = 6,
+    FloatingEnemy = 7
 }
 
 public enum EnemyCategory
@@ -76,6 +80,16 @@ public sealed class EnemyAI
 {
     private readonly EnemyType enemyType;
     private int turnCount;
+    private static readonly EnemyType[] DebugEnemyTypes =
+    {
+        EnemyType.NormalEnemy,
+        EnemyType.FireEnemy,
+        EnemyType.GrassEnemy,
+        EnemyType.IceEnemy,
+        EnemyType.HeavyEnemy,
+        EnemyType.FloatingEnemy,
+        EnemyType.Stage1Boss
+    };
 
     public EnemyAI(EnemyType enemyType)
     {
@@ -95,8 +109,15 @@ public sealed class EnemyAI
                 return 40;
             case EnemyType.NormalEnemy:
                 return 70;
+            case EnemyType.FireEnemy:
+                return 90;
+            case EnemyType.GrassEnemy:
+            case EnemyType.IceEnemy:
+                return 80;
             case EnemyType.HeavyEnemy:
-                return 100;
+                return 150;
+            case EnemyType.FloatingEnemy:
+                return 70;
             case EnemyType.Stage1Boss:
                 return 300;
             default:
@@ -112,8 +133,15 @@ public sealed class EnemyAI
                 return 15;
             case EnemyType.NormalEnemy:
                 return 20;
-            case EnemyType.HeavyEnemy:
+            case EnemyType.FireEnemy:
                 return 25;
+            case EnemyType.GrassEnemy:
+            case EnemyType.IceEnemy:
+                return 20;
+            case EnemyType.HeavyEnemy:
+                return 30;
+            case EnemyType.FloatingEnemy:
+                return 18;
             case EnemyType.Stage1Boss:
                 return 35;
             default:
@@ -144,7 +172,14 @@ public sealed class EnemyAI
                 return CardAttribute.Slash;
             case EnemyType.NormalEnemy:
                 return CardAttribute.Shot;
+            case EnemyType.FireEnemy:
+                return CardAttribute.Water;
+            case EnemyType.GrassEnemy:
+            case EnemyType.IceEnemy:
+                return CardAttribute.Fire;
             case EnemyType.HeavyEnemy:
+                return CardAttribute.Break;
+            case EnemyType.FloatingEnemy:
                 return CardAttribute.Electric;
             case EnemyType.Stage1Boss:
                 return CardAttribute.Shot;
@@ -181,13 +216,58 @@ public sealed class EnemyAI
                 return "SmallEnemy";
             case EnemyType.NormalEnemy:
                 return "NormalEnemy";
+            case EnemyType.FireEnemy:
+                return "FireEnemy";
+            case EnemyType.GrassEnemy:
+                return "GrassEnemy";
+            case EnemyType.IceEnemy:
+                return "IceEnemy";
             case EnemyType.HeavyEnemy:
                 return "HeavyEnemy";
+            case EnemyType.FloatingEnemy:
+                return "FloatingEnemy";
             case EnemyType.Stage1Boss:
                 return "Stage1Boss";
             default:
                 return "NormalEnemy";
         }
+    }
+
+    public static UnitElement GetElement(EnemyType enemyType)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.FireEnemy:
+                return UnitElement.Fire;
+            case EnemyType.GrassEnemy:
+                return UnitElement.Grass;
+            case EnemyType.IceEnemy:
+                return UnitElement.Ice;
+            default:
+                return UnitElement.Neutral;
+        }
+    }
+
+    public static bool HasFloatAbility(EnemyType enemyType)
+    {
+        return enemyType == EnemyType.FloatingEnemy;
+    }
+
+    public static EnemyType[] GetDebugEnemyTypes()
+    {
+        EnemyType[] result = new EnemyType[DebugEnemyTypes.Length];
+        DebugEnemyTypes.CopyTo(result, 0);
+        return result;
+    }
+
+    public static string GetDebugSummary(EnemyType enemyType)
+    {
+        return "HP:" + GetMaxHp(enemyType)
+            + "  Element:" + GetElement(enemyType)
+            + "  Weak:" + BattleText.FormatAttribute(GetWeakness(enemyType))
+            + "  Actions:" + GetActionCount(enemyType)
+            + (HasFloatAbility(enemyType) ? "  Float" : string.Empty)
+            + (IsBoss(enemyType) ? "  Boss" : string.Empty);
     }
 
     public EnemyBattleAction CreateNextAction(CharacterUnit player, CharacterUnit enemy, IEnumerable<CharacterUnit> units, int actionIndex)
@@ -197,6 +277,10 @@ public sealed class EnemyAI
             case EnemyType.SmallEnemy:
                 return CreateSmallAction(player, enemy, units);
             case EnemyType.NormalEnemy:
+            case EnemyType.FireEnemy:
+            case EnemyType.GrassEnemy:
+            case EnemyType.IceEnemy:
+            case EnemyType.FloatingEnemy:
                 return CreateNormalAction(player, enemy, units);
             case EnemyType.HeavyEnemy:
                 return CreateHeavyAction();

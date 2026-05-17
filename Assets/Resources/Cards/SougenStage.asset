@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fd404db3a404d04a825792a8a09012f, type: 3}
+  m_Name: SougenStage
+  m_EditorClassIdentifier: 
+  cardId: SougenStage
+  cardName: ソウゲンステージ
+  rulesText: すべてのパネルを草パネルにする。
+  deckType: 0
+  isClearCard: 1
+  effect: 6
+  power: 0
+  cost: 1
+  attribute: 7
+  usablePosition: 0
+  targetType: 3
+  targetPattern: 0
+  moveDirection: 0
+  targetPanelType: 4

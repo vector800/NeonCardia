@@ -15,6 +15,7 @@
 - Removed movement cards from the starter deck. Movement is now handled by always-available basic move commands.
 - Added 3 player action points per turn. Normal cards and movement consume 1 action point.
 - Added Clear Cards. `Guard`, `Repair`, and `Charge` are N cards that do not consume action points during normal player turns.
+- Added the `ウエポン` basic command. It queues like an action, costs no action points, and is limited to once per player turn.
 - Added action point UI. The current battle screen shows action points as a three-part gauge.
 - Changed player turns from immediate action resolution to queued action planning.
 - Added a temporary attack prediction interrupt system and Accel Gauge.
@@ -40,6 +41,7 @@ The BattleScene UI has been reorganized to reduce always-visible debug informati
 - The player-side and enemy-side 3x3 panels are visually connected into one 6-column by 3-row battle field. Internal `GridSide.Player` / `GridSide.Enemy` position management is unchanged.
 - Removed `プレイヤーパネル` / `エネミーパネル` labels from BattleScene.
 - Removed persistent right-side debug text such as enemy action count, enemy attack range, weakness, enemy type, Accel text, and attack prediction state. Enemy AI, weakness, attack prediction, and Accel logic are still active internally.
+- The current enemy name is shown as a top-right battle UI label, matching the enemy-side name placement while debug-only enemy details remain hidden unless the debug panel is opened.
 - Kept hand cards, movement buttons, `決定`, `選択リセット`, hover range preview, and the compact action log.
 
 Changed files:
@@ -75,6 +77,267 @@ Changed files and assets:
 - `Assets/Scripts/CardView.cs`
 - `Assets/Resources/UI/AttributeIcons/*.png`
 - `Assets/Resources/Cards/Placeholders/*.png`
+- `README.md`
+
+## Battle Effect Presentation
+
+BattleScene now has a lightweight attack-effect presentation layer prepared for gpt-image-2 generated sprite sheets.
+
+Effect folder layout:
+
+- Hit effects: `Assets/Art/Effects/Hit/`
+- Stage-change effects: `Assets/Art/Effects/Stage/`
+- Placeholder backups: `Assets/Art/Effects/Placeholder/`
+- Runtime presentation scripts: `Assets/Scripts/Battle/Presentation/`
+- Reserved sprite output folder: `Assets/Sprites/Effects/`
+
+Effect files:
+
+- `WaterHit.png`
+- `FireHit.png`
+- `BreakHit.png`
+- `IceHit.png`
+- `WeaponHit.png`
+- `EnemyHit.png`
+- `StageChange_Ice.png`
+- `StageChange_Grass.png`
+- `StageChange_Magma.png`
+
+EffectType mapping:
+
+- `BattleEffectType.WaterHit` -> `Assets/Art/Effects/Hit/WaterHit.png`
+- `BattleEffectType.FireHit` -> `Assets/Art/Effects/Hit/FireHit.png`
+- `BattleEffectType.BreakHit` -> `Assets/Art/Effects/Hit/BreakHit.png`
+- `BattleEffectType.IceHit` -> `Assets/Art/Effects/Hit/IceHit.png`
+- `BattleEffectType.WeaponHit` -> `Assets/Art/Effects/Hit/WeaponHit.png`
+- `BattleEffectType.EnemyHit` -> `Assets/Art/Effects/Hit/EnemyHit.png`
+- `BattleEffectType.StageChange_Ice` -> `Assets/Art/Effects/Stage/StageChange_Ice.png`
+- `BattleEffectType.StageChange_Grass` -> `Assets/Art/Effects/Stage/StageChange_Grass.png`
+- `BattleEffectType.StageChange_Magma` -> `Assets/Art/Effects/Stage/StageChange_Magma.png`
+
+Generated asset notes:
+
+- The files in `Assets/Art/Effects/Hit/` and `Assets/Art/Effects/Stage/` are generated effect assets for the current project.
+- They were generated for the image-2 effect request as 4x4 sprite-sheet-style images, then chroma-key processed into transparent PNGs.
+- Final saved size is 1024x1024, intended as 4 columns x 4 rows / 16 frames, with 256x256 cells.
+- Placeholder backup files remain in `Assets/Art/Effects/Placeholder/` and can be used if the generated assets are replaced or removed.
+- All names are stable and are meant to be swapped later without changing `EffectAssetResolver`.
+
+Generated effects and intended use:
+
+- `WaterHit.png`: Water card hit effect.
+- `FireHit.png`: Fire card hit effect.
+- `BreakHit.png`: Break card hit effect.
+- `IceHit.png`: Ice / freeze hit effect.
+- `WeaponHit.png`: basic `ウエポン` command hit effect.
+- `EnemyHit.png`: enemy attack hit effect on the player.
+- `StageChange_Ice.png`: field-wide `フリーズステージ` effect.
+- `StageChange_Grass.png`: field-wide `ソウゲンステージ` effect.
+- `StageChange_Magma.png`: field-wide `カザンステージ` effect.
+
+Implementation:
+
+- `AttackEffectPlayer` creates `BattleEffectRoot` and `StageEffectRoot` at runtime under the BattleScene Canvas.
+- `EffectAssetResolver` maps Water, Fire, Break, Ice, Weapon, Enemy, and stage-change actions to `BattleEffectType`.
+- The generated PNGs are loaded by path in Editor and sliced at runtime by `AttackEffectPlayer`, so BattleScene can play them even if the Sprite Editor slice metadata is refreshed later.
+- Card attacks show the card name, play the matching hit effect on the target panel, then apply damage and a damage popup.
+- Weapon attacks play `WeaponHit`; enemy attacks play `EnemyHit`.
+- Stage cards play `StageChange_Ice`, `StageChange_Grass`, or `StageChange_Magma` over the field before the panel update is visible.
+- The effect animation is non-blocking in this MVP. Existing queued action resolution and battle logic remain synchronous.
+
+Unity import settings for final assets:
+
+- Texture Type: `Sprite`
+- Sprite Mode: `Multiple`
+- Pixels Per Unit: `100` as a starting point
+- Mesh Type: `Full Rect`
+- Filter Mode: `Bilinear` or `Point`
+- Compression: `None` or low compression
+- Alpha Is Transparency: enabled
+
+Sprite slicing steps:
+
+1. Select the effect PNG in Unity.
+2. Set Sprite Mode to `Multiple`.
+3. Open Sprite Editor.
+4. Choose Slice, then `Grid By Cell Count`.
+5. Set Column `4` and Row `4`.
+6. Apply.
+
+Replacing or regenerating image assets:
+
+1. Generate a transparent 4x4 / 16-frame sprite sheet, or generate on a flat chroma-key background and remove the key color to alpha.
+2. Save hit effects to `Assets/Art/Effects/Hit/`.
+3. Save stage effects to `Assets/Art/Effects/Stage/`.
+4. Keep the exact file names listed above.
+5. Apply the Unity import and slicing settings.
+6. Enter BattleScene Play Mode and trigger the matching card, weapon, enemy attack, or stage card.
+
+Verification:
+
+- In BattleScene, use Water, Fire, Break, and Ice cards and confirm the matching hit effect appears.
+- Use `ウエポン` and confirm `WeaponHit` appears before damage.
+- Let the enemy attack and confirm `EnemyHit` appears before damage.
+- Use `フリーズステージ`, `ソウゲンステージ`, and `カザンステージ` and confirm a field-wide stage effect appears.
+- Confirm damage popup text appears after a damaging attack.
+
+Changed files and assets:
+
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/Battle/Presentation/AttackEffectPlayer.cs`
+- `Assets/Art/Effects/Hit/*.png`
+- `Assets/Art/Effects/Stage/*.png`
+- `Assets/Art/Effects/Placeholder/*.png`
+- `Assets/Sprites/Effects/.gitkeep`
+- `README.md`
+
+## Battle Weapon Command
+
+BattleScene now has a basic `ウエポン` command in the lower operation UI.
+
+- Moved `ウエポン`, `選択リセット`, and `決定` to the right side of the hand cards as a compact command column.
+- `ウエポン` is a basic command, not a card. It does not enter the deck, hand, discard pile, or draw pile.
+- `ウエポン` is added to the queued action list and resolves in order after pressing `決定`.
+- `ウエポン` does not consume action points and does not reduce the action point gauge.
+- `ウエポン` can be queued only once per player turn. `選択リセット` clears it from the current queue.
+- Current temporary weapon effect: 10 power, Neutral attribute, same-row/front enemy attack. With the current single-enemy MVP, it hits the enemy when the enemy is on the player's row; otherwise it misses.
+- The weapon performance is intentionally centralized in `BattleManager` constants so it can later be replaced by weapon data.
+- The selected action queue is shown directly above the hand cards as horizontal card-like boxes, leaving the player-panel-left space available for hover card detail.
+- Each queued action box shows its order number, action name, and an `ACT`, `FREE`, or `CLEAR` badge.
+- Queued actions are color-coded: attack cards use blue, Clear Cards use pale green, movement uses yellow, Weapon uses gray/white, and fallback actions use a dark standard color.
+- The queued action UI is rebuilt from the current queue count, so Clear Cards, Weapon, and future action-point increases can display more actions than the current three consuming actions.
+
+Verification:
+
+- Open `Assets/Scenes/BattleScene.unity` and enter Play Mode.
+- Confirm `ウエポン`, `選択リセット`, and `決定` are grouped to the right of the hand cards.
+- Queue `ウエポン` and confirm the action point gauge does not decrease.
+- Queue `ウエポン` a second time in the same turn and confirm it is rejected.
+- Press `選択リセット` and confirm the selected action list clears and `ウエポン` can be selected again.
+- Press `決定` and confirm `ウエポン` resolves in queue order, deals 10 damage when the enemy is on the player's row, and misses otherwise.
+- Confirm `ウエポン` does not change hand, draw pile, or discard pile behavior.
+- Confirm selected cards, movement commands, Clear Cards, and `ウエポン` appear as horizontal boxes directly above the hand cards.
+- Confirm the queued action boxes show order number, action name, color coding, and `ACT` / `FREE` / `CLEAR` badges.
+
+Changed files:
+
+- `Assets/Scripts/BattleManager.cs`
+- `README.md`
+
+## New N Cards
+
+Four N cards were added to the card pool and are available in DeckBuildScene through `Resources.LoadAll<CardData>("Cards")`.
+
+- `アクアショット`: N / normal card / Water / 40 power / forward single target. It can miss and is discarded normally. As a Water attack, it changes Magma panels in its route to Normal and can apply Frozen through the existing Ice-panel interaction.
+- `バーナーブレス`: N / normal card / Fire / 60 power / forward 3 panels. It can miss and is discarded normally. As a Fire attack, it changes Grass panels in its route to Normal and deals double damage to targets standing on Grass panels.
+- `テッキュウナゲ`: N / normal card / Break / 60 power / exactly 3 panels forward. It only hits a target exactly three panels ahead. It uses the existing Break interaction, so Frozen targets take double damage and thaw.
+- `フリーズ`: N / Clear Card / Ice / no damage / forward single target. It applies Frozen to the first forward target, costs no action points during normal player turns, and is still consumed as the one prediction action during attack prediction. Fire-element units ignore the Frozen application, but the card is still used and discarded.
+
+New range patterns:
+
+- `ForwardSingle`: forward same-row target.
+- `ForwardLine3`: the first three forward panels.
+- `ForwardExactly3`: only the third forward panel.
+
+Default deck update:
+
+- The fallback 30-card starter deck now includes `アクアショット x2`, `バーナーブレス x2`, `テッキュウナゲ x2`, and `フリーズ x2`.
+- Existing N-card counts were reduced to keep the deck at 30 cards and within the N same-name 4-copy limit.
+- Saved PlayerPrefs decks are still respected. If a saved deck exists, edit it in DeckBuildScene to add the new cards.
+
+UI notes:
+
+- The new cards use the existing N-card and Clear Card visual rules.
+- Water and Break attribute icons are generated at runtime if no PNG exists in `Assets/Resources/UI/AttributeIcons`, so the cards still show an attribute icon without external assets.
+
+Verification:
+
+- Open DeckBuildScene and confirm `アクアショット`, `バーナーブレス`, `テッキュウナゲ`, and `フリーズ` appear as N cards.
+- Confirm the DeckValidator rejects five copies of the same new N card.
+- In BattleScene, confirm `アクアショット` hits a forward same-row target for 40 Water damage and can change Magma panels to Normal.
+- Confirm `バーナーブレス` hits targets within three forward panels for 60 Fire damage, changes Grass panels to Normal, and doubles damage on Grass.
+- Confirm `テッキュウナゲ` only hits exactly three panels ahead for 60 Break damage and doubles damage plus clears Frozen on Frozen targets.
+- Confirm `フリーズ` is shown as a Clear Card, costs no action points in normal turns, freezes a forward target, misses when no target is in range, and does not freeze Fire-element units.
+- Confirm all four cards are discarded after resolution, including misses.
+
+Changed files and assets:
+
+- `Assets/Scripts/CardData.cs`
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/BattleText.cs`
+- `Assets/Scripts/CardView.cs`
+- `Assets/Scripts/DeckBuildManager.cs`
+- `Assets/Resources/Cards/AquaShot.asset`
+- `Assets/Resources/Cards/BurnerBreath.asset`
+- `Assets/Resources/Cards/TekkyuNage.asset`
+- `Assets/Resources/Cards/Freeze.asset`
+- `README.md`
+
+## Stage Change N Cards
+
+Three N / Clear stage cards were added to the card pool and are available in DeckBuildScene through `Resources.LoadAll<CardData>("Cards")`.
+
+- `フリーズステージ`: N / Clear Card / Ice / StageChange. It changes all player-side and enemy-side panels, 18 panels total, to `PanelType.Ice`. Units standing on those panels are moved to Ice visually, but no immediate Frozen effect is applied.
+- `ソウゲンステージ`: N / Clear Card / Grass / StageChange. It changes all 18 panels to `PanelType.Grass`. Units standing on those panels do not receive immediate healing; Grass healing still happens only at turn start for Grass-element units.
+- `カザンステージ`: N / Clear Card / Fire / StageChange. It changes all 18 panels to `PanelType.Magma`. If a unit's current panel becomes Magma during this card resolution, the existing Magma panel effect is applied immediately: normal units take 50 direct damage, and Fire-element units heal 50 without exceeding max HP.
+
+Implementation notes:
+
+- `CardEffectType.StageChange` and `CardData.TargetPanelType` were added so future cards can change the whole field to any `PanelType`.
+- Stage cards are not attack cards, do not run target/miss checks, and resolve only after the player presses the confirm button.
+- Because they are Clear Cards, they enter the action queue but do not consume normal-turn action points.
+- They are still N cards for deck construction, so the same-name 4-copy limit applies and HC/G limits are unchanged.
+- The fallback 30-card starter deck includes one copy each of `フリーズステージ`, `ソウゲンステージ`, and `カザンステージ`; Guard, Repair, and Freeze counts were reduced to keep the deck at 30 cards.
+- BattleScene cards show `ICE`, `GRASS`, or `MAGMA` as the stage value. Hover detail uses existing attribute artwork when present, and generates a simple attribute-colored placeholder if no sprite exists yet.
+
+Verification:
+
+- Open DeckBuildScene and confirm `フリーズステージ`, `ソウゲンステージ`, and `カザンステージ` appear as N / Clear cards.
+- Confirm DeckValidator rejects five copies of any one of those N cards.
+- In BattleScene, queue each stage card and confirm the action point gauge does not decrease.
+- Press confirm and verify `フリーズステージ` changes every player/enemy panel to Ice.
+- Press confirm and verify `ソウゲンステージ` changes every player/enemy panel to Grass.
+- Press confirm and verify `カザンステージ` changes every player/enemy panel to Magma and immediately applies the Magma effect to the player and enemy if they are standing on Magma.
+- Confirm Fire-element units heal 50 from the immediate Magma effect, while normal units take 50 damage.
+- Confirm Freeze and Grass stage changes do not apply immediate Frozen/healing effects.
+- Confirm used stage cards are discarded after resolution and existing debug panel / Reset Battle State behavior still works.
+
+Changed files and assets:
+
+- `Assets/Scripts/CardData.cs`
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/BattleText.cs`
+- `Assets/Scripts/CardView.cs`
+- `Assets/Scripts/DeckBuildManager.cs`
+- `Assets/Resources/Cards/FreezeStage.asset`
+- `Assets/Resources/Cards/FreezeStage.asset.meta`
+- `Assets/Resources/Cards/SougenStage.asset`
+- `Assets/Resources/Cards/SougenStage.asset.meta`
+- `Assets/Resources/Cards/KazanStage.asset`
+- `Assets/Resources/Cards/KazanStage.asset.meta`
+- `README.md`
+
+## DeckBuildScene Scrolling Lists
+
+DeckBuildScene now uses scrollable list panels for both the owned card list and the current deck list.
+
+- The owned card list is placed inside a `ScrollRect` with a masked viewport.
+- The current deck list also uses a `ScrollRect`, so long deck/card lists can be reviewed without overflowing behind the lower buttons.
+- Mouse wheel scrolling is supported through the existing `InputSystemUIInputModule` scroll wheel binding.
+- The list rows keep the existing add/remove click behavior.
+- Scroll position is preserved when the UI refreshes after adding or removing cards.
+
+Verification:
+
+- Open DeckBuildScene and enter Play Mode.
+- Hover the owned card list and use the mouse wheel to scroll through all owned cards.
+- Confirm cards below the visible area can be reached and clicked.
+- Hover the current deck list and scroll if the deck list exceeds the visible area.
+- Confirm adding/removing cards still updates counts and validation.
+
+Changed files:
+
+- `Assets/Scripts/DeckBuildManager.cs`
 - `README.md`
 
 ## Japanese UI Text
@@ -223,7 +486,7 @@ Panel types:
 Status and attribute notes:
 
 - `CardAttribute` now includes `Water`, `Grass`, and `Break`.
-- `UnitElement` is currently `Neutral`, `Fire`, or `Grass`, and is exposed on `BattleManager` for player/enemy test setup.
+- `UnitElement` is currently `Neutral`, `Fire`, `Grass`, or `Ice`. Enemy element is set from the current `EnemyType` profile for debug testing.
 - Frozen units skip their own turns. The first frozen turn is skipped, and the second frozen turn also skips while clearing Frozen afterward.
 - Fire-element units cannot be frozen.
 - Break attacks deal double damage to Frozen units and clear Frozen.
@@ -238,8 +501,64 @@ Current MVP attack-route support:
 - Around-self attacks process the target panel only when a target exists.
 - Fire/Water route changes can occur even if no unit is hit, as long as the attack route passes through the panel.
 
-Initial BattleScene test placement includes Cracked, Hole, Ice, Grass, Magma, and Poison panels so each color/effect can be checked in Play Mode.
+BattleScene starts with all panels set to `Normal`. Use the special panel debug presets to place Cracked, Hole, Ice, Grass, Magma, and Poison panels for testing.
 The current default deck has Fire and Electric attack cards, but Water and Break should be checked by temporarily changing a test card's `CardAttribute` in the ScriptableObject Inspector or by adding a test card asset.
+
+## Special Panel Debug Tools
+
+BattleScene now includes a runtime debug panel for testing special panels. It uses the same `PanelType` data that the battle system uses; there is no separate debug-only panel state.
+
+Debug controls:
+
+- BattleScene starts with the large `DEBUG PANEL` closed. Only the small `DEBUG` button is shown by default.
+- Click the `DEBUG` button to open or close the full debug panel.
+- Click the `X` button inside the panel to close it.
+- Choose one of `Normal`, `Cracked`, `Hole`, `Ice`, `Grass`, `Magma`, or `Poison`.
+- Click any player-side or enemy-side panel to change that panel to the selected type.
+- The panel view refreshes immediately after the change.
+- The debug panel writes changes to `Debug.Log`, for example `Debug: Panel (Player, row 1, col 2) changed to Ice`.
+- F1 toggles the debug panel visibility during Editor or Development builds.
+- F2 cycles the selected `PanelType` while the debug panel is visible.
+
+Preset buttons:
+
+- `All Normal`: resets all panels to `Normal`.
+- `All Types`: places every special panel type across the 6x3 field.
+- `Crack`, `Hole`, `Ice`, `Grass`, `Magma`, and `Poison`: place simple layouts for checking each panel behavior.
+- `Reset Battle State`: restores the current battle state without reloading the scene, then resets every panel to `Normal`.
+
+Enemy debug controls:
+
+- `ENEMY DEBUG` is shown inside the same debug panel and is hidden whenever the debug tools are disabled.
+- Use `<` / `>` to choose a test enemy profile, then press `Apply Enemy` to rebuild the battle with that enemy at its initial position.
+- `Current:` shows the currently applied enemy type, and the spec line shows the selected profile's HP, element, weakness, action count, floating flag, and boss flag.
+- Available profiles:
+  - `NormalEnemy`: HP70, Neutral, Shot weakness, attack 20, 1 action, no float, normal enemy.
+  - `FireEnemy`: HP90, Fire, Water weakness, attack 25, 1 action, no float, normal enemy. Use it to test Freeze immunity and Magma healing.
+  - `GrassEnemy`: HP80, Grass, Fire weakness, attack 20, 1 action, no float, normal enemy. Use it to test Grass panel turn-start healing.
+  - `IceEnemy`: HP80, Ice, Fire weakness, attack 20, 1 action, no float, normal enemy. Use it to test Ice panel, Electric, Water, and Frozen behavior.
+  - `HeavyEnemy`: HP150, Neutral, Break weakness, attack 30, 1 action, no float, normal enemy. Use it to test high HP and Break interactions.
+  - `FloatingEnemy`: HP70, Neutral, Electric weakness, attack 18, 1 action, floating, normal enemy. Use it to test Hole panel movement.
+  - `Stage1Boss`: HP300, Neutral, Shot weakness, attack 35, 2 actions, no float, boss enemy.
+- Applying an enemy profile resets enemy HP/max HP, element, weakness/AI profile, action count, attack power, float ability, guard/status state, boss pattern progress, and position. It also restarts the current battle state so panel, card, prediction, and UI state are clean for testing.
+- `Reset Battle State` keeps the currently applied enemy type. For example, after applying `FireEnemy`, reset returns to a fresh `FireEnemy` battle rather than reverting to `NormalEnemy`.
+
+Battle reset details:
+
+- Player HP, position, element, guard, Frozen state, float test flag, action points, queued actions, prediction state, and Accel Gauge return to battle-start values.
+- Enemy HP, position, type, element, guard, Frozen state, float test flag, AI turn state, action count, and boss pattern progress return to battle-start values.
+- Panel layout is reset to all `Normal` panels. Normal panels are also the default at battle start; special panels are now introduced through cards or debug presets.
+- Draw pile, hand, discard pile, and used cards are rebuilt from the same starting deck configuration. The shuffle order is re-randomized for this MVP.
+- Round and turn state return to round 1 / player turn, and card hover/preview/selected action state is cleared.
+- The reset writes `Debug: Battle state reset to initial state.` to the Console.
+- This is an in-scene state restore using `BattleManager.DebugResetBattleToInitialState()`, not a scene reload.
+
+Release/disable notes:
+
+- `BattleManager.showDebugPanelTools` controls whether the tools are shown.
+- The tools are only shown in `UNITY_EDITOR` or `DEVELOPMENT_BUILD`; non-development builds return false from `ShouldShowDebugPanelTools()`.
+- To hide them during development, set `showDebugPanelTools` to false on the `BattleManager` component. This hides both the small `DEBUG` button and the full debug panel.
+- You can also disable the runtime `Debug Toggle Root` and `Debug Panel Root` GameObjects while in Play Mode.
 
 ## Deck System
 
@@ -496,6 +815,9 @@ Enemy weaknesses:
 ## Changed Files
 
 - `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/Battle/Presentation/AttackEffectPlayer.cs`
+- `Assets/Scripts/BattleDebugPanelController.cs`
+- `Assets/Scripts/BattleDebugPanelController.cs.meta`
 - `Assets/Scripts/BattleManager.cs.meta`
 - `Assets/Scripts/AttackPredictionChanceProvider.cs`
 - `Assets/Scripts/AttackPredictionChanceProvider.cs.meta`
@@ -555,6 +877,24 @@ Enemy weaknesses:
 - `Assets/Resources/Cards/RailCannon.asset.meta`
 - `Assets/Resources/Cards/GigantBreak.asset`
 - `Assets/Resources/Cards/GigantBreak.asset.meta`
+- `Assets/Resources/Cards/AquaShot.asset`
+- `Assets/Resources/Cards/AquaShot.asset.meta`
+- `Assets/Resources/Cards/BurnerBreath.asset`
+- `Assets/Resources/Cards/BurnerBreath.asset.meta`
+- `Assets/Resources/Cards/TekkyuNage.asset`
+- `Assets/Resources/Cards/TekkyuNage.asset.meta`
+- `Assets/Resources/Cards/Freeze.asset`
+- `Assets/Resources/Cards/Freeze.asset.meta`
+- `Assets/Resources/Cards/FreezeStage.asset`
+- `Assets/Resources/Cards/FreezeStage.asset.meta`
+- `Assets/Resources/Cards/SougenStage.asset`
+- `Assets/Resources/Cards/SougenStage.asset.meta`
+- `Assets/Resources/Cards/KazanStage.asset`
+- `Assets/Resources/Cards/KazanStage.asset.meta`
+- `Assets/Art/Effects/Hit/*.png`
+- `Assets/Art/Effects/Stage/*.png`
+- `Assets/Art/Effects/Placeholder/*.png`
+- `Assets/Sprites/Effects/.gitkeep`
 - `Assets/Scenes/BattleScene.unity`
 - `Assets/Scenes/BattleScene.unity.meta`
 - `Assets/Scenes/DeckBuildScene.unity`
@@ -575,11 +915,176 @@ Removed files:
 - `Assets/Resources/Cards/StepDown.asset`
 - `Assets/Resources/Cards/StepDown.asset.meta`
 
+## Battle Result Overlay
+
+BattleScene displays a runtime-generated battle result overlay after victory. It is not a scene transition: the result UI is created under the existing BattleScene Canvas, placed as the last sibling, and shown over the battle screen with a dark translucent background.
+
+Displayed result contents:
+
+- `HUNTING LEVEL`
+- `S` / `A` / `B`
+- One temporary reward card name chosen randomly
+- ChatGPT Image 2 generated reward icon
+- `もう一度戦う`
+- `メニューへ戻る`
+
+Result presentation:
+
+- Victory is detected by the existing `CheckBattleEnd()` flow.
+- The overlay waits briefly before appearing.
+- The result background and panel fade in with `CanvasGroup`.
+- Hunting level, rank, reward card name, and buttons fade in in sequence.
+- The reward card name is a single line and is fit inside the lower reward frame.
+- No external animation libraries are used.
+- The result panel art and reward thumbnail were regenerated with ChatGPT Image 2 and stored under `Assets/Resources/UI/BattleResult`.
+- The panel avoids a direct copy of the reference design: no red circular badge, no specific existing-game mark, one top data frame, and an original sci-fi frame silhouette.
+- The hunting level letter is drawn as Unity text over the generated panel so `S` / `A` / `B` remains clearly visible and can update from evaluator output.
+
+Text-safe layout:
+
+- The ChatGPT Image 2 result panel is treated as background/frame art only.
+- Result wording does not rely on text baked into the image. `HUNTING LEVEL`, rank, reward card name, and button labels are rendered by Unity UI on top of the image.
+- Result text uses Unity standard `Text` with Best Fit, min/max font sizes, `VerticalWrapMode.Truncate`, and `RectMask2D` safe areas.
+- The result panel defines dedicated safe `RectTransform` areas: `HuntingLevelArea`, `HuntingRankArea`, `RewardCardNameArea`, `RewardIconArea`, and `ResultButtonArea`.
+- The upper large frame shows only `HUNTING LEVEL` and `S` / `A` / `B`.
+- The lower frame shows only the reward card name; long names are resized and clipped inside `RewardCardNameArea`.
+- The reward card name fades in through `CanvasGroup`.
+- `ResultOverlayRoot` stretches over the screen, while `ResultPanel` is kept in a centered 1792:1024 aspect-fit area so the image and text keep their relative placement.
+- The background image uses `preserveAspect` and is used only as frame/background decoration.
+- A disabled-by-default `showResultSafeAreaDebug` flag can show thin safe-area guides during layout debugging.
+- The upper frame text was nudged upward so `HUNTING LEVEL` and `S` / `A` / `B` read closer to the visual center of the generated frame.
+- The lower reward card name area was nudged upward so the card name sits closer to the center of the long reward frame.
+- The reward icon now uses centered normalized anchors inside `RewardIconArea`, with `preserveAspect` enabled and a slightly larger default scale.
+- Runtime layout tuning values are exposed on `BattleResultOverlay`: `huntingLevelVerticalOffset`, `huntingRankVerticalOffset`, `rewardTextVerticalOffset`, `rewardIconScale`, and `rewardIconOffset`.
+- Background images that contain embedded text should be replaced with textless assets such as `ResultPanel_NoText.png` / `ResultFrame_BackgroundOnly.png` in future art passes.
+
+Initialization safety fix:
+
+- `BattleResultOverlay.Build()` is no longer allowed to stop the normal BattleScene startup path.
+- If result overlay construction throws, `BattleManager.BuildBattleResultOverlay()` logs the exception, destroys the partial overlay object, leaves `battleResultOverlay` as `null`, and allows `StartBattle()` to continue.
+- This restores the normal startup refresh path: player/enemy creation, panel initialization, deck loading, initial hand draw, `RefreshUi()`, card view binding, enemy HP display, player HP display, and `ROUND` / turn display updates.
+- The result overlay does not create `TextMeshProUGUI`, `TMP_FontAsset`, or any TMP runtime object, so Play Mode does not open the TMP Importer or try to import TMP Essentials.
+- `StartBattle()` still calls `BattleResultOverlay.HideImmediate()` when the overlay exists, keeping the result root inactive with alpha `0`, `interactable = false`, and `blocksRaycasts = false`.
+- If victory occurs and the overlay is missing because startup construction failed, `ShowBattleResult()` attempts to rebuild it from the stored BattleScene Canvas root before displaying the result.
+- Normal Battle UI and Result UI remain separated under the same Canvas. The result overlay is hidden during battle and moved to the front only when shown after victory.
+
+TMP Importer safety:
+
+- TMP Essentials are treated as an Editor-side manual setup step, not a runtime dependency.
+- The result overlay uses Unity standard `Text`, `Image`, `Button`, `CanvasGroup`, `RectMask2D`, and `AspectRatioFitter`.
+- If TMP Essentials are not imported, the result overlay still displays because it does not touch TMP APIs.
+- This prevents `Cannot import package in play mode` from being triggered by the battle result UI.
+
+Battle result records:
+
+- `BattleResultData.isBossBattle`: derived from the active `EnemyType` via `EnemyAI.IsBoss()`.
+- `BattleResultData.victoryTurn`: the current BattleScene `ROUND` value when victory is detected.
+- `BattleResultData.playerDamageTakenCount`: increments only when the player's HP actually decreases.
+- `BattleResultData.maxSimultaneousDefeatCount`: stores the largest defeat batch size. Current single-enemy battles record up to `1`; the tracker already accepts larger future batch values.
+- `BattleResultData.huntingLevel`: calculated by `HuntingLevelEvaluator`.
+
+Damage taken count rules:
+
+- Enemy attacks count only when HP decreases after Guard.
+- Poison and Magma panel damage also count when they reduce player HP.
+- Damage `0` and fully guarded damage do not count.
+
+Normal enemy hunting level:
+
+- `S`: victory on turn 1, or 2+ simultaneous defeats by turn 2.
+- `A`: victory on turn 2, or player damage taken exactly 1 time.
+- `B`: victory on turn 3 or later, or player damage taken 2+ times.
+- `S` is prioritized when its condition is met. After that, `B` downgrade conditions are checked before `A` so 2+ damage taken remains `B`.
+
+Boss hunting level:
+
+- `S`: victory within 3 turns.
+- `A`: victory on turn 4, or player damage taken exactly 3 times.
+- `B`: victory on turn 5 or later, or player damage taken 4+ times. Damage taken 6+ times is also `B`.
+- `S` is prioritized when its condition is met. After that, `B` downgrade conditions are checked before `A`.
+
+Temporary rewards:
+
+- Current MVP displays one random reward card name only. Credits, rates, damage count, turn count, and long reward descriptions are hidden from the result panel for now.
+
+- `S`: randomly displays one of `フリーズ`, `バーナーブレス`, or `テッキュウナゲ`.
+- `A`: randomly displays one of `仮カード`, `アクアショット`, or `フリーズ`.
+- `B`: randomly displays one of `仮カード`, `アクアショット`, or `テッキュウナゲ`.
+- Rewards are display-only for now; no inventory, credit wallet, or card acquisition storage is updated yet.
+- The reward card image is a temporary ChatGPT Image 2 generated asset.
+
+Result buttons:
+
+- `もう一度戦う`: restarts the current BattleScene battle state with the current enemy type and initial Accel Gauge baseline.
+- `メニューへ戻る`: loads `MenuScene`.
+
+Battle result manual checks:
+
+1. Open `Assets/Scenes/BattleScene.unity` and enter Play Mode.
+2. Defeat a normal enemy and confirm the result overlay appears over the BattleScene instead of changing scenes.
+3. Confirm the overlay fades in after a short wait and one reward line fades in inside the lower reward frame.
+4. Defeat a normal enemy on round 1 and confirm hunting level `S`.
+5. Defeat a normal enemy on round 2 and confirm hunting level `A` if damage taken is below 2.
+6. Defeat a normal enemy on round 3 or later and confirm hunting level `B`.
+7. Take player HP damage 2+ times in a normal battle and confirm the result is `B` unless an `S` condition was met.
+8. Use the debug enemy selector to apply `Stage1Boss`.
+9. Defeat `Stage1Boss` within 3 rounds and confirm hunting level `S`.
+10. Defeat `Stage1Boss` on round 4 and confirm hunting level `A` if damage taken is below 4.
+11. Take player HP damage 4+ times in a boss battle and confirm the result is `B` unless an `S` condition was met.
+12. Confirm `NORMAL BATTLE`, `DAMAGE TAKEN`, `TURN`, `RESULT`, `WIN`, and `GET DATA` are not displayed on the result overlay.
+13. Confirm the upper large frame contains only `HUNTING LEVEL` and the `S` / `A` / `B` rank.
+14. Confirm `HUNTING LEVEL` and the rank look vertically centered in the upper frame and do not touch the decorative border.
+15. Confirm the lower frame contains only the reward card name, the reward card name is vertically centered, and it fades in.
+16. Confirm the reward icon is slightly larger than before, centered in the lower-right icon frame, and keeps its aspect ratio.
+17. Resize the Game view within 16:9 sizes and confirm the background image keeps its aspect ratio and Unity text stays aligned to the frame.
+18. Press `もう一度戦う` and confirm BattleScene restarts without breaking cards, special panels, attack prediction, Accel Gauge, or deck handling.
+19. Press `メニューへ戻る` and confirm `MenuScene` loads.
+
+Changed files for battle result:
+
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/BattleResultData.cs`
+- `Assets/Scripts/BattleStatsTracker.cs`
+- `Assets/Scripts/HuntingLevelEvaluator.cs`
+- `Assets/Scripts/BattleResultOverlay.cs`
+- `Assets/Resources/UI/BattleResult.meta`
+- `Assets/Resources/UI/BattleResult/ResultPanel.png`
+- `Assets/Resources/UI/BattleResult/ResultPanel.png.meta`
+- `Assets/Resources/UI/BattleResult/RewardCard.png`
+- `Assets/Resources/UI/BattleResult/RewardCard.png.meta`
+- `Assets/Scripts/BattleResultData.cs.meta`
+- `Assets/Scripts/BattleStatsTracker.cs.meta`
+- `Assets/Scripts/HuntingLevelEvaluator.cs.meta`
+- `Assets/Scripts/BattleResultOverlay.cs.meta`
+- `README.md`
+
+Battle result items not implemented yet:
+
+- Real reward grant/storage.
+- Reward rarity rolls.
+- Multiple enemy UI and target selection.
+- Multi-enemy simultaneous defeat detection beyond the tracker API.
+- Result sound effects and production animation polish.
+
+Battle result startup repair notes:
+
+- Cause investigated: `BuildUi()` creates the normal battle UI first, then calls `BuildBattleResultOverlay()`, and `Awake()` calls `StartBattle()` only after `BuildUi()` returns.
+- Because of that order, any exception while building the result overlay can stop before `StartBattle()`, leaving generated UI frames visible but preventing player HP, enemy display, enemy HP, hand cards, and `ROUND` / turn text from being populated by `RefreshUi()`.
+- The result overlay build is now isolated with exception handling so normal BattleScene initialization continues even if result UI setup fails.
+- Victory still calls `ShowBattleResult()`. If the result overlay was not available at startup, it is rebuilt from the stored BattleScene Canvas root before display.
+- The result overlay starts hidden and non-interactive: inactive root, alpha `0`, `interactable = false`, and `blocksRaycasts = false`.
+- Current result display fields are `HUNTING LEVEL`, `S` / `A` / `B`, one random reward card name, `もう一度戦う`, and `メニューへ戻る`.
+- The normal battle UI and result UI remain separate. Hiding or rebuilding `ResultOverlayRoot` does not clear CardView, EnemyView, player HP, enemy HP, or round/turn text.
+- Verification focus: after entering BattleScene Play Mode, confirm player HP `180`, Accel Gauge, action gauge, `ROUND: 1` / `PLAYER TURN`, player cell, normal enemy HP `70`, card names, card values, and attribute icons appear before any result overlay is shown.
 ## Script Structure
 
 `BattleMvpController.cs` was replaced by the following split structure. `BattleScene` keeps the same script GUID through `BattleManager.cs`, so it can still be opened and played directly.
 
 - `BattleManager.cs`: Scene entry point, 3x3 grid UI, queued player actions, Clear Card action-point handling, Charge damage bonus, attack prediction interrupt handling, Accel Gauge, card range resolution, basic movement commands, action count, turn handling, and victory/defeat checks.
+- `BattleResultData.cs`: Battle result DTO with boss flag, victory turn, damage taken count, simultaneous defeat count, and hunting level.
+- `BattleStatsTracker.cs`: Runtime battle stat recording for player damage taken and max simultaneous enemy defeats.
+- `HuntingLevelEvaluator.cs`: Normal enemy and boss enemy hunting level evaluation rules.
+- `BattleResultOverlay.cs`: Runtime-generated result overlay UI, Unity standard Text safe-area layout, fade sequence, reward card name reveal, retry button, and menu button.
 - `CharacterUnit.cs`: Player/enemy HP, capped Guard, damage, healing, `GridSide`, and `BattleGridPosition`.
 - `CardData.cs`: ScriptableObject card definitions, deck type, Clear Card flag, attributes, card metadata, and starter deck loading.
 - `DeckManager.cs`: Card instances, shuffled draw pile, hand, discard pile, draw-to-limit, and discard recycling.
@@ -625,6 +1130,7 @@ Removed files:
 25. Confirm that BattleScene does not show the battle log UI.
 26. Confirm that enemy HP appears as a number above the enemy unit.
 27. Move the enemy through enemy actions if possible and confirm the enemy HP number follows the enemy cell.
+    - Confirm that the current enemy name is shown in the top-right battle UI area.
 28. Confirm that hand cards do not show `[N]`, `[HC]`, `[G]`, or `[CLEAR]` text.
 29. Confirm that N cards are pale gray, HC cards are sky blue, G cards are pale red, and Clear Cards are pale green with an edge strip.
 30. Confirm that hand cards show only card name, value, and a mini attribute icon.
@@ -681,6 +1187,25 @@ Removed files:
 81. Confirm that a Frozen unit skips its turn and clears Frozen on the second skipped frozen turn.
 82. Temporarily set a test attack card to Break, use it on a Frozen unit, and confirm damage is doubled and Frozen is cleared.
 83. Put a Hole panel in a ground attack route and confirm the attack stops at the hole.
+    Debug panel checks:
+    - Confirm that only the small `DEBUG` button appears initially in BattleScene while running in Editor or Development builds.
+    - Press the `DEBUG` button and confirm that `DEBUG PANEL` appears.
+    - Press the `DEBUG` button again and confirm that `DEBUG PANEL` closes.
+    - Press the `X` button inside the panel and confirm that `DEBUG PANEL` closes.
+    - Select each `PanelType` button and confirm the `Selected:` line updates.
+    - Click player-side and enemy-side panels and confirm they change to the selected panel type immediately.
+    - Confirm that panel changes are written to the Console with `Debug:` logs.
+    - Press `All Normal` and confirm every panel returns to `Normal`.
+    - Press `All Types` and confirm all special panel colors appear on the field.
+    - Press each focused preset button and confirm the layout changes.
+    - Press `Reset Battle State` and confirm all panels become `Normal`, while units, HP, hand, discard, round, turn, action queue, prediction state, and Accel Gauge return to battle-start state.
+    - Press F1 and confirm the debug panel hides/shows.
+    - Press F2 and confirm the selected `PanelType` cycles.
+    - Use the `ENEMY DEBUG` `<` / `>` buttons and confirm the selected enemy profile changes.
+    - Press `Apply Enemy` for `NormalEnemy`, `FireEnemy`, `GrassEnemy`, `IceEnemy`, `HeavyEnemy`, `FloatingEnemy`, and `Stage1Boss`, and confirm the enemy HP number updates to 70, 90, 80, 80, 150, 70, and 300 respectively.
+    - Confirm `FireEnemy` ignores Frozen and heals from Magma, `GrassEnemy` heals on Grass at turn start, `FloatingEnemy` can enter Hole panels, and `Stage1Boss` takes 2 actions.
+    - Apply a non-default enemy, press `Reset Battle State`, and confirm the same enemy type remains active.
+    - Set `showDebugPanelTools` false on `BattleManager` and confirm the `DEBUG` button and full debug panel stay hidden.
 84. Open `Assets/Scenes/DeckBuildScene.unity`.
 85. Enter Play Mode and confirm that all deck builder text is sharper and easier to read.
 86. Confirm that `NEON CARDIA - デッキビルドMVP` is not shown.
@@ -719,7 +1244,7 @@ Removed files:
 - Additional status effects beyond the temporary Frozen MVP, plus full buff/debuff UI.
 - Dedicated Water and Break card assets in the default deck.
 - Animations, sound effects, card art, and polish.
-- Card acquisition, rewards, multiple deck slots, ability-based HC/G limit increases, and post-battle flow.
+- Real card acquisition, reward storage, multiple deck slots, ability-based HC/G limit increases, and full post-battle progression flow.
 - Dedicated Clear Card deck-building limits or advanced Clear Card-specific rules.
 - Production-quality deck builder scrolling, filtering, sorting, and card-detail UI.
 - Automated tests.

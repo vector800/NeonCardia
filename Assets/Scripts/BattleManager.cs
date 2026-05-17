@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public sealed class BattleManager : MonoBehaviour
@@ -11,8 +12,11 @@ public sealed class BattleManager : MonoBehaviour
     private const int MaxHandSize = 5;
     private const int MaxPlayerActions = 3;
     private const int MaxAccelGauge = 100;
+    private const int WeaponPower = 10;
     private const int PlayerSideIndex = 0;
     private const int EnemySideIndex = 1;
+    private const string WeaponDisplayName = "ウエポン";
+    private const CardAttribute WeaponAttribute = CardAttribute.Neutral;
     private static int previousBattleAccelGauge;
 
     [SerializeField] private List<CardData> starterDeck = new List<CardData>();
@@ -21,15 +25,18 @@ public sealed class BattleManager : MonoBehaviour
     [SerializeField] private UnitElement enemyElement = UnitElement.Neutral;
     [SerializeField] private bool playerHasFloatAbility;
     [SerializeField] private bool enemyHasFloatAbility;
+    [SerializeField] private bool showDebugPanelTools = true;
 
     private readonly IAttackPredictionChanceProvider predictionChanceProvider = new TestAttackPredictionChanceProvider();
     private readonly List<CardView> cardViews = new List<CardView>();
     private readonly List<Button> moveButtons = new List<Button>();
     private readonly List<QueuedBattleAction> actionQueue = new List<QueuedBattleAction>();
+    private readonly List<GameObject> actionQueueItemObjects = new List<GameObject>();
     private readonly Image[,,] gridSlots = new Image[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly Text[,,] gridLabels = new Text[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly PanelType[,,] panelTypes = new PanelType[2, BattleGridPosition.GridSize, BattleGridPosition.GridSize];
     private readonly List<BattleGridPosition> previewCells = new List<BattleGridPosition>();
+    private readonly BattleStatsTracker battleStatsTracker = new BattleStatsTracker();
 
     private Font uiFont;
     private CharacterUnit player;
@@ -48,30 +55,39 @@ public sealed class BattleManager : MonoBehaviour
     private EnemyBattleAction pendingEnemyAttack;
     private CardAttribute currentPlayerAttackAttribute = CardAttribute.Neutral;
     private bool resolvingAttackPathEffects;
+    private int battleStartAccelGauge;
     private CharacterUnit currentPlayerAttackTarget;
     private PanelType currentPlayerAttackTargetPanelBeforePath;
 
     private Text playerHpText;
     private Text enemyHpText;
+    private Text enemyNameText;
     private Text positionText;
     private Text statusText;
     private Text actionCountText;
     private Text actionQueueText;
+    private RectTransform actionQueueRoot;
     private Text enemyPlanText;
     private Text predictionText;
     private Text rangeText;
     private Text deckText;
     private Text logText;
     private CardHoverDetailView cardHoverDetailView;
+    private AttackEffectPlayer attackEffectPlayer;
     private AccelGaugeUI accelGaugeUI;
+    private BattleDebugPanelController debugPanelController;
+    private BattleResultOverlay battleResultOverlay;
+    private Transform battleCanvasRoot;
     private Button confirmButton;
     private Button resetSelectionButton;
+    private Button weaponButton;
     private readonly List<Image> actionPips = new List<Image>();
 
     private enum QueuedActionType
     {
         Card,
-        Move
+        Move,
+        Weapon
     }
 
     private sealed class QueuedBattleAction
@@ -90,6 +106,13 @@ public sealed class BattleManager : MonoBehaviour
             MoveDirection = direction;
             DisplayName = displayName;
             ConsumesAction = true;
+        }
+
+        public QueuedBattleAction(string displayName)
+        {
+            Type = QueuedActionType.Weapon;
+            DisplayName = displayName;
+            ConsumesAction = false;
         }
 
         public QueuedActionType Type { get; private set; }
@@ -202,10 +225,18 @@ public sealed class BattleManager : MonoBehaviour
         return InputActionReference.Create(action);
     }
 
-    private void StartBattle()
+    private void StartBattle(int? overrideAccelGauge = null, bool captureInitialState = true)
     {
+        if (battleResultOverlay != null)
+        {
+            battleResultOverlay.HideImmediate();
+        }
+
+        battleStatsTracker.Reset();
         player = new CharacterUnit(BattleText.PlayerName, 180, new BattleGridPosition(GridSide.Player, 1, 1));
         enemy = new CharacterUnit(BattleText.EnemyName, EnemyAI.GetMaxHp(enemyType), new BattleGridPosition(GridSide.Enemy, 1, 1));
+        enemyElement = EnemyAI.GetElement(enemyType);
+        enemyHasFloatAbility = EnemyAI.HasFloatAbility(enemyType);
         player.Element = playerElement;
         enemy.Element = enemyElement;
         player.HasFloatAbility = playerHasFloatAbility;
@@ -214,12 +245,26 @@ public sealed class BattleManager : MonoBehaviour
         predictionActive = false;
         currentRound = 1;
         remainingPlayerActions = MaxPlayerActions;
-        accelGauge = previousBattleAccelGauge >= 50 ? 50 : 0;
+        accelGauge = overrideAccelGauge.HasValue ? Mathf.Clamp(overrideAccelGauge.Value, 0, MaxAccelGauge) : (previousBattleAccelGauge >= 50 ? 50 : 0);
+        if (captureInitialState)
+        {
+            battleStartAccelGauge = accelGauge;
+        }
+
         enemyActionsRemaining = 0;
         enemyActionIndex = 0;
         pendingPlayerAttackBonus = 0;
         pendingEnemyAttack = null;
+        currentPlayerAttackAttribute = CardAttribute.Neutral;
+        resolvingAttackPathEffects = false;
+        currentPlayerAttackTarget = null;
+        currentPlayerAttackTargetPanelBeforePath = PanelType.Normal;
         actionQueue.Clear();
+        previewCells.Clear();
+        if (cardHoverDetailView != null)
+        {
+            cardHoverDetailView.Hide();
+        }
 
         battleLog = new BattleLog(10);
         enemyAI = new EnemyAI(enemyType);
@@ -280,19 +325,6 @@ public sealed class BattleManager : MonoBehaviour
                 }
             }
         }
-
-        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 0), PanelType.Cracked);
-        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 2), PanelType.Ice);
-        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 0), PanelType.Grass);
-        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 1), PanelType.Magma);
-        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 2), PanelType.Poison);
-
-        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 0), PanelType.Hole);
-        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 2), PanelType.Cracked);
-        SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 2), PanelType.Ice);
-        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 0), PanelType.Grass);
-        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 1), PanelType.Magma);
-        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 2), PanelType.Poison);
     }
 
     private PanelType GetPanelType(BattleGridPosition position)
@@ -308,6 +340,169 @@ public sealed class BattleManager : MonoBehaviour
         }
 
         panelTypes[GetSideIndex(position.Side), position.Row, position.Column] = panelType;
+    }
+
+    private void ApplyStagePanelChange(PanelType panelType)
+    {
+        if (attackEffectPlayer != null)
+        {
+            attackEffectPlayer.PlayStageEffect(EffectAssetResolver.GetStageEffect(panelType));
+        }
+
+        for (int side = 0; side < 2; side++)
+        {
+            for (int row = 0; row < BattleGridPosition.GridSize; row++)
+            {
+                for (int column = 0; column < BattleGridPosition.GridSize; column++)
+                {
+                    SetPanelType(new BattleGridPosition((GridSide)side, row, column), panelType);
+                }
+            }
+        }
+
+        battleLog.Add("すべてのパネルを" + GetPanelTypeDisplayName(panelType) + "に変更しました。");
+        Debug.Log("Debug: Stage card changed all panels to " + panelType + ".");
+
+        if (panelType == PanelType.Magma)
+        {
+            ApplyImmediateMagmaStageEffects();
+        }
+
+        RefreshGrid();
+    }
+
+    private void ApplyImmediateMagmaStageEffects()
+    {
+        ApplyMagmaPanelEffectToCurrentPosition(player);
+        ApplyMagmaPanelEffectToCurrentPosition(enemy);
+        CheckBattleEnd();
+    }
+
+    private void ApplyMagmaPanelEffectToCurrentPosition(CharacterUnit unit)
+    {
+        if (unit == null || unit.IsDefeated || GetPanelType(unit.Position) != PanelType.Magma)
+        {
+            return;
+        }
+
+        ApplyArrivalPanelEffect(unit, unit.Position);
+    }
+
+    public void DebugSetPanelType(BattleGridPosition position, PanelType panelType)
+    {
+        SetPanelType(position, panelType);
+        Debug.Log("Debug: Panel (" + position.Side + ", row " + position.Row + ", col " + position.Column + ") changed to " + panelType);
+        RefreshGrid();
+    }
+
+    public void DebugApplyPanelPreset(PanelDebugPreset preset)
+    {
+        ResetAllPanelsToNormal();
+
+        switch (preset)
+        {
+            case PanelDebugPreset.CrackedTest:
+                SetPanelType(new BattleGridPosition(GridSide.Player, 1, 0), PanelType.Cracked);
+                SetPanelType(new BattleGridPosition(GridSide.Player, 1, 2), PanelType.Cracked);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 0), PanelType.Cracked);
+                break;
+            case PanelDebugPreset.HoleTest:
+                SetPanelType(new BattleGridPosition(GridSide.Player, 1, 2), PanelType.Hole);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 0), PanelType.Hole);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 0), PanelType.Hole);
+                break;
+            case PanelDebugPreset.IceTest:
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, enemy.Position.Row, enemy.Position.Column), PanelType.Ice);
+                SetPanelType(new BattleGridPosition(GridSide.Player, 0, 2), PanelType.Ice);
+                break;
+            case PanelDebugPreset.GrassTest:
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 0), PanelType.Grass);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 1), PanelType.Grass);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 2), PanelType.Grass);
+                break;
+            case PanelDebugPreset.MagmaTest:
+                SetPanelType(new BattleGridPosition(GridSide.Player, 2, 1), PanelType.Magma);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 0), PanelType.Magma);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 1), PanelType.Magma);
+                break;
+            case PanelDebugPreset.PoisonTest:
+                SetPanelType(player.Position, PanelType.Poison);
+                SetPanelType(new BattleGridPosition(GridSide.Enemy, 1, 0), PanelType.Poison);
+                SetPanelType(new BattleGridPosition(GridSide.Player, 0, 1), PanelType.Poison);
+                break;
+            case PanelDebugPreset.AllTypes:
+                ApplyAllTypesPanelLayout();
+                break;
+        }
+
+        Debug.Log("Debug: Applied panel preset " + preset);
+        RefreshGrid();
+    }
+
+    public void DebugResetBattleToInitialState()
+    {
+        StartBattle(battleStartAccelGauge, false);
+        ResetAllPanelsToNormal();
+        RefreshGrid();
+        Debug.Log("Debug: Battle state reset to initial state.");
+    }
+
+    public void DebugChangeEnemyType(EnemyType newEnemyType)
+    {
+        enemyType = newEnemyType;
+        StartBattle(battleStartAccelGauge, false);
+        Debug.Log("Debug: Enemy type changed to " + EnemyAI.GetDisplayName(enemyType) + ".");
+    }
+
+    public EnemyType DebugGetEnemyType()
+    {
+        return enemyType;
+    }
+
+    public string DebugGetEnemySummary(EnemyType targetEnemyType)
+    {
+        return EnemyAI.GetDebugSummary(targetEnemyType);
+    }
+
+    private void ResetAllPanelsToNormal()
+    {
+        for (int side = 0; side < 2; side++)
+        {
+            for (int row = 0; row < BattleGridPosition.GridSize; row++)
+            {
+                for (int column = 0; column < BattleGridPosition.GridSize; column++)
+                {
+                    panelTypes[side, row, column] = PanelType.Normal;
+                }
+            }
+        }
+
+        Debug.Log("Debug: All panels reset to Normal");
+    }
+
+    private void ApplyAllTypesPanelLayout()
+    {
+        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 0), PanelType.Cracked);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 1), PanelType.Hole);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 0, 2), PanelType.Ice);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 0), PanelType.Grass);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 1), PanelType.Magma);
+        SetPanelType(new BattleGridPosition(GridSide.Player, 2, 2), PanelType.Poison);
+
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 0), PanelType.Hole);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 1), PanelType.Ice);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 0, 2), PanelType.Cracked);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 0), PanelType.Grass);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 1), PanelType.Magma);
+        SetPanelType(new BattleGridPosition(GridSide.Enemy, 2, 2), PanelType.Poison);
+    }
+
+    private void HandleDebugPanelCellClicked(BattleGridPosition position)
+    {
+        if (debugPanelController != null)
+        {
+            debugPanelController.HandlePanelClicked(position);
+        }
     }
 
     private void PlayCard(int handIndex)
@@ -378,6 +573,42 @@ public sealed class BattleManager : MonoBehaviour
         return false;
     }
 
+    private bool IsWeaponQueued()
+    {
+        for (int i = 0; i < actionQueue.Count; i++)
+        {
+            if (actionQueue[i].Type == QueuedActionType.Weapon)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void HandleWeaponCommand()
+    {
+        if (battleEnded || predictionActive)
+        {
+            return;
+        }
+
+        if (IsWeaponQueued())
+        {
+            battleLog.Add("ウエポンは1ターンに1回までです。");
+            Debug.Log("Debug: Weapon command can only be queued once per player turn.");
+            RefreshUi();
+            return;
+        }
+
+        actionQueue.Add(new QueuedBattleAction(WeaponDisplayName));
+        remainingPlayerActions = GetRemainingPlayerActions();
+        battleLog.Add("ウエポンを行動キューに追加しました。");
+        Debug.Log("Debug: Weapon command queued.");
+        ClearPreview();
+        RefreshUi();
+    }
+
     private bool TryResolveCard(CardData card, out string failureMessage, bool predictionAction = false)
     {
         switch (card.Effect)
@@ -389,6 +620,7 @@ public sealed class BattleManager : MonoBehaviour
                 TryGetDamageTarget(card, out target);
                 resolvingAttackPathEffects = false;
                 battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
+                PlayCardAttackPresentation(card, target);
                 int attackBonus = pendingPlayerAttackBonus;
                 int damage = card.Power + attackBonus;
                 if (attackBonus > 0)
@@ -446,6 +678,47 @@ public sealed class BattleManager : MonoBehaviour
                 battleLog.Add("次の攻撃カードのダメージ +" + card.Power + "。");
                 failureMessage = string.Empty;
                 return true;
+            case CardEffectType.Freeze:
+                currentPlayerAttackAttribute = card.Attribute;
+                resolvingAttackPathEffects = true;
+                CharacterUnit freezeTarget;
+                TryGetDamageTarget(card, out freezeTarget);
+                resolvingAttackPathEffects = false;
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
+                PlayCardAttackPresentation(card, freezeTarget);
+                if (freezeTarget == null)
+                {
+                    battleLog.Add("しかし攻撃範囲内に敵はいなかった。");
+                    battleLog.Add(card.Name + "は空振りした。");
+                    failureMessage = string.Empty;
+                    return true;
+                }
+
+                if (freezeTarget.ApplyFrozen())
+                {
+                    battleLog.Add(freezeTarget.Name + "を凍結状態にした。");
+                    Debug.Log("Debug: " + card.Name + " applied Frozen to " + freezeTarget.Name + ".");
+                }
+                else
+                {
+                    battleLog.Add(freezeTarget.Name + "は炎属性のため凍結しなかった。");
+                    Debug.Log("Debug: " + card.Name + " did not freeze " + freezeTarget.Name + " because the target is Fire element.");
+                }
+
+                currentPlayerAttackTarget = null;
+                currentPlayerAttackTargetPanelBeforePath = PanelType.Normal;
+                failureMessage = string.Empty;
+                return true;
+            case CardEffectType.StageChange:
+                battleLog.Add(predictionAction ? "プレイヤーは予測行動で" + card.Name + "を使用。" : "プレイヤーは" + card.Name + "を使用。");
+                if (attackEffectPlayer != null)
+                {
+                    attackEffectPlayer.ShowCardName(card.Name);
+                }
+
+                ApplyStagePanelChange(card.TargetPanelType);
+                failureMessage = string.Empty;
+                return true;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -454,6 +727,7 @@ public sealed class BattleManager : MonoBehaviour
     private void DealDamageToEnemy(CharacterUnit target, int damage)
     {
         damage = CalculatePanelAdjustedDamage(target, damage, currentPlayerAttackAttribute);
+        bool wasDefeated = target.IsDefeated;
         int blocked;
         int actualDamage = target.TakeDamage(damage, out blocked);
         if (blocked > 0)
@@ -465,8 +739,28 @@ public sealed class BattleManager : MonoBehaviour
             battleLog.Add("エネミーに" + actualDamage + "ダメージ。");
         }
 
+        if (attackEffectPlayer != null)
+        {
+            attackEffectPlayer.PlayDamagePopup(target.Position, actualDamage);
+        }
+
+        RecordDamageResult(target, wasDefeated, actualDamage);
         currentPlayerAttackTarget = null;
         currentPlayerAttackTargetPanelBeforePath = PanelType.Normal;
+    }
+
+    private void PlayCardAttackPresentation(CardData card, CharacterUnit target)
+    {
+        if (attackEffectPlayer == null || card == null)
+        {
+            return;
+        }
+
+        attackEffectPlayer.ShowCardName(card.Name);
+        if (target != null)
+        {
+            attackEffectPlayer.PlayEffectAtPanel(EffectAssetResolver.GetHitEffect(card.Attribute), target.Position);
+        }
     }
 
     private int CalculatePanelAdjustedDamage(CharacterUnit target, int baseDamage, CardAttribute attribute)
@@ -528,6 +822,15 @@ public sealed class BattleManager : MonoBehaviour
             case CardTargetPattern.Row:
                 target = enemy.Position.Row == player.Position.Row ? enemy : null;
                 break;
+            case CardTargetPattern.ForwardSingle:
+                target = IsEnemyInSameForwardRow(enemy) ? enemy : null;
+                break;
+            case CardTargetPattern.ForwardLine3:
+                target = IsEnemyWithinForwardDistance(enemy, 3) ? enemy : null;
+                break;
+            case CardTargetPattern.ForwardExactly3:
+                target = IsEnemyAtForwardDistance(enemy, 3) ? enemy : null;
+                break;
             case CardTargetPattern.SingleTarget:
                 target = enemy;
                 break;
@@ -551,6 +854,22 @@ public sealed class BattleManager : MonoBehaviour
         return target != null;
     }
 
+    private bool TryGetWeaponTarget(out CharacterUnit target)
+    {
+        target = enemy.Position.Row == player.Position.Row ? enemy : null;
+        currentPlayerAttackTarget = target;
+        currentPlayerAttackTargetPanelBeforePath = target != null ? GetPanelType(target.Position) : PanelType.Normal;
+
+        List<BattleGridPosition> attackPath = BuildPlayerSameRowAttackPath(target);
+        if (ApplyAttackPathPanelEffects(WeaponAttribute, AttackTravelType.Ground, attackPath))
+        {
+            target = null;
+            currentPlayerAttackTarget = null;
+        }
+
+        return target != null;
+    }
+
     private List<BattleGridPosition> BuildPlayerAttackPath(CardData card, CharacterUnit target)
     {
         List<BattleGridPosition> path = new List<BattleGridPosition>();
@@ -559,16 +878,12 @@ public sealed class BattleManager : MonoBehaviour
         {
             case CardTargetPattern.SameRowNearestEnemy:
             case CardTargetPattern.Row:
-                for (int column = player.Position.Column + 1; column < BattleGridPosition.GridSize; column++)
-                {
-                    path.Add(new BattleGridPosition(GridSide.Player, player.Position.Row, column));
-                }
-
-                int maxColumn = target != null && target.Position.Side == GridSide.Enemy ? target.Position.Column : BattleGridPosition.GridSize - 1;
-                for (int column = 0; column <= maxColumn; column++)
-                {
-                    path.Add(new BattleGridPosition(GridSide.Enemy, player.Position.Row, column));
-                }
+            case CardTargetPattern.ForwardSingle:
+                path.AddRange(BuildPlayerSameRowAttackPath(target));
+                break;
+            case CardTargetPattern.ForwardLine3:
+            case CardTargetPattern.ForwardExactly3:
+                path.AddRange(BuildPlayerForwardPath(3));
                 break;
             case CardTargetPattern.ForwardOnePanel:
                 if (player.Position.Column < BattleGridPosition.GridSize - 1)
@@ -599,6 +914,38 @@ public sealed class BattleManager : MonoBehaviour
                     path.Add(target.Position);
                 }
                 break;
+        }
+
+        return path;
+    }
+
+    private List<BattleGridPosition> BuildPlayerSameRowAttackPath(CharacterUnit target)
+    {
+        List<BattleGridPosition> path = new List<BattleGridPosition>();
+        for (int column = player.Position.Column + 1; column < BattleGridPosition.GridSize; column++)
+        {
+            path.Add(new BattleGridPosition(GridSide.Player, player.Position.Row, column));
+        }
+
+        int maxColumn = target != null && target.Position.Side == GridSide.Enemy ? target.Position.Column : BattleGridPosition.GridSize - 1;
+        for (int column = 0; column <= maxColumn; column++)
+        {
+            path.Add(new BattleGridPosition(GridSide.Enemy, player.Position.Row, column));
+        }
+
+        return path;
+    }
+
+    private List<BattleGridPosition> BuildPlayerForwardPath(int distance)
+    {
+        List<BattleGridPosition> path = new List<BattleGridPosition>();
+        for (int i = 1; i <= distance; i++)
+        {
+            BattleGridPosition position;
+            if (TryGetPlayerForwardPosition(i, out position))
+            {
+                path.Add(position);
+            }
         }
 
         return path;
@@ -790,8 +1137,15 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
+        bool wasDefeated = unit.IsDefeated;
         int actualDamage = unit.TakeDirectDamage(50);
         battleLog.Add(unit.Name + "はマグマパネルで" + actualDamage + "ダメージを受けました。");
+        if (attackEffectPlayer != null)
+        {
+            attackEffectPlayer.PlayDamagePopup(unit.Position, actualDamage);
+        }
+
+        RecordDamageResult(unit, wasDefeated, actualDamage);
     }
 
     private void HandleMoveCommand(MoveDirection direction)
@@ -876,6 +1230,54 @@ public sealed class BattleManager : MonoBehaviour
         return player.Position.Column == BattleGridPosition.GridSize - 1 && target.Position.Column == 0;
     }
 
+    private bool IsEnemyInSameForwardRow(CharacterUnit target)
+    {
+        return target.Position.Side == GridSide.Enemy && target.Position.Row == player.Position.Row && GetGlobalColumn(target.Position) > GetGlobalColumn(player.Position);
+    }
+
+    private bool IsEnemyWithinForwardDistance(CharacterUnit target, int distance)
+    {
+        if (!IsEnemyInSameForwardRow(target))
+        {
+            return false;
+        }
+
+        int delta = GetGlobalColumn(target.Position) - GetGlobalColumn(player.Position);
+        return delta >= 1 && delta <= distance;
+    }
+
+    private bool IsEnemyAtForwardDistance(CharacterUnit target, int distance)
+    {
+        return IsEnemyInSameForwardRow(target) && GetGlobalColumn(target.Position) - GetGlobalColumn(player.Position) == distance;
+    }
+
+    private static int GetGlobalColumn(BattleGridPosition position)
+    {
+        return position.Side == GridSide.Player ? position.Column : BattleGridPosition.GridSize + position.Column;
+    }
+
+    private bool TryGetPlayerForwardPosition(int distance, out BattleGridPosition position)
+    {
+        int globalColumn = GetGlobalColumn(player.Position) + distance;
+        int maxGlobalColumn = BattleGridPosition.GridSize * 2 - 1;
+        if (globalColumn < 0 || globalColumn > maxGlobalColumn)
+        {
+            position = new BattleGridPosition(GridSide.Player, -1, -1);
+            return false;
+        }
+
+        if (globalColumn < BattleGridPosition.GridSize)
+        {
+            position = new BattleGridPosition(GridSide.Player, player.Position.Row, globalColumn);
+        }
+        else
+        {
+            position = new BattleGridPosition(GridSide.Enemy, player.Position.Row, globalColumn - BattleGridPosition.GridSize);
+        }
+
+        return position.IsValid;
+    }
+
     private bool IsAroundSelf(BattleGridPosition targetPosition)
     {
         if (targetPosition.Side != player.Position.Side)
@@ -943,6 +1345,12 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
+        if (action.Type == QueuedActionType.Weapon)
+        {
+            ResolveWeaponCommand();
+            return;
+        }
+
         if (action.Card == null || action.Card.Data == null)
         {
             battleLog.Add("カードを解決できませんでした。");
@@ -973,6 +1381,31 @@ public sealed class BattleManager : MonoBehaviour
         }
 
         TryMoveUnitTo(player, destination, GetMoveCommandLog(direction));
+    }
+
+    private void ResolveWeaponCommand()
+    {
+        battleLog.Add("プレイヤーはウエポンを使用。");
+        currentPlayerAttackAttribute = WeaponAttribute;
+
+        CharacterUnit target;
+        if (!TryGetWeaponTarget(out target))
+        {
+            battleLog.Add("しかし攻撃範囲内に敵はいなかった。");
+            battleLog.Add("ウエポンは空振りした。");
+            currentPlayerAttackTarget = null;
+            currentPlayerAttackTargetPanelBeforePath = PanelType.Normal;
+            Debug.Log("Debug: Weapon command missed.");
+            return;
+        }
+
+        if (attackEffectPlayer != null)
+        {
+            attackEffectPlayer.PlayEffectAtPanel(BattleEffectType.WeaponHit, target.Position);
+        }
+
+        DealDamageToEnemy(target, WeaponPower);
+        Debug.Log("Debug: Weapon command dealt " + WeaponPower + " neutral damage.");
     }
 
     private void ResetQueuedActions()
@@ -1102,12 +1535,18 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
+        if (attackEffectPlayer != null)
+        {
+            attackEffectPlayer.PlayEffectAtPanel(BattleEffectType.EnemyHit, player.Position);
+        }
+
         DealDamageToPlayer(attackAction.Damage);
     }
 
     private void DealDamageToPlayer(int damage)
     {
         damage = CalculatePanelAdjustedDamage(player, damage, CardAttribute.Neutral);
+        bool wasDefeated = player.IsDefeated;
         int blocked;
         int actualDamage = player.TakeDamage(damage, out blocked);
         if (blocked > 0)
@@ -1117,6 +1556,31 @@ public sealed class BattleManager : MonoBehaviour
         else
         {
             battleLog.Add("プレイヤーに" + actualDamage + "ダメージ。");
+        }
+
+        if (attackEffectPlayer != null)
+        {
+            attackEffectPlayer.PlayDamagePopup(player.Position, actualDamage);
+        }
+
+        RecordDamageResult(player, wasDefeated, actualDamage);
+    }
+
+    private void RecordDamageResult(CharacterUnit unit, bool wasDefeated, int actualDamage)
+    {
+        if (actualDamage <= 0)
+        {
+            return;
+        }
+
+        if (unit == player)
+        {
+            battleStatsTracker.RecordPlayerDamageTaken(actualDamage);
+        }
+
+        if (unit == enemy && !wasDefeated && unit.IsDefeated)
+        {
+            battleStatsTracker.RecordEnemyDefeatBatch(1);
         }
     }
 
@@ -1160,8 +1624,10 @@ public sealed class BattleManager : MonoBehaviour
         if (panelType == PanelType.Poison)
         {
             int damage = Mathf.Max(1, Mathf.CeilToInt(unit.MaxHp * 0.2f));
+            bool wasDefeated = unit.IsDefeated;
             int actualDamage = unit.TakeDirectDamage(damage);
             battleLog.Add(unit.Name + "は毒パネルで" + actualDamage + "ダメージを受けました。");
+            RecordDamageResult(unit, wasDefeated, actualDamage);
         }
 
         if (panelType == PanelType.Grass && unit.Element == UnitElement.Grass)
@@ -1394,6 +1860,7 @@ public sealed class BattleManager : MonoBehaviour
             previousBattleAccelGauge = accelGauge;
             battleLog.Add("エネミーを撃破。");
             battleLog.Add("プレイヤーの勝利。");
+            ShowBattleResult();
         }
         else if (player.IsDefeated)
         {
@@ -1402,6 +1869,62 @@ public sealed class BattleManager : MonoBehaviour
             battleLog.Add("プレイヤーは倒れた。");
             battleLog.Add("敗北。");
         }
+    }
+
+    private void ShowBattleResult()
+    {
+        BattleResultData resultData = battleStatsTracker.CreateResultData(EnemyAI.IsBoss(enemyType), currentRound);
+        resultData.HuntingLevel = HuntingLevelEvaluator.Evaluate(resultData);
+
+        if (battleResultOverlay == null && battleCanvasRoot != null)
+        {
+            BuildBattleResultOverlay(battleCanvasRoot);
+        }
+
+        if (battleResultOverlay != null)
+        {
+            battleResultOverlay.Show(resultData, CreateTemporaryRewardLines(resultData.HuntingLevel));
+        }
+        else
+        {
+            Debug.LogError("Battle result overlay could not be created.");
+        }
+    }
+
+    private List<string> CreateTemporaryRewardLines(HuntingLevel huntingLevel)
+    {
+        List<string> rewardCandidates = new List<string>();
+        switch (huntingLevel)
+        {
+            case HuntingLevel.S:
+                rewardCandidates.Add("フリーズ");
+                rewardCandidates.Add("バーナーブレス");
+                rewardCandidates.Add("テッキュウナゲ");
+                break;
+            case HuntingLevel.A:
+                rewardCandidates.Add("仮カード");
+                rewardCandidates.Add("アクアショット");
+                rewardCandidates.Add("フリーズ");
+                break;
+            default:
+                rewardCandidates.Add("仮カード");
+                rewardCandidates.Add("アクアショット");
+                rewardCandidates.Add("テッキュウナゲ");
+                break;
+        }
+
+        int rewardIndex = UnityEngine.Random.Range(0, rewardCandidates.Count);
+        return new List<string> { rewardCandidates[rewardIndex] };
+    }
+
+    private void RetryBattleFromResult()
+    {
+        StartBattle(battleStartAccelGauge, false);
+    }
+
+    private void ReturnToMenuFromResult()
+    {
+        SceneManager.LoadScene("MenuScene");
     }
 
     private void RefreshUi()
@@ -1421,12 +1944,17 @@ public sealed class BattleManager : MonoBehaviour
 
         if (actionQueueText != null)
         {
-            actionQueueText.text = BuildActionQueueText();
+            RefreshActionQueueView();
         }
 
         if (enemyPlanText != null)
         {
             enemyPlanText.text = string.Empty;
+        }
+
+        if (enemyNameText != null)
+        {
+            enemyNameText.text = enemy != null ? EnemyAI.GetDisplayName(enemyType) : string.Empty;
         }
 
         if (predictionText != null)
@@ -1441,6 +1969,10 @@ public sealed class BattleManager : MonoBehaviour
 
         confirmButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
         resetSelectionButton.interactable = !battleEnded && !predictionActive && actionQueue.Count > 0;
+        if (weaponButton != null)
+        {
+            weaponButton.interactable = !battleEnded && !predictionActive && !IsWeaponQueued();
+        }
         int queuedActionCost = GetQueuedActionCost();
         SetMoveButtonsInteractable(!battleEnded && (predictionActive || queuedActionCost < MaxPlayerActions));
         RefreshActionCounter();
@@ -1519,6 +2051,112 @@ public sealed class BattleManager : MonoBehaviour
         }
 
         return text;
+    }
+
+    private string BuildCompactActionQueueText()
+    {
+        if (actionQueue.Count == 0)
+        {
+            return "選択中アクション\nなし\n消費 0 / " + MaxPlayerActions;
+        }
+
+        string text = "選択中アクション\n消費 " + GetQueuedActionCost() + " / " + MaxPlayerActions;
+        for (int i = 0; i < actionQueue.Count; i++)
+        {
+            text += "\n" + (i + 1) + " " + actionQueue[i].DisplayName;
+            if (!actionQueue[i].ConsumesAction)
+            {
+                text += " 無消費";
+            }
+        }
+
+        return text;
+    }
+
+    private void RefreshActionQueueView()
+    {
+        if (actionQueueRoot == null || actionQueueText == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < actionQueueItemObjects.Count; i++)
+        {
+            if (actionQueueItemObjects[i] != null)
+            {
+                Destroy(actionQueueItemObjects[i]);
+            }
+        }
+
+        actionQueueItemObjects.Clear();
+        bool hasActions = actionQueue.Count > 0;
+        actionQueueText.gameObject.SetActive(!hasActions);
+        if (!hasActions)
+        {
+            actionQueueText.text = "選択中アクション：なし";
+            return;
+        }
+
+        int count = actionQueue.Count;
+        float slotWidth = 1f / count;
+        for (int i = 0; i < count; i++)
+        {
+            QueuedBattleAction action = actionQueue[i];
+            float minX = i * slotWidth;
+            float maxX = (i + 1) * slotWidth;
+            Image slot = CreateImage("Queued Action " + (i + 1), actionQueueRoot, new Vector2(minX, 0f), new Vector2(maxX, 1f), new Vector2(4f, 3f), new Vector2(-4f, -3f), GetQueuedActionColor(action));
+            slot.raycastTarget = false;
+            actionQueueItemObjects.Add(slot.gameObject);
+
+            CreateText("Queued Action Number " + (i + 1), slot.transform, new Vector2(0.03f, 0.56f), new Vector2(0.22f, 0.96f), Vector2.zero, Vector2.zero, (i + 1).ToString(), 18, TextAnchor.MiddleCenter, Color.white);
+            Text nameText = CreateText("Queued Action Name " + (i + 1), slot.transform, new Vector2(0.18f, 0.28f), new Vector2(0.98f, 0.96f), Vector2.zero, Vector2.zero, action.DisplayName, 17, TextAnchor.MiddleCenter, Color.white);
+            nameText.resizeTextForBestFit = true;
+            nameText.resizeTextMinSize = 10;
+            nameText.resizeTextMaxSize = 17;
+
+            Text badgeText = CreateText("Queued Action Badge " + (i + 1), slot.transform, new Vector2(0.18f, 0.02f), new Vector2(0.98f, 0.32f), Vector2.zero, Vector2.zero, GetQueuedActionBadge(action), 12, TextAnchor.MiddleRight, new Color(1f, 0.96f, 0.72f));
+            badgeText.resizeTextForBestFit = true;
+            badgeText.resizeTextMinSize = 8;
+            badgeText.resizeTextMaxSize = 12;
+        }
+    }
+
+    private Color GetQueuedActionColor(QueuedBattleAction action)
+    {
+        if (action.Type == QueuedActionType.Weapon)
+        {
+            return new Color(0.68f, 0.72f, 0.76f, 0.96f);
+        }
+
+        if (action.Type == QueuedActionType.Move)
+        {
+            return new Color(0.72f, 0.56f, 0.16f, 0.96f);
+        }
+
+        if (action.Type == QueuedActionType.Card && action.Card != null && action.Card.Data != null)
+        {
+            if (action.Card.Data.IsClearCard)
+            {
+                return new Color(0.42f, 0.72f, 0.48f, 0.96f);
+            }
+
+            if (action.Card.Data.Effect == CardEffectType.Damage)
+            {
+                return new Color(0.18f, 0.43f, 0.78f, 0.96f);
+            }
+        }
+
+        return new Color(0.20f, 0.24f, 0.32f, 0.96f);
+    }
+
+    private string GetQueuedActionBadge(QueuedBattleAction action)
+    {
+        if (action.Type == QueuedActionType.Card && action.Card != null && action.Card.Data != null && action.Card.Data.IsClearCard)
+        {
+            return "CLEAR";
+        }
+
+        return action.ConsumesAction ? "ACT" : "FREE";
     }
 
     private void SetMoveButtonsInteractable(bool interactable)
@@ -1619,6 +2257,27 @@ public sealed class BattleManager : MonoBehaviour
         return new Color(0.48f, 0.19f, 0.24f, 0.96f);
     }
 
+    private static string GetPanelTypeDisplayName(PanelType panelType)
+    {
+        switch (panelType)
+        {
+            case PanelType.Cracked:
+                return "ヒビパネル";
+            case PanelType.Hole:
+                return "穴パネル";
+            case PanelType.Ice:
+                return "氷パネル";
+            case PanelType.Grass:
+                return "草パネル";
+            case PanelType.Magma:
+                return "マグマパネル";
+            case PanelType.Poison:
+                return "毒パネル";
+            default:
+                return "ノーマルパネル";
+        }
+    }
+
     private void SetUnitCell(CharacterUnit unit, string label, Color color)
     {
         int sideIndex = GetSideIndex(unit.Position.Side);
@@ -1651,6 +2310,7 @@ public sealed class BattleManager : MonoBehaviour
         switch (card.Effect)
         {
             case CardEffectType.Damage:
+            case CardEffectType.Freeze:
                 TryGetDamageTarget(card, out target);
                 failureMessage = target == null ? "攻撃範囲内にエネミーがいないため空振りします。" : string.Empty;
                 return true;
@@ -1740,7 +2400,23 @@ public sealed class BattleManager : MonoBehaviour
             return;
         }
 
-        if (card.Effect != CardEffectType.Damage)
+        if (card.Effect == CardEffectType.StageChange)
+        {
+            for (int side = 0; side < 2; side++)
+            {
+                for (int row = 0; row < BattleGridPosition.GridSize; row++)
+                {
+                    for (int column = 0; column < BattleGridPosition.GridSize; column++)
+                    {
+                        previewCells.Add(new BattleGridPosition((GridSide)side, row, column));
+                    }
+                }
+            }
+
+            return;
+        }
+
+        if (card.Effect != CardEffectType.Damage && card.Effect != CardEffectType.Freeze)
         {
             previewCells.Add(player.Position);
             return;
@@ -1750,9 +2426,18 @@ public sealed class BattleManager : MonoBehaviour
         {
             case CardTargetPattern.SameRowNearestEnemy:
             case CardTargetPattern.Row:
+            case CardTargetPattern.ForwardSingle:
                 for (int column = 0; column < BattleGridPosition.GridSize; column++)
                 {
                     previewCells.Add(new BattleGridPosition(GridSide.Enemy, player.Position.Row, column));
+                }
+                break;
+            case CardTargetPattern.ForwardLine3:
+            case CardTargetPattern.ForwardExactly3:
+                List<BattleGridPosition> path = BuildPlayerForwardPath(3);
+                for (int i = 0; i < path.Count; i++)
+                {
+                    previewCells.Add(path[i]);
                 }
                 break;
             case CardTargetPattern.ForwardOnePanel:
@@ -1793,6 +2478,7 @@ public sealed class BattleManager : MonoBehaviour
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.pixelPerfect = true;
+        battleCanvasRoot = canvasObject.transform;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -1808,20 +2494,71 @@ public sealed class BattleManager : MonoBehaviour
 
         statusText = CreateText("Status Text", canvasObject.transform, new Vector2(0.39f, 0.86f), new Vector2(0.61f, 0.975f), Vector2.zero, Vector2.zero, string.Empty, 30, TextAnchor.MiddleCenter, new Color(0.95f, 1f, 0.78f));
         BuildActionCounter(canvasObject.transform);
+        BuildEnemyNameView(canvasObject.transform);
 
         BuildBattleGrid(canvasObject.transform);
         BuildCardHoverDetail(canvasObject.transform);
+        BuildActionQueueView(canvasObject.transform);
 
         BuildMoveCommands(canvasObject.transform);
 
         RectTransform handRoot = CreateRect("Hand", canvasObject.transform, new Vector2(0.03f, 0.04f), new Vector2(0.78f, 0.25f), Vector2.zero, Vector2.zero);
         BuildCardViews(handRoot);
 
-        confirmButton = CreateButton("Confirm Actions Button", canvasObject.transform, new Vector2(0.82f, 0.08f), new Vector2(0.95f, 0.22f), Vector2.zero, Vector2.zero, "決定", 26, new Color(0.14f, 0.48f, 0.28f));
-        confirmButton.onClick.AddListener(ConfirmQueuedActions);
+        BuildBottomCommandButtons(canvasObject.transform);
+        BuildEffectPresentation(canvasObject.transform);
 
-        resetSelectionButton = CreateButton("Reset Actions Button", canvasObject.transform, new Vector2(0.82f, 0.225f), new Vector2(0.95f, 0.285f), Vector2.zero, Vector2.zero, "選択リセット", 20, new Color(0.32f, 0.32f, 0.38f));
-        resetSelectionButton.onClick.AddListener(ResetQueuedActions);
+        BuildDebugPanel(canvasObject.transform);
+        BuildBattleResultOverlay(canvasObject.transform);
+    }
+
+    private void BuildBattleResultOverlay(Transform parent)
+    {
+        GameObject overlayObject = new GameObject("Battle Result Overlay");
+        try
+        {
+            battleResultOverlay = overlayObject.AddComponent<BattleResultOverlay>();
+            battleResultOverlay.Build(parent, uiFont, RetryBattleFromResult, ReturnToMenuFromResult);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            battleResultOverlay = null;
+            Destroy(overlayObject);
+        }
+    }
+
+    private void BuildEffectPresentation(Transform parent)
+    {
+        attackEffectPlayer = new AttackEffectPlayer();
+        attackEffectPlayer.Build(parent, uiFont, this);
+    }
+
+    private void BuildEnemyNameView(Transform parent)
+    {
+        Image panel = CreateImage("Enemy Name Panel", parent, new Vector2(0.805f, 0.82f), new Vector2(0.995f, 0.91f), Vector2.zero, Vector2.zero, new Color(0.015f, 0.02f, 0.035f, 0.92f));
+        panel.raycastTarget = false;
+        enemyNameText = CreateText("Enemy Name Text", panel.transform, Vector2.zero, Vector2.one, new Vector2(12f, 6f), new Vector2(-16f, -6f), string.Empty, 32, TextAnchor.MiddleRight, new Color(1f, 0.97f, 0.86f));
+        enemyNameText.resizeTextForBestFit = true;
+        enemyNameText.resizeTextMinSize = 18;
+        enemyNameText.resizeTextMaxSize = 32;
+    }
+
+    private void BuildDebugPanel(Transform parent)
+    {
+        GameObject debugObject = new GameObject("BattleDebugPanelController");
+        debugObject.transform.SetParent(parent, false);
+        debugPanelController = debugObject.AddComponent<BattleDebugPanelController>();
+        debugPanelController.Build(this, parent, uiFont, ShouldShowDebugPanelTools());
+    }
+
+    private bool ShouldShowDebugPanelTools()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        return showDebugPanelTools;
+#else
+        return false;
+#endif
     }
 
     private void BuildAccelGaugeUi(Transform parent)
@@ -1835,6 +2572,29 @@ public sealed class BattleManager : MonoBehaviour
     {
         cardHoverDetailView = new CardHoverDetailView();
         cardHoverDetailView.Build(parent, uiFont);
+    }
+
+    private void BuildActionQueueView(Transform parent)
+    {
+        Image panel = CreateImage("Selected Action Queue Panel", parent, new Vector2(0.03f, 0.325f), new Vector2(0.78f, 0.415f), Vector2.zero, Vector2.zero, new Color(0.012f, 0.018f, 0.032f, 0.94f));
+        panel.raycastTarget = false;
+        actionQueueRoot = CreateRect("Selected Action Queue Items", panel.transform, Vector2.zero, Vector2.one, new Vector2(8f, 5f), new Vector2(-8f, -5f));
+        actionQueueText = CreateText("Selected Action Queue Empty Text", panel.transform, Vector2.zero, Vector2.one, new Vector2(12f, 8f), new Vector2(-12f, -8f), "選択中アクション：なし", 20, TextAnchor.MiddleCenter, new Color(1f, 0.96f, 0.72f));
+        actionQueueText.resizeTextForBestFit = true;
+        actionQueueText.resizeTextMinSize = 12;
+        actionQueueText.resizeTextMaxSize = 20;
+    }
+
+    private void BuildBottomCommandButtons(Transform parent)
+    {
+        weaponButton = CreateButton("Weapon Command Button", parent, new Vector2(0.80f, 0.18f), new Vector2(0.96f, 0.25f), Vector2.zero, Vector2.zero, WeaponDisplayName, 22, new Color(0.2f, 0.34f, 0.46f));
+        weaponButton.onClick.AddListener(HandleWeaponCommand);
+
+        resetSelectionButton = CreateButton("Reset Actions Button", parent, new Vector2(0.80f, 0.11f), new Vector2(0.96f, 0.175f), Vector2.zero, Vector2.zero, "選択リセット", 19, new Color(0.32f, 0.32f, 0.38f));
+        resetSelectionButton.onClick.AddListener(ResetQueuedActions);
+
+        confirmButton = CreateButton("Confirm Actions Button", parent, new Vector2(0.80f, 0.04f), new Vector2(0.96f, 0.105f), Vector2.zero, Vector2.zero, "決定", 24, new Color(0.14f, 0.48f, 0.28f));
+        confirmButton.onClick.AddListener(ConfirmQueuedActions);
     }
 
     private void BuildActionCounter(Transform parent)
@@ -1897,6 +2657,12 @@ public sealed class BattleManager : MonoBehaviour
                 float minY = 1f - (row + 1) / (float)BattleGridPosition.GridSize;
 
                 Image slot = CreateImage(side + " Cell " + row + "-" + column, panelRoot, new Vector2(minX, minY), new Vector2(maxX, maxY), new Vector2(2f, 2f), new Vector2(-2f, -2f), side == GridSide.Player ? new Color(0.16f, 0.28f, 0.42f, 0.96f) : new Color(0.48f, 0.19f, 0.24f, 0.96f));
+                BattleGridPosition capturedPosition = new BattleGridPosition(side, row, column);
+                EventTrigger trigger = slot.gameObject.AddComponent<EventTrigger>();
+                EventTrigger.Entry clickEntry = new EventTrigger.Entry();
+                clickEntry.eventID = EventTriggerType.PointerClick;
+                clickEntry.callback.AddListener(_ => HandleDebugPanelCellClicked(capturedPosition));
+                trigger.triggers.Add(clickEntry);
                 Text label = CreateText(side + " Cell Label " + row + "-" + column, slot.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, string.Empty, 40, TextAnchor.MiddleCenter, Color.white);
                 gridSlots[sideIndex, row, column] = slot;
                 gridLabels[sideIndex, row, column] = label;

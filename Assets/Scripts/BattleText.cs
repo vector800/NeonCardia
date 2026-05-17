@@ -90,6 +90,11 @@ public static class BattleText
             return FormatMoveDirection(card.MoveDirection) + " 1マス";
         }
 
+        if (card.Effect == CardEffectType.StageChange)
+        {
+            return "全パネル";
+        }
+
         switch (card.TargetPattern)
         {
             case CardTargetPattern.SameRowNearestEnemy:
@@ -98,6 +103,12 @@ public static class BattleText
                 return "前方1マス";
             case CardTargetPattern.Row:
                 return "同じ行";
+            case CardTargetPattern.ForwardSingle:
+                return "前方の敵一体";
+            case CardTargetPattern.ForwardLine3:
+                return "前方3マス";
+            case CardTargetPattern.ForwardExactly3:
+                return "前方3マス先";
             case CardTargetPattern.SingleTarget:
                 return "単体";
             case CardTargetPattern.AroundSelf:

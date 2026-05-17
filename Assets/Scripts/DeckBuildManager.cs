@@ -16,6 +16,8 @@ public sealed class DeckBuildManager : MonoBehaviour
     private Font uiFont;
     private RectTransform collectionListRoot;
     private RectTransform deckListRoot;
+    private ScrollRect collectionScrollRect;
+    private ScrollRect deckScrollRect;
     private Text deckSummaryText;
     private Text validationText;
     private Text messageText;
@@ -154,8 +156,8 @@ public sealed class DeckBuildManager : MonoBehaviour
         Image collectionPanel = CreateImage("Collection Panel", canvasObject.transform, new Vector2(0.035f, 0.145f), new Vector2(0.485f, 0.905f), Vector2.zero, Vector2.zero, new Color(0.035f, 0.065f, 0.075f, 0.98f));
         Image deckPanel = CreateImage("Deck Panel", canvasObject.transform, new Vector2(0.515f, 0.145f), new Vector2(0.965f, 0.905f), Vector2.zero, Vector2.zero, new Color(0.035f, 0.065f, 0.075f, 0.98f));
 
-        collectionListRoot = CreateRect("Collection List", collectionPanel.transform, Vector2.zero, Vector2.one, new Vector2(10f, 8f), new Vector2(-10f, -8f));
-        deckListRoot = CreateRect("Deck List", deckPanel.transform, Vector2.zero, Vector2.one, new Vector2(10f, 8f), new Vector2(-10f, -8f));
+        collectionListRoot = CreateScrollableList(collectionPanel, "Collection", out collectionScrollRect);
+        deckListRoot = CreateScrollableList(deckPanel, "Deck", out deckScrollRect);
 
         CreateImage("Status Panel", canvasObject.transform, new Vector2(0.035f, 0.098f), new Vector2(0.965f, 0.135f), Vector2.zero, Vector2.zero, new Color(0.015f, 0.025f, 0.032f, 0.9f)).raycastTarget = false;
         validationText = CreateText("Validation Text", canvasObject.transform, new Vector2(0.045f, 0.098f), new Vector2(0.485f, 0.135f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleLeft, new Color(1f, 0.9f, 0.55f));
@@ -193,35 +195,39 @@ public sealed class DeckBuildManager : MonoBehaviour
 
     private void RebuildCollectionList()
     {
+        float scrollPosition = collectionScrollRect != null ? collectionScrollRect.verticalNormalizedPosition : 1f;
         ClearChildren(collectionListRoot);
         collectionButtons.Clear();
+        UpdateListContentHeight(collectionListRoot, ownedCards.Count);
 
         for (int i = 0; i < ownedCards.Count; i++)
         {
             CardData card = ownedCards[i];
-            float maxY = 1f - i * 0.074f;
-            float minY = maxY - 0.067f;
-            Button button = CreateButton("Collection " + card.CardId, collectionListRoot, new Vector2(0f, minY), new Vector2(1f, maxY), Vector2.zero, Vector2.zero, FormatCollectionCard(card), 18, GetCardColor(card));
+            Button button = CreateListButton("Collection " + card.CardId, collectionListRoot, i, FormatCollectionCard(card), 18, GetCardColor(card));
             CardData capturedCard = card;
             button.onClick.AddListener(() => AddCard(capturedCard));
             collectionButtons.Add(button);
         }
+
+        RestoreScrollPosition(collectionScrollRect, scrollPosition);
     }
 
     private void RebuildDeckList()
     {
+        float scrollPosition = deckScrollRect != null ? deckScrollRect.verticalNormalizedPosition : 1f;
         ClearChildren(deckListRoot);
         List<CardData> uniqueCards = GetUniqueDeckCards();
+        UpdateListContentHeight(deckListRoot, uniqueCards.Count);
 
         for (int i = 0; i < uniqueCards.Count; i++)
         {
             CardData card = uniqueCards[i];
-            float maxY = 1f - i * 0.074f;
-            float minY = maxY - 0.067f;
-            Button button = CreateButton("Deck " + card.CardId, deckListRoot, new Vector2(0f, minY), new Vector2(1f, maxY), Vector2.zero, Vector2.zero, FormatDeckCard(card), 18, GetCardColor(card));
+            Button button = CreateListButton("Deck " + card.CardId, deckListRoot, i, FormatDeckCard(card), 18, GetCardColor(card));
             CardData capturedCard = card;
             button.onClick.AddListener(() => RemoveCard(capturedCard));
         }
+
+        RestoreScrollPosition(deckScrollRect, scrollPosition);
     }
 
     private List<CardData> GetUniqueDeckCards()
@@ -279,8 +285,27 @@ public sealed class DeckBuildManager : MonoBehaviour
                 return "HP +" + card.Power;
             case CardEffectType.Charge:
                 return "次の攻撃 +" + card.Power;
+            case CardEffectType.Freeze:
+                return "凍結 / " + BattleText.FormatAttribute(card.Attribute);
+            case CardEffectType.StageChange:
+                return FormatStageChange(card.TargetPanelType) + " / " + BattleText.FormatAttribute(card.Attribute);
             default:
                 return card.RulesText;
+        }
+    }
+
+    private static string FormatStageChange(PanelType panelType)
+    {
+        switch (panelType)
+        {
+            case PanelType.Ice:
+                return "全パネル氷";
+            case PanelType.Grass:
+                return "全パネル草";
+            case PanelType.Magma:
+                return "全パネルマグマ";
+            default:
+                return "全パネル変更";
         }
     }
 
@@ -391,6 +416,61 @@ public sealed class DeckBuildManager : MonoBehaviour
         {
             Destroy(parent.GetChild(i).gameObject);
         }
+    }
+
+    private RectTransform CreateScrollableList(Image panel, string listName, out ScrollRect scrollRect)
+    {
+        RectTransform viewport = CreateRect(listName + " Viewport", panel.transform, Vector2.zero, Vector2.one, new Vector2(10f, 8f), new Vector2(-14f, -8f));
+        viewport.gameObject.AddComponent<RectMask2D>();
+
+        RectTransform content = CreateRect(listName + " Content", viewport, new Vector2(0f, 1f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.anchoredPosition = Vector2.zero;
+        content.sizeDelta = Vector2.zero;
+
+        scrollRect = panel.gameObject.AddComponent<ScrollRect>();
+        scrollRect.viewport = viewport;
+        scrollRect.content = content;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.inertia = true;
+        scrollRect.scrollSensitivity = 42f;
+
+        return content;
+    }
+
+    private static void UpdateListContentHeight(RectTransform content, int rowCount)
+    {
+        float height = Mathf.Max(1f, rowCount * GetListRowPitch());
+        content.sizeDelta = new Vector2(0f, height);
+        content.anchoredPosition = Vector2.zero;
+    }
+
+    private Button CreateListButton(string name, Transform parent, int index, string labelText, int fontSize, Color color)
+    {
+        float rowPitch = GetListRowPitch();
+        float rowHeight = GetListRowHeight();
+        float top = -index * rowPitch;
+        return CreateButton(name, parent, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, top - rowHeight), new Vector2(0f, top), labelText, fontSize, color);
+    }
+
+    private static void RestoreScrollPosition(ScrollRect scrollRect, float normalizedPosition)
+    {
+        if (scrollRect != null)
+        {
+            scrollRect.verticalNormalizedPosition = Mathf.Clamp01(normalizedPosition);
+        }
+    }
+
+    private static float GetListRowPitch()
+    {
+        return 48f;
+    }
+
+    private static float GetListRowHeight()
+    {
+        return 44f;
     }
 
     private RectTransform CreateRect(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)

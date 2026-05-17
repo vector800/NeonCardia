@@ -334,12 +334,48 @@ public static class CardVisualStyleResolver
 
     public static string GetValueText(CardData card)
     {
-        if (card == null || card.Power <= 0)
+        if (card == null)
+        {
+            return string.Empty;
+        }
+
+        if (card.Effect == CardEffectType.Freeze)
+        {
+            return "凍結";
+        }
+
+        if (card.Effect == CardEffectType.StageChange)
+        {
+            return GetPanelValueText(card.TargetPanelType);
+        }
+
+        if (card.Power <= 0)
         {
             return string.Empty;
         }
 
         return card.Effect == CardEffectType.Charge ? "+" + card.Power : card.Power.ToString();
+    }
+
+    private static string GetPanelValueText(PanelType panelType)
+    {
+        switch (panelType)
+        {
+            case PanelType.Ice:
+                return "ICE";
+            case PanelType.Grass:
+                return "GRASS";
+            case PanelType.Magma:
+                return "MAGMA";
+            case PanelType.Cracked:
+                return "CRACK";
+            case PanelType.Hole:
+                return "HOLE";
+            case PanelType.Poison:
+                return "POISON";
+            default:
+                return "STAGE";
+        }
     }
 }
 
@@ -356,6 +392,11 @@ public static class CardAttributeIconResolver
         }
 
         icon = LoadSprite("UI/AttributeIcons/" + attribute);
+        if (icon == null)
+        {
+            icon = CreateGeneratedIcon(attribute);
+        }
+
         Icons[attribute] = icon;
         return icon;
     }
@@ -369,6 +410,55 @@ public static class CardAttributeIconResolver
         }
 
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private static Sprite CreateGeneratedIcon(CardAttribute attribute)
+    {
+        const int size = 32;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        texture.filterMode = FilterMode.Point;
+        Color color = GetGeneratedIconColor(attribute);
+        Color clear = new Color(0f, 0f, 0f, 0f);
+        Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float distance = Vector2.Distance(new Vector2(x, y), center);
+                bool filled = distance < 12f;
+                bool accent = Mathf.Abs(x - y) < 3 || Mathf.Abs((size - 1 - x) - y) < 3;
+                texture.SetPixel(x, y, filled || accent ? color : clear);
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private static Color GetGeneratedIconColor(CardAttribute attribute)
+    {
+        switch (attribute)
+        {
+            case CardAttribute.Water:
+                return new Color(0.25f, 0.75f, 1f, 1f);
+            case CardAttribute.Break:
+                return new Color(0.82f, 0.72f, 0.55f, 1f);
+            case CardAttribute.Fire:
+                return new Color(1f, 0.38f, 0.16f, 1f);
+            case CardAttribute.Ice:
+                return new Color(0.65f, 0.95f, 1f, 1f);
+            case CardAttribute.Electric:
+                return new Color(1f, 0.92f, 0.25f, 1f);
+            case CardAttribute.Grass:
+                return new Color(0.35f, 0.9f, 0.32f, 1f);
+            case CardAttribute.Slash:
+                return new Color(0.95f, 0.95f, 1f, 1f);
+            case CardAttribute.Shot:
+                return new Color(0.56f, 0.82f, 1f, 1f);
+            default:
+                return new Color(0.82f, 0.86f, 0.9f, 1f);
+        }
     }
 }
 
@@ -396,7 +486,7 @@ public static class CardArtworkResolver
         }
 
         sprite = LoadCached("Cards/Placeholders/" + card.Attribute);
-        return sprite;
+        return sprite != null ? sprite : CreateGeneratedArtwork(card.Attribute);
     }
 
     private static Sprite LoadCached(string resourcePath)
@@ -417,5 +507,70 @@ public static class CardArtworkResolver
         sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
         Artwork[resourcePath] = sprite;
         return sprite;
+    }
+
+    private static Sprite CreateGeneratedArtwork(CardAttribute attribute)
+    {
+        string cacheKey = "Generated/" + attribute;
+        Sprite sprite;
+        if (Artwork.TryGetValue(cacheKey, out sprite))
+        {
+            return sprite;
+        }
+
+        const int width = 96;
+        const int height = 64;
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        texture.filterMode = FilterMode.Point;
+        Color baseColor = GetArtworkColor(attribute);
+        Color darkColor = Color.Lerp(baseColor, Color.black, 0.65f);
+        Color lightColor = Color.Lerp(baseColor, Color.white, 0.35f);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float t = y / (float)(height - 1);
+                Color color = Color.Lerp(darkColor, baseColor, t);
+                bool diagonal = Mathf.Abs((x % 24) - (y % 24)) < 2;
+                bool pulse = (x + y) % 31 < 2;
+                if (diagonal || pulse)
+                {
+                    color = lightColor;
+                }
+
+                texture.SetPixel(x, y, color);
+            }
+        }
+
+        texture.Apply();
+        sprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f);
+        Artwork[cacheKey] = sprite;
+        return sprite;
+    }
+
+    private static Color GetArtworkColor(CardAttribute attribute)
+    {
+        switch (attribute)
+        {
+            case CardAttribute.Fire:
+                return new Color(1f, 0.28f, 0.08f, 1f);
+            case CardAttribute.Ice:
+                return new Color(0.45f, 0.85f, 1f, 1f);
+            case CardAttribute.Grass:
+                return new Color(0.18f, 0.72f, 0.22f, 1f);
+            case CardAttribute.Water:
+                return new Color(0.18f, 0.62f, 1f, 1f);
+            case CardAttribute.Electric:
+                return new Color(1f, 0.86f, 0.16f, 1f);
+            case CardAttribute.Break:
+                return new Color(0.72f, 0.6f, 0.42f, 1f);
+            case CardAttribute.Slash:
+                return new Color(0.82f, 0.86f, 1f, 1f);
+            case CardAttribute.Shot:
+                return new Color(0.36f, 0.72f, 1f, 1f);
+            default:
+                return new Color(0.72f, 0.78f, 0.84f, 1f);
+        }
     }
 }

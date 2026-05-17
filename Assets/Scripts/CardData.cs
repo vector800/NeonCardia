@@ -7,7 +7,9 @@ public enum CardEffectType
     Guard,
     Move,
     Repair,
-    Charge
+    Charge,
+    Freeze,
+    StageChange
 }
 
 public enum CardDeckType
@@ -24,7 +26,10 @@ public enum CardTargetPattern
     ForwardOnePanel,
     Row,
     SingleTarget,
-    AroundSelf
+    AroundSelf,
+    ForwardSingle,
+    ForwardLine3,
+    ForwardExactly3
 }
 
 public enum CardUsablePosition
@@ -80,6 +85,7 @@ public sealed class CardData : ScriptableObject
     [SerializeField] private CardTargetType targetType;
     [SerializeField] private CardTargetPattern targetPattern;
     [SerializeField] private MoveDirection moveDirection;
+    [SerializeField] private PanelType targetPanelType = PanelType.Normal;
 
     public string CardId { get { return string.IsNullOrEmpty(cardId) ? name : cardId; } }
     public string Name { get { return cardName; } }
@@ -94,8 +100,9 @@ public sealed class CardData : ScriptableObject
     public CardTargetType TargetType { get { return targetType; } }
     public CardTargetPattern TargetPattern { get { return targetPattern; } }
     public MoveDirection MoveDirection { get { return moveDirection; } }
+    public PanelType TargetPanelType { get { return targetPanelType; } }
 
-    private void Initialize(string newCardId, string newName, string newRulesText, CardDeckType newDeckType, bool newIsClearCard, CardEffectType newEffect, int newPower, int newCost, CardAttribute newAttribute, CardUsablePosition newUsablePosition, CardTargetType newTargetType, CardTargetPattern newTargetPattern, MoveDirection newMoveDirection)
+    private void Initialize(string newCardId, string newName, string newRulesText, CardDeckType newDeckType, bool newIsClearCard, CardEffectType newEffect, int newPower, int newCost, CardAttribute newAttribute, CardUsablePosition newUsablePosition, CardTargetType newTargetType, CardTargetPattern newTargetPattern, MoveDirection newMoveDirection, PanelType newTargetPanelType = PanelType.Normal)
     {
         cardId = newCardId;
         cardName = newName;
@@ -110,18 +117,26 @@ public sealed class CardData : ScriptableObject
         targetType = newTargetType;
         targetPattern = newTargetPattern;
         moveDirection = newMoveDirection;
+        targetPanelType = newTargetPanelType;
     }
 
     public static List<CardData> CreateStarterDeck()
     {
         List<CardData> cards = new List<CardData>();
         AddCopies(cards, LoadOrCreate("Strike", "ストライク", "同じ行の一番近い敵に35ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 35, 1, CardAttribute.Slash, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.SameRowNearestEnemy, MoveDirection.None), 4);
-        AddCopies(cards, LoadOrCreate("Guard", "ガード", "次に受けるダメージを40軽減する。", CardDeckType.N, true, CardEffectType.Guard, 40, 1, CardAttribute.Neutral, CardUsablePosition.Any, CardTargetType.Self, CardTargetPattern.None, MoveDirection.None), 4);
-        AddCopies(cards, LoadOrCreate("Repair", "リペア", "HPを45回復する。", CardDeckType.N, true, CardEffectType.Repair, 45, 1, CardAttribute.Neutral, CardUsablePosition.Any, CardTargetType.Self, CardTargetPattern.None, MoveDirection.None), 4);
-        AddCopies(cards, LoadOrCreate("WideShot", "ワイドショット", "横一列に25ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 25, 1, CardAttribute.Shot, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.Row, MoveDirection.None), 4);
-        AddCopies(cards, LoadOrCreate("QuickShot", "クイックショット", "同じ行の一番近い敵に25ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 25, 1, CardAttribute.Shot, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.SameRowNearestEnemy, MoveDirection.None), 4);
-        AddCopies(cards, LoadOrCreate("PierceShot", "ピアースショット", "同じ行の敵に30ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 30, 1, CardAttribute.Electric, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.Row, MoveDirection.None), 4);
+        AddCopies(cards, LoadOrCreate("Guard", "ガード", "次に受けるダメージを40軽減する。", CardDeckType.N, true, CardEffectType.Guard, 40, 1, CardAttribute.Neutral, CardUsablePosition.Any, CardTargetType.Self, CardTargetPattern.None, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("Repair", "リペア", "HPを45回復する。", CardDeckType.N, true, CardEffectType.Repair, 45, 1, CardAttribute.Neutral, CardUsablePosition.Any, CardTargetType.Self, CardTargetPattern.None, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("WideShot", "ワイドショット", "横一列に25ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 25, 1, CardAttribute.Shot, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.Row, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("QuickShot", "クイックショット", "同じ行の一番近い敵に25ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 25, 1, CardAttribute.Shot, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.SameRowNearestEnemy, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("PierceShot", "ピアースショット", "同じ行の敵に30ダメージを与える。", CardDeckType.N, false, CardEffectType.Damage, 30, 1, CardAttribute.Electric, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.Row, MoveDirection.None), 2);
         AddCopies(cards, LoadOrCreate("Charge", "チャージ", "次の攻撃カードのダメージを20増やす。", CardDeckType.N, true, CardEffectType.Charge, 20, 1, CardAttribute.Neutral, CardUsablePosition.Any, CardTargetType.Self, CardTargetPattern.None, MoveDirection.None), 1);
+        AddCopies(cards, LoadOrCreate("AquaShot", "アクアショット", "前方の敵一体に40ダメージを与える。マグマパネルをノーマル化する。", CardDeckType.N, false, CardEffectType.Damage, 40, 1, CardAttribute.Water, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.ForwardSingle, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("BurnerBreath", "バーナーブレス", "前方3マスに60ダメージを与える。草パネルをノーマル化する。", CardDeckType.N, false, CardEffectType.Damage, 60, 1, CardAttribute.Fire, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.ForwardLine3, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("TekkyuNage", "テッキュウナゲ", "前方3マス先に60ダメージを与える。凍結中の敵には2倍ダメージ。", CardDeckType.N, false, CardEffectType.Damage, 60, 1, CardAttribute.Break, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.ForwardExactly3, MoveDirection.None), 2);
+        AddCopies(cards, LoadOrCreate("Freeze", "フリーズ", "前方の敵一体を凍結状態にする。", CardDeckType.N, true, CardEffectType.Freeze, 0, 1, CardAttribute.Ice, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.ForwardSingle, MoveDirection.None), 1);
+        AddCopies(cards, LoadOrCreate("FreezeStage", "フリーズステージ", "すべてのパネルを氷パネルにする。", CardDeckType.N, true, CardEffectType.StageChange, 0, 1, CardAttribute.Ice, CardUsablePosition.Any, CardTargetType.Panel, CardTargetPattern.None, MoveDirection.None, PanelType.Ice), 1);
+        AddCopies(cards, LoadOrCreate("SougenStage", "ソウゲンステージ", "すべてのパネルを草パネルにする。", CardDeckType.N, true, CardEffectType.StageChange, 0, 1, CardAttribute.Grass, CardUsablePosition.Any, CardTargetType.Panel, CardTargetPattern.None, MoveDirection.None, PanelType.Grass), 1);
+        AddCopies(cards, LoadOrCreate("KazanStage", "カザンステージ", "すべてのパネルをマグマパネルにする。足元がマグマになったユニットは即時マグマ効果を受ける。", CardDeckType.N, true, CardEffectType.StageChange, 0, 1, CardAttribute.Fire, CardUsablePosition.Any, CardTargetType.Panel, CardTargetPattern.None, MoveDirection.None, PanelType.Magma), 1);
         AddCopies(cards, LoadOrCreate("HeavyShot", "ヘビーショット", "同じ行の敵に70ダメージを与える。", CardDeckType.HC, false, CardEffectType.Damage, 70, 2, CardAttribute.Shot, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.SameRowNearestEnemy, MoveDirection.None), 1);
         AddCopies(cards, LoadOrCreate("HighBurst", "ハイバースト", "同じ行の敵に85ダメージを与える。", CardDeckType.HC, false, CardEffectType.Damage, 85, 2, CardAttribute.Fire, CardUsablePosition.Any, CardTargetType.Enemy, CardTargetPattern.SameRowNearestEnemy, MoveDirection.None), 1);
         AddCopies(cards, LoadOrCreate("BoostGuard", "ブーストガード", "ガードを60増やす。", CardDeckType.HC, false, CardEffectType.Guard, 60, 2, CardAttribute.Neutral, CardUsablePosition.Any, CardTargetType.Self, CardTargetPattern.None, MoveDirection.None), 1);
@@ -138,7 +153,7 @@ public sealed class CardData : ScriptableObject
         }
     }
 
-    private static CardData LoadOrCreate(string resourceName, string name, string rulesText, CardDeckType deckType, bool isClearCard, CardEffectType effect, int power, int cost, CardAttribute attribute, CardUsablePosition usablePosition, CardTargetType targetType, CardTargetPattern targetPattern, MoveDirection moveDirection)
+    private static CardData LoadOrCreate(string resourceName, string name, string rulesText, CardDeckType deckType, bool isClearCard, CardEffectType effect, int power, int cost, CardAttribute attribute, CardUsablePosition usablePosition, CardTargetType targetType, CardTargetPattern targetPattern, MoveDirection moveDirection, PanelType targetPanelType = PanelType.Normal)
     {
         CardData card = Resources.Load<CardData>("Cards/" + resourceName);
         if (card != null)
@@ -147,7 +162,7 @@ public sealed class CardData : ScriptableObject
         }
 
         CardData fallback = CreateInstance<CardData>();
-        fallback.Initialize(resourceName, name, rulesText, deckType, isClearCard, effect, power, cost, attribute, usablePosition, targetType, targetPattern, moveDirection);
+        fallback.Initialize(resourceName, name, rulesText, deckType, isClearCard, effect, power, cost, attribute, usablePosition, targetType, targetPattern, moveDirection, targetPanelType);
         return fallback;
     }
 }
