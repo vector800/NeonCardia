@@ -1,5 +1,83 @@
 # NeonCardia Battle MVP
 
+## BattleTimelinePrototypeScene MVP
+
+`BattleTimelinePrototypeScene` was added as a separate prototype scene for a new turn-based card RPG battle flow. This scene does not replace or modify the existing `BattleScene`; the current `BattleScene`, `DeckBuildScene`, `MenuScene`, existing card processing, and existing battle result processing remain separate.
+
+### Prototype Goals
+
+- Validate a new battle format in `Assets/Scenes/BattleTimelinePrototypeScene.unity`.
+- Keep the existing battle implementation intact.
+- Reuse shared data only where it is low-risk, such as `CardData`, card attributes, deck type, and Clear Card flags.
+- Keep the prototype self-contained in `BattleTimelinePrototypeController`.
+
+### Current Battle Layout
+
+- Ally party has three fixed position lanes: `Front`, `Middle`, and `Back`.
+- Initial ally placement is `AllyFront`, `AllyMiddle`, and `AllyBack`.
+- Each ally has name, HP, max HP, position, Speed, and placeholder status text.
+- Enemy side uses a 3x3 grid.
+- The prototype currently creates up to three enemies, with `Enemy1` placed in the center cell.
+- Each enemy has name, HP, max HP, attribute, grid coordinate, next action preview, and Speed.
+- The top of the screen shows a horizontal action timeline.
+- The bottom of the screen shows a shared hand, Weapon, swap buttons, Reset, and Confirm.
+
+### Current MVP Features
+
+- Timeline order is calculated from ally and enemy Speed values.
+- When a unit acts, it is returned to the back of the timeline with Speed-based recovery.
+- Ally turns can queue card use, Weapon, or party position swaps.
+- The action queue is already structured for up to three normal actions.
+- Clear Cards are detected through existing `CardData.IsClearCard` and do not count against the normal action queue cap.
+- Damage cards apply single-target damage to the selected enemy.
+- Repair cards heal the selected ally.
+- Unsupported card effects fall back to a simple placeholder effect or status update.
+- Weapon deals placeholder single-target damage.
+- Front/Middle/Back swaps are available through `Swap F/M`, `Swap M/B`, and `Swap F/B`.
+- Enemy turns can be resolved with Confirm and currently apply placeholder damage to the front ally.
+- The prototype loads existing cards from `Assets/Resources/Cards` when available.
+
+### Not Implemented Yet
+
+- Full compatibility with all existing card targeting patterns.
+- Real multi-target card resolution.
+- Production enemy AI.
+- Status ailment rules beyond placeholder text and a simple freeze delay.
+- Character-specific decks, equipment, skills, and passives.
+- Targeting UI for every future card type.
+- Battle result overlay, rewards, and progression for this prototype.
+- Animation, sound effects, and production presentation.
+- Automated tests.
+
+### Verification Steps
+
+1. Open the project in Unity Editor.
+2. Confirm `Assets/Scenes/BattleScene.unity` still exists and has not been edited for this prototype.
+3. Open `Assets/Scenes/BattleTimelinePrototypeScene.unity`.
+4. Enter Play Mode and confirm there are no compile errors.
+5. Confirm `AllyFront`, `AllyMiddle`, and `AllyBack` are visible.
+6. Confirm `Front`, `Middle`, and `Back` positions are visible.
+7. Confirm the enemy 3x3 grid is visible.
+8. Confirm at least `Enemy1` is visible in the center grid cell.
+9. Confirm the top timeline is visible and shows ally/enemy action order.
+10. Confirm the shared hand is visible at the bottom.
+11. Confirm card buttons, Weapon, swap buttons, Reset, and Confirm are visible.
+12. Select an enemy cell, click a damage card, and press Confirm; confirm enemy HP changes.
+13. Select an ally, click a Repair card if one is in hand, and press Confirm; confirm ally HP can recover.
+14. Press Weapon and Confirm; confirm the selected enemy takes placeholder weapon damage.
+15. Press a swap button and Confirm; confirm ally positions swap.
+16. When an enemy is active on the timeline, press Confirm and confirm the enemy action resolves.
+17. Reopen `Assets/Scenes/BattleScene.unity` and confirm the existing battle can still be opened independently.
+
+### Changed Files
+
+- `Assets/Scenes/BattleTimelinePrototypeScene.unity`
+- `Assets/Scenes/BattleTimelinePrototypeScene.unity.meta`
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `Assets/Scripts/BattleTimelinePrototypeController.cs.meta`
+- `ProjectSettings/EditorBuildSettings.asset`
+- `README.md`
+
 ## Implemented
 
 - Added `BattleScene` and registered it in Build Settings.
