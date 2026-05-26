@@ -136,6 +136,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Text enemyLabelText;
     private Text handLabelText;
     private Text playerHpText;
+    private Text currentHpValueText;
     private RectTransform battleSceneTimelineRoot;
     private RectTransform battleSceneEnemyHpOverlayRoot;
     private Button weaponButton;
@@ -581,6 +582,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     protected virtual void LateUpdate()
     {
         UpdateSceneEnemyHpNumbers();
+        RefreshCurrentHpPanel();
     }
 
     public void SetInitialDebugLabels(bool enabled)
@@ -1470,17 +1472,25 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             CreateImage("Action Order Info Hot Edge", infoPanel, new Vector2(0f, 0f), new Vector2(0.020f, 1f), Vector2.zero, Vector2.zero, new Color(1f, 0.58f, 0.14f, 0.84f)).raycastTarget = false;
             CreateImage("Action Order Info Top Edge", infoPanel, new Vector2(0.060f, 0.850f), new Vector2(0.940f, 0.895f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.56f)).raycastTarget = false;
 
-            timelineLabelText = CreateText("Timeline Label", infoPanel, new Vector2(0.075f, 0.520f), new Vector2(0.930f, 0.850f), Vector2.zero, Vector2.zero, "ACTION ORDER", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, 0.98f));
-            Text sequenceText = CreateText("Action Order Sequence Label", infoPanel, new Vector2(0.075f, 0.405f), new Vector2(0.930f, 0.540f), Vector2.zero, Vector2.zero, "SEQUENCE", 10, TextAnchor.MiddleLeft, new Color(0.55f, 0.88f, 1f, 0.82f));
-            sequenceText.resizeTextMinSize = 7;
-            sequenceText.resizeTextMaxSize = 10;
+            timelineLabelText = CreateText("Timeline Label", infoPanel, new Vector2(0.075f, 0.620f), new Vector2(0.930f, 0.850f), Vector2.zero, Vector2.zero, "ACTION ORDER", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, 0.98f));
+            Text currentHpLabel = CreateText("Current HP Label", infoPanel, new Vector2(0.075f, 0.445f), new Vector2(0.930f, 0.600f), Vector2.zero, Vector2.zero, "CURRENT HP", 12, TextAnchor.MiddleLeft, new Color(0.54f, 0.92f, 1f, 0.96f));
+            currentHpLabel.resizeTextMinSize = 9;
+            currentHpLabel.resizeTextMaxSize = 12;
+            CreateImage("Current HP Label Rail", infoPanel, new Vector2(0.075f, 0.425f), new Vector2(0.930f, 0.442f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.26f)).raycastTarget = false;
 
-            RectTransform hpReserve = CreatePanel("Current HP Reserved Area", infoPanel, new Vector2(0.070f, 0.100f), new Vector2(0.930f, 0.340f), new Color(0.004f, 0.012f, 0.020f, 0.84f));
+            RectTransform hpReserve = CreatePanel("Current HP Reserved Area", infoPanel, new Vector2(0.070f, 0.075f), new Vector2(0.930f, 0.415f), new Color(0.004f, 0.012f, 0.020f, 0.84f));
             Outline hpOutline = hpReserve.gameObject.AddComponent<Outline>();
             hpOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.32f);
             hpOutline.effectDistance = new Vector2(1f, -1f);
-            CreateText("Current HP Reserved Label", hpReserve, new Vector2(0.055f, 0.18f), new Vector2(0.650f, 0.82f), Vector2.zero, Vector2.zero, "CURRENT HP", 10, TextAnchor.MiddleLeft, new Color(0.70f, 0.92f, 1f, 0.72f));
-            CreateImage("Current HP Empty Rail", hpReserve, new Vector2(0.680f, 0.42f), new Vector2(0.935f, 0.58f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.18f)).raycastTarget = false;
+
+            currentHpValueText = CreateText("Current HP Value", hpReserve, new Vector2(0.060f, 0.115f), new Vector2(0.945f, 0.905f), Vector2.zero, Vector2.zero, "-- / --", 25, TextAnchor.MiddleCenter, Color.white);
+            currentHpValueText.resizeTextMinSize = 16;
+            currentHpValueText.resizeTextMaxSize = 25;
+            currentHpValueText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            currentHpValueText.verticalOverflow = VerticalWrapMode.Overflow;
+            Outline hpValueOutline = currentHpValueText.gameObject.AddComponent<Outline>();
+            hpValueOutline.effectColor = new Color(0f, 0f, 0f, 0.82f);
+            hpValueOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
             timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.225f, 0.865f), new Vector2(0.958f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
         }
@@ -3110,6 +3120,64 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 view.DetailText.text = string.Empty;
             }
         }
+
+        RefreshCurrentHpPanel();
+    }
+
+    private void RefreshCurrentHpPanel()
+    {
+        if (currentHpValueText == null)
+        {
+            return;
+        }
+
+        int hp;
+        int maxHp;
+        bool hasHp = TryGetCurrentUnitHp(out hp, out maxHp);
+        int safeMaxHp = Mathf.Max(0, maxHp);
+        int safeHp = hasHp ? Mathf.Clamp(hp, 0, safeMaxHp) : 0;
+        currentHpValueText.text = hasHp ? safeHp + " / " + safeMaxHp : "-- / --";
+        currentHpValueText.color = hasHp ? Color.white : new Color(0.58f, 0.72f, 0.78f, 0.86f);
+    }
+
+    private bool TryGetCurrentUnitHp(out int hp, out int maxHp)
+    {
+        hp = 0;
+        maxHp = 0;
+        TimelineUnit unit = activeUnit != null ? activeUnit : GetCurrentActiveUnit();
+        if (unit == null)
+        {
+            return false;
+        }
+
+        if (unit.IsSkill)
+        {
+            AllyUnit owner = unit.SkillAction != null ? unit.SkillAction.Owner : null;
+            if (owner != null)
+            {
+                hp = owner.Hp;
+                maxHp = owner.MaxHp;
+                return maxHp > 0;
+            }
+
+            return false;
+        }
+
+        if (unit.IsAlly && unit.Ally != null)
+        {
+            hp = unit.Ally.Hp;
+            maxHp = unit.Ally.MaxHp;
+            return maxHp > 0;
+        }
+
+        if (!unit.IsAlly && unit.Enemy != null)
+        {
+            hp = unit.Enemy.Hp;
+            maxHp = unit.Enemy.MaxHp;
+            return maxHp > 0;
+        }
+
+        return false;
     }
 
     private List<TimelinePreview> BuildTimelinePreview()
