@@ -1,30 +1,116 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public sealed class BattleTimelinePrototypeController : MonoBehaviour
+public class BattleTimelinePrototypeController : MonoBehaviour
 {
     private const int HandSize = 5;
     private const int MaxQueuedActions = 3;
     private const int TimelinePreviewCount = 8;
-    private const int WeaponPower = 18;
+    private const int WeaponPower = 10;
+    private const int EchoShotPower = 20;
+    private const int EchoSkillPower = 10;
+    private const int EchoSkillInsertDelay = 45;
+    private const float FrontOutgoingDamageMultiplier = 1.2f;
+    private const float FrontIncomingDamageMultiplier = 1.2f;
+    private const float MiddleModifierMultiplier = 1f;
+    private const float BackIncomingDamageMultiplier = 0.8f;
+    private const float BackHealingReceivedMultiplier = 1.2f;
+    private const int PushDistance = 1;
+    private const int DelayTicks = 24;
+    private const string BattleBackgroundAssetPath = "Assets/Art/Backgrounds/Battle/CyberBattleBackground.png";
+    private const string BattleUiFrameAssetPath = "Assets/Art/UI/Battle/BattleUIFrame.png";
+    private const string CardFrameAssetPath = "Assets/Art/Cards/Frames/CardFrame_Base.png";
+    private const string TimelineIconsAssetPath = "Assets/Art/UI/Timeline/TimelineIconsSheet.png";
+    private const string AllyPortraitFramesAssetPath = "Assets/Art/UI/Party/AllyPortraitFramesSheet.png";
+    private const string EnemyGridPanelsAssetPath = "Assets/Art/UI/Grid/EnemyGridPanelsSheet.png";
+    private const string EnemySpritesAssetPath = "Assets/Art/Enemies/Prototype/EnemySpritesSheet.png";
+    private const string BattlePanelVisualSetAssetPath = "Assets/ScriptableObjects/Visual/BattlePanelVisualSet.asset";
+    private const string BattleGridBottomPrefabName = "PF_BattleGrid_Full_3x6_Image2_Bottom";
+    private const string BattleFieldFloorAssetPath = "Assets/Art/BattleField/NeonGrid/Textures/CyberFloor_Base.png";
+    private const string BattleGridFullImage2AssetPath = "Assets/Art/BattleField/NeonGrid/Textures/BattleGrid_Full_Image2.png";
+    private const string PanelPlayerNormalAssetPath = "Assets/Art/BattleField/NeonGrid/Sprites/Panel_RedOrange_Base.png";
+    private const string PanelPlayerSelectedAssetPath = "Assets/Art/Runtime/Panels/Panel_Player_Selected.png";
+    private const string PanelEnemyNormalAssetPath = "Assets/Art/BattleField/NeonGrid/Sprites/Panel_CyanBlue_Base.png";
+    private const string PanelEnemySelectedAssetPath = "Assets/Art/Runtime/Panels/Panel_Enemy_Selected.png";
+    private const string PanelTargetableOverlayAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Targetable_Perspective_Overlay.png";
+    private const string PanelDangerOverlayAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Danger_Perspective_Overlay.png";
+    private const string PanelHoverAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Hover_Perspective_Overlay.png";
+    private const string PanelDisabledAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Disabled_Perspective_Overlay.png";
+    private const string PanelBreakHintAssetPath = "Assets/Art/Runtime/Panels/Panel_BreakHint.png";
+    private const string PanelHealHintAssetPath = "Assets/Art/Runtime/Panels/Panel_HealHint.png";
+    private const string AllyAIdleSheetAssetPath = "Assets/Art/Runtime/Characters/Allies/AllyA_Protagonist/AllyA_Protagonist_IdleSheet.png";
+    private const string AllyAIdleTransparentSheetAssetPath = "Assets/Art/Runtime/Characters/Allies/AllyA_Protagonist/AllyA_Protagonist_IdleSheet_Transparent.png";
+    private const string AllyBIdleSheetAssetPath = "Assets/Art/Runtime/Characters/Allies/AllyB_CyberWolf/AllyB_CyberWolf_IdleSheet.png";
+    private const string AllyBIdleTransparentSheetAssetPath = "Assets/Art/Runtime/Characters/Allies/AllyB_CyberWolf/AllyB_CyberWolf_IdleSheet_Transparent.png";
+    private const string AllyCIdleSheetAssetPath = "Assets/Art/Runtime/Characters/Allies/AllyC_CyberFairy/AllyC_CyberFairy_IdleSheet.png";
+    private const string AllyCIdleTransparentSheetAssetPath = "Assets/Art/Runtime/Characters/Allies/AllyC_CyberFairy/AllyC_CyberFairy_IdleSheet_Transparent.png";
+    private const string CyberKnightIdleSheetAssetPath = "Assets/Art/Characters/CyberKnight/CyberKnight_idle_1x4_128.png";
+    private const string CyberWolfIdleSheetAssetPath = "Assets/Art/Enemies/CyberWolf/CyberWolf_idle_1x4_128.png";
+    private const string DigitalFairyIdleSheetAssetPath = "Assets/Art/Characters/DigitalFairy/DigitalFairy_idle_1x4_128.png";
+    private const int AllyIdleFrameCount = 4;
+    private const string EnemyDrillMoleIdleSheetAssetPath = "Assets/Art/Enemies/DrillMole/Enemy_DrillMole_Idle_Sheet.png";
+    private const string EnemyElecGeckoIdleSheetAssetPath = "Assets/Art/Enemies/ElecGecko/Enemy_ElecGecko_Idle_Sheet.png";
+    private const string EnemyBladeBugIdleSheetAssetPath = "Assets/Art/Enemies/BladeBug/Enemy_BladeBug_Idle_Sheet.png";
+    private const int EnemyIdleFrameCount = 6;
+    private const int BattleGridRows = 3;
+    private const int BattleGridAllyCols = 3;
+    private const int BattleGridEnemyCols = 3;
+    private const int BattleGridTotalCols = BattleGridAllyCols + BattleGridEnemyCols;
+    private const float BattleGridTileSize = 216f;
+    private const float BattleGridCenterYOffset = -132f;
+    private const float BattleFieldTiltDegrees = 62f;
+    private const float BattleSpriteScaleRowDelta = 0.13f;
+    private const float BattleSpriteYOffsetRowDelta = -0.035f;
+    private const string BattleSceneEnemyHpTextName = "HPText";
+    private const string BattleSceneEnemyHpRootName = "EnemyHpUI";
+    private const string BattleSceneEnemyHpObjectPrefix = "EnemyHp_";
+    private const string BattleSceneEnemyHpAnchorName = "HpAnchor";
+    private const float BattleSceneEnemyHpPanelYRatioFromBottom = 0.20716f;
+    private static readonly Vector3 BattleSceneEnemyHpFallbackLocalPosition = new Vector3(0f, -0.38f, -0.08f);
+    private static readonly Vector3 BattleSceneEnemyHpLocalScale = new Vector3(0.94f, 0.94f, 1f);
+    private static readonly Vector2 BattleGridAnchor = new Vector2(0.5f, 0.5f);
+    private static readonly Vector2 BattleSceneEnemyHpTextSize = new Vector2(92f, 38f);
+    private static readonly Vector2 BattleSceneEnemyHpWorldTextSize = new Vector2(2.8f, 1.05f);
+    private static readonly Vector2 BattleFieldSize = new Vector2(
+        BattleGridTileSize * BattleGridTotalCols,
+        BattleGridTileSize * BattleGridRows);
+    private static readonly Vector2 BattleFieldOffsetMin = new Vector2(
+        -BattleFieldSize.x * 0.5f,
+        BattleGridCenterYOffset - BattleFieldSize.y * 0.5f);
+    private static readonly Vector2 BattleFieldOffsetMax = BattleFieldOffsetMin + BattleFieldSize;
+    private static readonly Vector2 BattleGridOrigin = new Vector2(
+        -BattleGridTileSize * BattleGridTotalCols * 0.5f,
+        -BattleGridTileSize * BattleGridRows * 0.5f);
 
     private readonly List<AllyUnit> allies = new List<AllyUnit>();
     private readonly List<EnemyUnit> enemies = new List<EnemyUnit>();
-    private readonly List<CardData> drawPile = new List<CardData>();
-    private readonly List<CardData> hand = new List<CardData>();
-    private readonly List<CardData> discardPile = new List<CardData>();
+    private readonly List<SkillTimelineAction> skillTimelineActions = new List<SkillTimelineAction>();
+    private readonly List<PrototypeCard> drawPile = new List<PrototypeCard>();
+    private readonly List<PrototypeCard> hand = new List<PrototypeCard>();
+    private readonly List<PrototypeCard> discardPile = new List<PrototypeCard>();
     private readonly List<QueuedAction> queuedActions = new List<QueuedAction>();
     private readonly bool[] queuedHandSlots = new bool[HandSize];
+    private readonly Dictionary<string, AllySpriteDefinition> allySpriteDefinitions = new Dictionary<string, AllySpriteDefinition>();
+    private readonly Dictionary<string, EnemySpriteDefinition> enemySpriteDefinitions = new Dictionary<string, EnemySpriteDefinition>();
+    private readonly Dictionary<string, SpriteRenderer> sceneBattleGridUnitRenderers = new Dictionary<string, SpriteRenderer>();
+    private readonly Dictionary<string, TextMeshPro> battleSceneEnemyHpTexts = new Dictionary<string, TextMeshPro>();
+    private readonly Dictionary<string, SceneUnitSpriteAnimation> sceneBattleGridUnitAnimations = new Dictionary<string, SceneUnitSpriteAnimation>();
+    private readonly Dictionary<PartyPosition, bool> allyPanelHoverStates = new Dictionary<PartyPosition, bool>();
+    private readonly bool[,] enemyPanelHoverStates = new bool[3, 3];
+    private readonly List<GameObject> debugGridLines = new List<GameObject>();
 
     private readonly List<TimelineSlotView> timelineViews = new List<TimelineSlotView>();
     private readonly Dictionary<PartyPosition, AllyView> allyViews = new Dictionary<PartyPosition, AllyView>();
     private readonly EnemyCellView[,] enemyCellViews = new EnemyCellView[3, 3];
     private readonly List<CardButtonView> handViews = new List<CardButtonView>();
+    private readonly List<Text> chipQueueSlotTexts = new List<Text>();
 
     private Font uiFont;
     private Text turnText;
@@ -32,19 +118,73 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
     private Text queueText;
     private Text deckText;
     private Text selectedText;
+    private Text purposeText;
+    private Text timelineHintText;
+    private Text allyHintText;
+    private Text enemyHintText;
+    private Text timelineLabelText;
+    private Text allyLabelText;
+    private Text enemyLabelText;
+    private Text handLabelText;
+    private Text playerHpText;
+    private RectTransform battleSceneTimelineRoot;
+    private RectTransform battleSceneEnemyHpOverlayRoot;
     private Button weaponButton;
     private Button confirmButton;
     private Button resetButton;
+    private Button debugButton;
     private Button swapFrontMiddleButton;
     private Button swapMiddleBackButton;
-    private Button swapFrontBackButton;
+    private GameObject cardSelectRoot;
+    private Text chipDetailNameText;
+    private Text chipDetailPowerText;
+    private Text chipDetailMetaText;
+    private Text chipSelectTitleText;
+    private Image chipDetailArtwork;
+    private Image chipDetailAttributeIcon;
+    private Image chipDetailRankBox;
+    private TimelineBattleResultOverlay resultOverlay;
+    private BattleResultOverlay battleSceneResultOverlay;
+    private Sprite battleBackgroundSprite;
+    private Sprite battleUiFrameSprite;
+    private Sprite cardFrameSprite;
+    private TimelineSpriteSet timelineSprites;
+    private AllyUiSpriteSet allySprites;
+    private EnemyGridSpriteSet enemyGridSprites;
+    private EnemySpriteSet enemySprites;
+    private BattlePanelSpriteSet battlePanelSprites;
+    private Sprite battleFieldFloorSprite;
+    private Sprite battleGridFullImage2Sprite;
+    [SerializeField] private bool showDebugLabels;
+    [SerializeField] private bool mainBattleSceneMode;
+    [SerializeField] private BattlePanelVisualSet battlePanelVisualSet;
+    [SerializeField] private float allyIdleFrameSeconds = 0.20f;
+    [SerializeField] private float enemyIdleFrameSeconds = 0.14f;
+    [SerializeField] private Vector2 allyAScale = new Vector2(0.78f, 0.82f);
+    [SerializeField] private Vector2 allyBScale = new Vector2(0.92f, 0.68f);
+    [SerializeField] private Vector2 allyCScale = new Vector2(0.74f, 0.78f);
+    [SerializeField] private Vector2 allyAOffset = new Vector2(0.00f, 0.02f);
+    [SerializeField] private Vector2 allyBOffset = new Vector2(0.00f, 0.02f);
+    [SerializeField] private Vector2 allyCOffset = new Vector2(0.00f, 0.03f);
 
+    private bool useSceneBattleGridPrefabVisuals;
     private int currentTick;
     private int activeUnitSequence;
+    private int playerActionTurnCount;
+    private int playerDamageTakenCount;
+    private int maxSimultaneousDefeatCount;
+    private int allyIdleFrameIndex;
+    private int enemyIdleFrameIndex;
+    private float allyIdleTimer;
+    private float enemyIdleTimer;
     private AllyUnit selectedAlly;
     private EnemyUnit selectedEnemy;
     private TimelineUnit activeUnit;
     private System.Random random;
+    private bool loadedSavedDeck;
+    private bool battleEnded;
+    private bool cardSelectOpen;
+    private int selectedHandIndex;
 
     private enum PartyPosition
     {
@@ -58,6 +198,41 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         Card,
         Weapon,
         Swap
+    }
+
+    private enum PrototypeCardEffect
+    {
+        SingleDamage,
+        RowDamage,
+        PushDamage,
+        DelayDamage,
+        Heal,
+        EchoShot,
+        Unsupported
+    }
+
+    private enum PrototypeTargetKind
+    {
+        Enemy,
+        Ally,
+        None
+    }
+
+    private sealed class PrototypeCard
+    {
+        public string CardId;
+        public string Name;
+        public PrototypeCardEffect Effect;
+        public PrototypeTargetKind TargetKind;
+        public int Power;
+        public bool IsClearCard;
+        public CardDeckType DeckType;
+        public CardAttribute Attribute;
+        public int ActionDelay;
+        public CardData SourceCard;
+        public bool IsUnsupported;
+        public string UnsupportedReason;
+        public bool AddsEchoSkillEntry;
     }
 
     private sealed class AllyUnit
@@ -82,10 +257,13 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         public int Hp;
         public int MaxHp;
         public CardAttribute Attribute;
+        public CardAttribute Weakness;
         public Vector2Int GridPosition;
-        public string NextAction;
+        public string SpriteKey;
+        public string Status;
         public int Speed;
         public int NextReadyTick;
+        public bool IsBoss;
 
         public bool IsAlive
         {
@@ -93,29 +271,46 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         }
     }
 
+    private sealed class SkillTimelineAction
+    {
+        public string Id;
+        public string DisplayName;
+        public AllyUnit Owner;
+        public EnemyUnit Target;
+        public int Power;
+        public int NextReadyTick;
+        public int Delay;
+        public bool IsAlive = true;
+        public Color DisplayColor;
+        public string Status;
+    }
+
     private sealed class TimelineUnit
     {
         public AllyUnit Ally;
         public EnemyUnit Enemy;
+        public SkillTimelineAction SkillAction;
         public bool IsAlly;
+        public bool IsSkill;
         public int ReadyTick;
         public int Sequence;
+        public BattleTimelineEntry Entry;
 
         public string DisplayName
         {
-            get { return IsAlly ? Ally.Name : Enemy.Name; }
+            get { return IsSkill ? SkillAction != null ? SkillAction.DisplayName : "Skill" : IsAlly ? Ally.Name : Enemy.Name; }
         }
 
         public int Speed
         {
-            get { return IsAlly ? Ally.Speed : Enemy.Speed; }
+            get { return IsSkill ? 0 : IsAlly ? Ally.Speed : Enemy.Speed; }
         }
     }
 
     private sealed class QueuedAction
     {
         public ActionKind Kind;
-        public CardData Card;
+        public PrototypeCard Card;
         public int HandIndex = -1;
         public AllyUnit Actor;
         public AllyUnit AllyTarget;
@@ -130,6 +325,8 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
     {
         public Image Panel;
         public Image Accent;
+        public Image UnitIcon;
+        public Image Cursor;
         public Text NameText;
         public Text DetailText;
     }
@@ -138,24 +335,145 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
     {
         public Image Panel;
         public Image Accent;
+        public Image Portrait;
+        public Image SelectedHighlight;
+        public Image ActiveHighlight;
+        public Image TargetableOverlay;
+        public Image DangerOverlay;
+        public Image HoverOverlay;
+        public Image DisabledOverlay;
+        public RectTransform UnitAnchor;
+        public Image HpBack;
+        public Image HpFill;
+        public RectTransform HpFillRect;
         public Text PositionText;
         public Text NameText;
         public Text DetailText;
         public Button Button;
     }
 
+    private sealed class AllySpriteDefinition
+    {
+        public string AllyName;
+        public string CharacterLabel;
+        public Sprite[] IdleFrames = new Sprite[0];
+        public Vector2 Scale = Vector2.one;
+        public Vector2 Offset;
+        public Color FallbackColor = Color.white;
+    }
+
+    private sealed class EnemySpriteDefinition
+    {
+        public string EnemyKey;
+        public string CharacterLabel;
+        public Sprite[] IdleFrames = new Sprite[0];
+        public Vector2 Scale = Vector2.one;
+        public Vector2 Offset;
+        public bool FlipX;
+        public Color FallbackColor = Color.white;
+    }
+
+    private sealed class SceneUnitSpriteAnimation
+    {
+        public Sprite[] IdleFrames = new Sprite[0];
+        public bool FlipX;
+        public bool IsEnemy;
+    }
+
     private sealed class EnemyCellView
     {
         public Image Panel;
+        public Image Highlight;
+        public Image TargetableOverlay;
+        public Image DangerOverlay;
+        public Image HoverOverlay;
+        public Image DisabledOverlay;
+        public RectTransform UnitAnchor;
+        public GameObject EnemyRoot;
+        public Image EnemySprite;
+        public Image HpBack;
+        public Image HpFill;
+        public RectTransform HpFillRect;
+        public Text NameText;
         public Text Label;
         public Button Button;
+    }
+
+    private sealed class TimelineSpriteSet
+    {
+        public Sprite AllyNormal;
+        public Sprite AllySelected;
+        public Sprite AllyActive;
+        public Sprite AllyDone;
+        public Sprite EnemyNormal;
+        public Sprite EnemySelected;
+        public Sprite EnemyActive;
+        public Sprite EnemyDone;
+        public Sprite TargetHighlight;
+        public Sprite StatusBadge;
+        public Sprite SlotBase;
+        public Sprite Cursor;
+    }
+
+    private sealed class AllyUiSpriteSet
+    {
+        public Sprite FrontFrame;
+        public Sprite MiddleFrame;
+        public Sprite BackFrame;
+        public Sprite SelectedFrame;
+        public Sprite ActiveFrame;
+        public Sprite HpBarBack;
+        public Sprite HpBarFill;
+        public Sprite SmallIconFrame;
+    }
+
+    private sealed class EnemyGridSpriteSet
+    {
+        public Sprite Normal;
+        public Sprite Empty;
+        public Sprite Selected;
+        public Sprite Targetable;
+        public Sprite Danger;
+        public Sprite Cracked;
+        public Sprite Hole;
+        public Sprite Ice;
+        public Sprite Grass;
+        public Sprite Magma;
+        public Sprite Poison;
+        public Sprite HighlightOverlay;
+    }
+
+    private sealed class EnemySpriteSet
+    {
+        public Sprite NormalEnemy;
+        public Sprite FireEnemy;
+        public Sprite IceEnemy;
+    }
+
+    private sealed class BattlePanelSpriteSet
+    {
+        public Sprite PlayerNormal;
+        public Sprite PlayerSelected;
+        public Sprite EnemyNormal;
+        public Sprite EnemySelected;
+        public Sprite TargetableOverlay;
+        public Sprite DangerOverlay;
+        public Sprite HoverOverlay;
+        public Sprite DisabledOverlay;
+        public Sprite BreakHintOverlay;
+        public Sprite HealHintOverlay;
     }
 
     private sealed class CardButtonView
     {
         public Image Panel;
+        public Image Artwork;
+        public Image AttributeIcon;
+        public Image RankBox;
         public Text NameText;
         public Text DetailText;
+        public Text RankText;
+        public Text PowerText;
         public Button Button;
     }
 
@@ -165,8 +483,10 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         public int DeltaTick;
     }
 
-    private void Awake()
+    protected virtual void Awake()
     {
+        mainBattleSceneMode = mainBattleSceneMode || SceneManager.GetActiveScene().name == "BattleScene";
+        useSceneBattleGridPrefabVisuals = mainBattleSceneMode && GameObject.Find(BattleGridBottomPrefabName) != null;
         random = new System.Random(17);
         uiFont = CreateJapaneseFont();
         if (uiFont == null)
@@ -179,15 +499,37 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
 
+        if (mainBattleSceneMode)
+        {
+            Application.runInBackground = true;
+        }
+
+        if (mainBattleSceneMode)
+        {
+            ClearPreviewArtSprites();
+        }
+        else
+        {
+            LoadPreviewArtSprites();
+        }
+
+        LoadAllyCharacterSprites();
+        LoadEnemyCharacterSprites();
+        LoadSceneBattleGridUnitAnimations();
+        LoadBattlePanelSprites();
         EnsureCamera();
         EnsureEventSystem();
         InitializeBattle();
         BuildUi();
-        RefreshAll("BattleTimelinePrototypeScene ready. Select a card, weapon, or swap, then confirm.");
+        CacheSceneBattleGridUnitRenderers();
+        RefreshAll("Ready.");
     }
 
-    private void Update()
+    protected virtual void Update()
     {
+        UpdateAllyIdleAnimation();
+        UpdateEnemyIdleAnimation();
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null)
         {
@@ -224,6 +566,20 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         }
     }
 
+    protected virtual void LateUpdate()
+    {
+        UpdateSceneEnemyHpNumbers();
+    }
+
+    public void SetInitialDebugLabels(bool enabled)
+    {
+        showDebugLabels = enabled;
+        if (statusText != null)
+        {
+            RefreshAll(showDebugLabels ? "Debug labels on." : "Ready.");
+        }
+    }
+
     private static Font CreateJapaneseFont()
     {
         string[] fontNames = { "Meiryo UI", "Yu Gothic UI", "Meiryo", "Yu Gothic", "Noto Sans CJK JP", "Arial" };
@@ -241,8 +597,21 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             cameraObject.AddComponent<AudioListener>();
         }
 
-        camera.orthographic = true;
-        camera.orthographicSize = 5f;
+        if (mainBattleSceneMode)
+        {
+            camera.orthographic = false;
+            camera.fieldOfView = 34f;
+            camera.nearClipPlane = 0.1f;
+            camera.farClipPlane = 1000f;
+            camera.transform.position = new Vector3(0f, 0f, -10f);
+            camera.transform.rotation = Quaternion.identity;
+        }
+        else
+        {
+            camera.orthographic = true;
+            camera.orthographicSize = 5f;
+        }
+
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0.018f, 0.022f, 0.032f);
     }
@@ -302,6 +671,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
     {
         allies.Clear();
         enemies.Clear();
+        skillTimelineActions.Clear();
         drawPile.Clear();
         hand.Clear();
         discardPile.Clear();
@@ -310,52 +680,221 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
 
         currentTick = 0;
         activeUnitSequence = 0;
+        playerActionTurnCount = 1;
+        playerDamageTakenCount = 0;
+        maxSimultaneousDefeatCount = 0;
+        loadedSavedDeck = false;
+        battleEnded = false;
+        cardSelectOpen = false;
+        selectedHandIndex = 0;
 
         allies.Add(new AllyUnit { Name = "AllyFront", Hp = 150, MaxHp = 150, Position = PartyPosition.Front, Speed = 48, Status = "Normal", NextReadyTick = 0 });
         allies.Add(new AllyUnit { Name = "AllyMiddle", Hp = 125, MaxHp = 125, Position = PartyPosition.Middle, Speed = 58, Status = "Normal", NextReadyTick = 8 });
         allies.Add(new AllyUnit { Name = "AllyBack", Hp = 110, MaxHp = 110, Position = PartyPosition.Back, Speed = 68, Status = "Normal", NextReadyTick = 16 });
+        EnsureUniquePartyPositions();
 
-        enemies.Add(new EnemyUnit { Name = "Enemy1", Hp = 90, MaxHp = 90, Attribute = CardAttribute.Neutral, GridPosition = new Vector2Int(1, 1), NextAction = "Claw", Speed = 42, NextReadyTick = 12 });
-        enemies.Add(new EnemyUnit { Name = "Enemy2", Hp = 70, MaxHp = 70, Attribute = CardAttribute.Fire, GridPosition = new Vector2Int(0, 2), NextAction = "Shot", Speed = 36, NextReadyTick = 24 });
-        enemies.Add(new EnemyUnit { Name = "Enemy3", Hp = 75, MaxHp = 75, Attribute = CardAttribute.Ice, GridPosition = new Vector2Int(2, 2), NextAction = "Guard Break", Speed = 32, NextReadyTick = 32 });
+        enemies.Add(new EnemyUnit { Name = "Enemy1", Hp = 90, MaxHp = 90, Attribute = CardAttribute.Neutral, Weakness = CardAttribute.Shot, GridPosition = new Vector2Int(1, 1), SpriteKey = "DrillMole", Status = "Ready", Speed = 42, NextReadyTick = 12, IsBoss = false });
+        enemies.Add(new EnemyUnit { Name = "Enemy2", Hp = 70, MaxHp = 70, Attribute = CardAttribute.Fire, Weakness = CardAttribute.Water, GridPosition = new Vector2Int(0, 2), SpriteKey = "ElecGecko", Status = "Ready", Speed = 36, NextReadyTick = 24, IsBoss = false });
+        enemies.Add(new EnemyUnit { Name = "Enemy3", Hp = 75, MaxHp = 75, Attribute = CardAttribute.Ice, Weakness = CardAttribute.Fire, GridPosition = new Vector2Int(2, 2), SpriteKey = "BladeBug", Status = "Ready", Speed = 32, NextReadyTick = 32, IsBoss = false });
 
         selectedAlly = allies[0];
         selectedEnemy = enemies[0];
 
-        LoadPrototypeDeck();
-        Shuffle(drawPile);
+        BuildTimelineDeck();
         DrawToHand();
         activeUnit = GetCurrentActiveUnit();
     }
 
-    private void LoadPrototypeDeck()
+    private void BuildTimelineDeck()
     {
-        CardData[] loadedCards = Resources.LoadAll<CardData>("Cards");
-        for (int i = 0; i < loadedCards.Length; i++)
+        List<CardData> savedDeck;
+        if (DeckStorage.TryLoadDeck(out savedDeck))
         {
-            CardData card = loadedCards[i];
-            if (card != null && card.Effect != CardEffectType.Move)
+            DeckValidationResult validation = DeckValidator.Validate(savedDeck);
+            if (validation.IsValid)
             {
-                drawPile.Add(card);
+                for (int i = 0; i < savedDeck.Count; i++)
+                {
+                    drawPile.Add(CreatePrototypeCard(TimelineCardActionAdapter.Resolve(savedDeck[i])));
+                }
+
+                drawPile.Add(CreateEchoShotCard());
+                loadedSavedDeck = true;
+                Shuffle(drawPile);
+                Debug.Log((mainBattleSceneMode ? "BattleScene" : "BattleTimelinePrototypeScene") + " loaded saved deck: " + drawPile.Count + " cards.");
+                return;
             }
+
+            Debug.Log((mainBattleSceneMode ? "BattleScene" : "BattleTimelinePrototypeScene") + " saved deck is invalid, using fallback deck. First error: "
+                + (validation.Errors.Count > 0 ? validation.Errors[0] : "unknown"));
+        }
+        else
+        {
+            Debug.Log((mainBattleSceneMode ? "BattleScene" : "BattleTimelinePrototypeScene") + " found no saved deck, using fallback deck.");
         }
 
-        if (drawPile.Count == 0)
+        if (mainBattleSceneMode)
         {
-            List<CardData> starterDeck = CardData.CreateStarterDeck();
-            for (int i = 0; i < starterDeck.Count; i++)
-            {
-                if (starterDeck[i] != null && starterDeck[i].Effect != CardEffectType.Move)
-                {
-                    drawPile.Add(starterDeck[i]);
-                }
-            }
+            BuildStarterDeck();
         }
+        else
+        {
+            BuildPrototypeDeck();
+        }
+
+        ExpandFallbackDeckToThirtyCards();
+        Shuffle(drawPile);
+    }
+
+    private void BuildStarterDeck()
+    {
+        List<CardData> starterCards = CardData.CreateStarterDeck();
+        for (int i = 0; i < starterCards.Count; i++)
+        {
+            drawPile.Add(CreatePrototypeCard(TimelineCardActionAdapter.Resolve(starterCards[i])));
+        }
+
+        drawPile.Add(CreateEchoShotCard());
+    }
+
+    private void ExpandFallbackDeckToThirtyCards()
+    {
+        int seedCount = drawPile.Count;
+        if (seedCount == 0)
+        {
+            return;
+        }
+
+        while (drawPile.Count < DeckValidator.RequiredDeckCount)
+        {
+            drawPile.Add(drawPile[drawPile.Count % seedCount]);
+        }
+    }
+
+    private void BuildPrototypeDeck()
+    {
+        drawPile.Add(CreateEchoShotCard());
+        drawPile.Add(CreatePrototypeCard("AquaShot", "アクアショット", PrototypeCardEffect.SingleDamage, PrototypeTargetKind.Enemy, 40, CardAttribute.Water));
+        drawPile.Add(CreatePrototypeCard("WideSlash", "ワイドスラッシュ", PrototypeCardEffect.RowDamage, PrototypeTargetKind.Enemy, 35, CardAttribute.Slash));
+        drawPile.Add(CreatePrototypeCard("PushShot", "プッシュショット", PrototypeCardEffect.PushDamage, PrototypeTargetKind.Enemy, 20, CardAttribute.Shot));
+        drawPile.Add(CreatePrototypeCard("DelayBullet", "ディレイバレット", PrototypeCardEffect.DelayDamage, PrototypeTargetKind.Enemy, 20, CardAttribute.Electric));
+        drawPile.Add(CreatePrototypeCard("Repair", "リペア", PrototypeCardEffect.Heal, PrototypeTargetKind.Ally, 50, CardAttribute.Neutral, true));
+        drawPile.Add(CreatePrototypeCard("AquaShot2", "アクアショット", PrototypeCardEffect.SingleDamage, PrototypeTargetKind.Enemy, 40, CardAttribute.Water));
+        drawPile.Add(CreatePrototypeCard("WideSlash2", "ワイドスラッシュ", PrototypeCardEffect.RowDamage, PrototypeTargetKind.Enemy, 35, CardAttribute.Slash));
+        drawPile.Add(CreatePrototypeCard("PushShot2", "プッシュショット", PrototypeCardEffect.PushDamage, PrototypeTargetKind.Enemy, 20, CardAttribute.Shot));
+        drawPile.Add(CreatePrototypeCard("DelayBullet2", "ディレイバレット", PrototypeCardEffect.DelayDamage, PrototypeTargetKind.Enemy, 20, CardAttribute.Electric));
+        drawPile.Add(CreatePrototypeCard("Repair2", "リペア", PrototypeCardEffect.Heal, PrototypeTargetKind.Ally, 50, CardAttribute.Neutral, true));
+    }
+
+    private PrototypeCard CreatePrototypeCard(TimelineCardAction action)
+    {
+        PrototypeCardEffect effect = PrototypeCardEffect.Unsupported;
+        PrototypeTargetKind targetKind = PrototypeTargetKind.None;
+        if (action != null)
+        {
+            effect = ConvertEffect(action.EffectKind);
+            targetKind = ConvertTargetKind(action.TargetKind);
+        }
+
+        return new PrototypeCard
+        {
+            CardId = action != null ? action.CardId : "NullCard",
+            Name = action != null ? action.DisplayName : "Null Card",
+            Effect = effect,
+            TargetKind = targetKind,
+            Power = action != null ? action.Power : 0,
+            IsClearCard = action != null && action.IsClearCard,
+            DeckType = action != null ? action.DeckType : CardDeckType.N,
+            Attribute = action != null ? action.Attribute : CardAttribute.Neutral,
+            ActionDelay = action != null ? action.ActionDelay : BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait),
+            SourceCard = action != null ? action.SourceCard : null,
+            IsUnsupported = action != null && action.IsUnsupported,
+            UnsupportedReason = action != null ? action.UnsupportedReason : "No timeline card action was provided.",
+            AddsEchoSkillEntry = action != null && LooksLikeEchoCard(action.CardId, action.DisplayName)
+        };
+    }
+
+    private PrototypeCard CreateEchoShotCard()
+    {
+        return new PrototypeCard
+        {
+            CardId = "EchoShot",
+            Name = "Echo Shot",
+            Effect = PrototypeCardEffect.EchoShot,
+            TargetKind = PrototypeTargetKind.Enemy,
+            Power = EchoShotPower,
+            IsClearCard = false,
+            DeckType = CardDeckType.N,
+            Attribute = CardAttribute.Electric,
+            ActionDelay = BattleActionDelayResolver.Resolve(BattleActionDelayKind.NormalCard),
+            IsUnsupported = false,
+            AddsEchoSkillEntry = true
+        };
+    }
+
+    private static bool LooksLikeEchoCard(string cardId, string displayName)
+    {
+        return ContainsText(cardId, "Echo") || ContainsText(displayName, "Echo");
+    }
+
+    private static bool ContainsText(string value, string token)
+    {
+        return !string.IsNullOrEmpty(value) && value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static PrototypeCardEffect ConvertEffect(TimelineCardEffectKind effectKind)
+    {
+        switch (effectKind)
+        {
+            case TimelineCardEffectKind.SingleDamage:
+                return PrototypeCardEffect.SingleDamage;
+            case TimelineCardEffectKind.RowDamage:
+                return PrototypeCardEffect.RowDamage;
+            case TimelineCardEffectKind.PushDamage:
+                return PrototypeCardEffect.PushDamage;
+            case TimelineCardEffectKind.DelayDamage:
+                return PrototypeCardEffect.DelayDamage;
+            case TimelineCardEffectKind.Heal:
+                return PrototypeCardEffect.Heal;
+            default:
+                return PrototypeCardEffect.Unsupported;
+        }
+    }
+
+    private static PrototypeTargetKind ConvertTargetKind(TimelineCardTargetKind targetKind)
+    {
+        switch (targetKind)
+        {
+            case TimelineCardTargetKind.Enemy:
+                return PrototypeTargetKind.Enemy;
+            case TimelineCardTargetKind.Ally:
+                return PrototypeTargetKind.Ally;
+            default:
+                return PrototypeTargetKind.None;
+        }
+    }
+
+    private PrototypeCard CreatePrototypeCard(string cardId, string cardName, PrototypeCardEffect effect, PrototypeTargetKind targetKind, int power, CardAttribute attribute, bool isClearCard = false)
+    {
+        return new PrototypeCard
+        {
+            CardId = cardId,
+            Name = cardName,
+            Effect = effect,
+            TargetKind = targetKind,
+            Power = power,
+            IsClearCard = isClearCard,
+            DeckType = CardDeckType.N,
+            Attribute = attribute,
+            ActionDelay = BattleActionDelayResolver.ResolveCardDelay(effect == PrototypeCardEffect.Heal ? TimelineCardEffectKind.Heal : TimelineCardEffectKind.SingleDamage, isClearCard, CardDeckType.N),
+            IsUnsupported = false,
+            AddsEchoSkillEntry = effect == PrototypeCardEffect.EchoShot || LooksLikeEchoCard(cardId, cardName)
+        };
     }
 
     private void BuildUi()
     {
-        GameObject canvasObject = new GameObject("Battle Timeline Prototype Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        GameObject canvasObject = new GameObject(mainBattleSceneMode ? "Battle Scene Timeline Canvas" : "Battle Timeline Prototype Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.pixelPerfect = true;
@@ -365,164 +904,1036 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         scaler.referenceResolution = new Vector2(1280f, 720f);
         scaler.matchWidthOrHeight = 0.5f;
 
-        Image background = CreateImage("Background", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.016f, 0.02f, 0.03f, 1f));
+        RectTransform root = CreateRect(mainBattleSceneMode ? "BattleSceneTimelineRoot" : "BattleTimelinePrototypeRoot", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        battleSceneTimelineRoot = root;
+        battleSceneEnemyHpOverlayRoot = null;
+
+        BuildPreviewBackground(root);
+        BuildBackgroundGrid(root);
+        if (!mainBattleSceneMode)
+        {
+            BuildVisualFrame(root);
+        }
+        BuildHeader(root);
+        BuildTimeline(root);
+        BuildImage2BattleFieldArt(root);
+        RectTransform battleFieldRoot = mainBattleSceneMode ? CreateBattleFieldRoot(root) : root;
+        BuildAllies(battleFieldRoot);
+        BuildEnemyGrid(battleFieldRoot);
+        BuildHandAndCommands(root);
+        if (!useSceneBattleGridPrefabVisuals)
+        {
+            EnsureBattleSceneEnemyHpOverlay();
+        }
+        BuildResultOverlay(root);
+    }
+
+    private void LoadPreviewArtSprites()
+    {
+        battleBackgroundSprite = LoadPreviewSprite(BattleBackgroundAssetPath);
+        battleUiFrameSprite = LoadPreviewSprite(BattleUiFrameAssetPath);
+        cardFrameSprite = LoadPreviewSprite(CardFrameAssetPath);
+        timelineSprites = LoadTimelineSprites();
+        allySprites = LoadAllyUiSprites();
+        enemyGridSprites = LoadEnemyGridSprites();
+        enemySprites = LoadEnemySprites();
+    }
+
+    private void ClearPreviewArtSprites()
+    {
+        battleBackgroundSprite = null;
+        battleUiFrameSprite = null;
+        cardFrameSprite = null;
+        timelineSprites = null;
+        allySprites = null;
+        enemyGridSprites = null;
+        enemySprites = null;
+    }
+
+    private void LoadAllyCharacterSprites()
+    {
+        allySpriteDefinitions.Clear();
+        allyIdleFrameIndex = 0;
+        allyIdleTimer = 0f;
+
+        RegisterAllySpriteDefinition(
+            "AllyFront",
+            "Protagonist",
+            allyAScale,
+            allyAOffset,
+            new Color(0.18f, 0.62f, 1f, 1f),
+            new[] { AllyAIdleTransparentSheetAssetPath, AllyAIdleSheetAssetPath },
+            new[]
+            {
+                "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_00.png",
+                "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_01.png",
+                "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_02.png",
+                "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_03.png"
+            },
+            CyberKnightIdleSheetAssetPath);
+
+        RegisterAllySpriteDefinition(
+            "AllyMiddle",
+            "Cyber Wolf",
+            allyBScale,
+            allyBOffset,
+            new Color(0.26f, 1f, 0.45f, 1f),
+            new[] { AllyBIdleTransparentSheetAssetPath, AllyBIdleSheetAssetPath },
+            new[]
+            {
+                "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_00.png",
+                "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_01.png",
+                "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_02.png",
+                "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_03.png"
+            },
+            CyberWolfIdleSheetAssetPath);
+
+        RegisterAllySpriteDefinition(
+            "AllyBack",
+            "Cyber Fairy",
+            allyCScale,
+            allyCOffset,
+            new Color(0.38f, 0.92f, 1f, 1f),
+            new[] { AllyCIdleTransparentSheetAssetPath, AllyCIdleSheetAssetPath },
+            new[]
+            {
+                "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_00.png",
+                "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_01.png",
+                "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_02.png",
+                "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_03.png"
+            },
+            DigitalFairyIdleSheetAssetPath);
+    }
+
+    private void LoadEnemyCharacterSprites()
+    {
+        enemySpriteDefinitions.Clear();
+        enemyIdleFrameIndex = 0;
+        enemyIdleTimer = 0f;
+
+        RegisterEnemySpriteDefinition(
+            "DrillMole",
+            "Drill Mole",
+            EnemyDrillMoleIdleSheetAssetPath,
+            new Vector2(0.92f, 0.78f),
+            new Vector2(0.00f, 0.03f),
+            true,
+            new Color(1f, 0.70f, 0.26f, 1f));
+
+        RegisterEnemySpriteDefinition(
+            "ElecGecko",
+            "Elec Gecko",
+            EnemyElecGeckoIdleSheetAssetPath,
+            new Vector2(0.94f, 0.72f),
+            new Vector2(0.00f, 0.02f),
+            false,
+            new Color(0.34f, 1f, 0.86f, 1f));
+
+        RegisterEnemySpriteDefinition(
+            "BladeBug",
+            "Blade Bug",
+            EnemyBladeBugIdleSheetAssetPath,
+            new Vector2(0.86f, 0.82f),
+            new Vector2(0.00f, 0.03f),
+            false,
+            new Color(1f, 0.40f, 0.78f, 1f));
+    }
+
+    private void LoadSceneBattleGridUnitAnimations()
+    {
+        sceneBattleGridUnitAnimations.Clear();
+        if (!mainBattleSceneMode)
+        {
+            return;
+        }
+
+        RegisterSceneBattleGridUnitAnimation("Ally_Front_CyberKnight", LoadAllyIdleFrames(new string[0], new[]
+        {
+            "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_00.png",
+            "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_01.png",
+            "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_02.png",
+            "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_03.png"
+        }, CyberKnightIdleSheetAssetPath), false, false);
+
+        RegisterSceneBattleGridUnitAnimation("Ally_Middle_CyberWolf", LoadAllyIdleFrames(new string[0], new[]
+        {
+            "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_00.png",
+            "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_01.png",
+            "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_02.png",
+            "Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_03.png"
+        }, CyberWolfIdleSheetAssetPath), false, false);
+
+        RegisterSceneBattleGridUnitAnimation("Ally_Back_DigitalFairy", LoadAllyIdleFrames(new string[0], new[]
+        {
+            "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_00.png",
+            "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_01.png",
+            "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_02.png",
+            "Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_03.png"
+        }, DigitalFairyIdleSheetAssetPath), false, false);
+
+        RegisterSceneBattleGridUnitAnimation("Enemy_DrillMole", LoadEnemyIdleFrames(EnemyDrillMoleIdleSheetAssetPath), true, true);
+        RegisterSceneBattleGridUnitAnimation("Enemy_ElecGecko", LoadEnemyIdleFrames(EnemyElecGeckoIdleSheetAssetPath), false, true);
+        RegisterSceneBattleGridUnitAnimation("Enemy_BladeBug", LoadEnemyIdleFrames(EnemyBladeBugIdleSheetAssetPath), false, true);
+    }
+
+    private void RegisterSceneBattleGridUnitAnimation(string unitName, Sprite[] idleFrames, bool flipX, bool isEnemy)
+    {
+        sceneBattleGridUnitAnimations[unitName] = new SceneUnitSpriteAnimation
+        {
+            IdleFrames = idleFrames != null ? idleFrames : new Sprite[0],
+            FlipX = flipX,
+            IsEnemy = isEnemy
+        };
+    }
+
+    private void LoadBattlePanelSprites()
+    {
+        battleFieldFloorSprite = mainBattleSceneMode ? LoadOptionalSprite(BattleFieldFloorAssetPath) : null;
+        battleGridFullImage2Sprite = mainBattleSceneMode ? LoadOptionalSprite(BattleGridFullImage2AssetPath) : null;
+        BattlePanelVisualSet visualSet = battlePanelVisualSet;
+#if UNITY_EDITOR
+        if (visualSet == null)
+        {
+            visualSet = UnityEditor.AssetDatabase.LoadAssetAtPath<BattlePanelVisualSet>(BattlePanelVisualSetAssetPath);
+        }
+#endif
+
+        battlePanelSprites = new BattlePanelSpriteSet
+        {
+            PlayerNormal = mainBattleSceneMode ? LoadOptionalSprite(PanelPlayerNormalAssetPath) : visualSet != null && visualSet.PlayerNormal != null ? visualSet.PlayerNormal : LoadOptionalSprite(PanelPlayerNormalAssetPath),
+            PlayerSelected = visualSet != null && visualSet.PlayerSelected != null ? visualSet.PlayerSelected : LoadOptionalSprite(PanelPlayerSelectedAssetPath),
+            EnemyNormal = mainBattleSceneMode ? LoadOptionalSprite(PanelEnemyNormalAssetPath) : visualSet != null && visualSet.EnemyNormal != null ? visualSet.EnemyNormal : LoadOptionalSprite(PanelEnemyNormalAssetPath),
+            EnemySelected = visualSet != null && visualSet.EnemySelected != null ? visualSet.EnemySelected : LoadOptionalSprite(PanelEnemySelectedAssetPath),
+            TargetableOverlay = visualSet != null && visualSet.TargetableOverlay != null ? visualSet.TargetableOverlay : LoadOptionalSprite(PanelTargetableOverlayAssetPath),
+            DangerOverlay = visualSet != null && visualSet.DangerOverlay != null ? visualSet.DangerOverlay : LoadOptionalSprite(PanelDangerOverlayAssetPath),
+            HoverOverlay = visualSet != null && visualSet.HoverOverlay != null ? visualSet.HoverOverlay : LoadOptionalSprite(PanelHoverAssetPath),
+            DisabledOverlay = visualSet != null && visualSet.DisabledOverlay != null ? visualSet.DisabledOverlay : LoadOptionalSprite(PanelDisabledAssetPath),
+            BreakHintOverlay = visualSet != null && visualSet.BreakHintOverlay != null ? visualSet.BreakHintOverlay : LoadOptionalSprite(PanelBreakHintAssetPath),
+            HealHintOverlay = visualSet != null && visualSet.HealHintOverlay != null ? visualSet.HealHintOverlay : LoadOptionalSprite(PanelHealHintAssetPath)
+        };
+    }
+
+    private void RegisterAllySpriteDefinition(string allyName, string characterLabel, Vector2 scale, Vector2 offset, Color fallbackColor, string[] preferredSheets, string[] fallbackFramePaths, string fallbackSheetPath)
+    {
+        AllySpriteDefinition definition = new AllySpriteDefinition
+        {
+            AllyName = allyName,
+            CharacterLabel = characterLabel,
+            Scale = ClampSpriteScale(scale),
+            Offset = offset,
+            FallbackColor = fallbackColor,
+            IdleFrames = LoadAllyIdleFrames(preferredSheets, fallbackFramePaths, fallbackSheetPath)
+        };
+
+        if (definition.IdleFrames.Length == 0)
+        {
+            Debug.LogWarning("BattleScene ally sprite missing for " + characterLabel + ". A fallback color icon will be used.");
+        }
+
+        allySpriteDefinitions[allyName] = definition;
+    }
+
+    private void RegisterEnemySpriteDefinition(string enemyKey, string characterLabel, string sheetPath, Vector2 scale, Vector2 offset, bool flipX, Color fallbackColor)
+    {
+        EnemySpriteDefinition definition = new EnemySpriteDefinition
+        {
+            EnemyKey = enemyKey,
+            CharacterLabel = characterLabel,
+            Scale = ClampSpriteScale(scale),
+            Offset = offset,
+            FlipX = flipX,
+            FallbackColor = fallbackColor,
+            IdleFrames = LoadEnemyIdleFrames(sheetPath)
+        };
+
+        if (definition.IdleFrames.Length == 0)
+        {
+            Debug.LogWarning("BattleScene enemy sprite missing for " + characterLabel + ". A fallback color token will be used.");
+        }
+
+        enemySpriteDefinitions[enemyKey] = definition;
+    }
+
+    private static Vector2 ClampSpriteScale(Vector2 scale)
+    {
+        return new Vector2(Mathf.Clamp(scale.x, 0.18f, 0.99f), Mathf.Clamp(scale.y, 0.18f, 0.97f));
+    }
+
+    private static Sprite[] LoadAllyIdleFrames(string[] preferredSheets, string[] fallbackFramePaths, string fallbackSheetPath)
+    {
+        for (int i = 0; i < preferredSheets.Length; i++)
+        {
+            Sprite[] frames = LoadSpritesFromImportedSheet(preferredSheets[i], AllyIdleFrameCount);
+            if (frames.Length >= AllyIdleFrameCount)
+            {
+                return TrimFrames(frames, AllyIdleFrameCount);
+            }
+
+            frames = SliceSpriteSheetFromFile(preferredSheets[i], 2, 2);
+            if (frames.Length >= AllyIdleFrameCount)
+            {
+                return TrimFrames(frames, AllyIdleFrameCount);
+            }
+        }
+
+        Sprite[] fallbackFrames = LoadIndividualSpriteFiles(fallbackFramePaths);
+        if (fallbackFrames.Length >= AllyIdleFrameCount)
+        {
+            return TrimFrames(fallbackFrames, AllyIdleFrameCount);
+        }
+
+        Sprite[] importedFallback = LoadSpritesFromImportedSheet(fallbackSheetPath, AllyIdleFrameCount);
+        if (importedFallback.Length >= AllyIdleFrameCount)
+        {
+            return TrimFrames(importedFallback, AllyIdleFrameCount);
+        }
+
+        Sprite[] slicedFallback = SliceSpriteSheetFromFile(fallbackSheetPath, 4, 1);
+        if (slicedFallback.Length >= AllyIdleFrameCount)
+        {
+            return TrimFrames(slicedFallback, AllyIdleFrameCount);
+        }
+
+        return new Sprite[0];
+    }
+
+    private static Sprite[] LoadEnemyIdleFrames(string sheetPath)
+    {
+        Sprite[] importedFrames = LoadSpritesFromImportedSheet(sheetPath, EnemyIdleFrameCount);
+        if (importedFrames.Length >= EnemyIdleFrameCount)
+        {
+            return TrimFrames(importedFrames, EnemyIdleFrameCount);
+        }
+
+        Sprite[] slicedFrames = SliceSpriteSheetFromFile(sheetPath, EnemyIdleFrameCount, 1);
+        if (slicedFrames.Length >= EnemyIdleFrameCount)
+        {
+            return TrimFrames(slicedFrames, EnemyIdleFrameCount);
+        }
+
+        return new Sprite[0];
+    }
+
+    private static Sprite[] TrimFrames(Sprite[] frames, int count)
+    {
+        if (frames.Length <= count)
+        {
+            return frames;
+        }
+
+        Sprite[] trimmed = new Sprite[count];
+        for (int i = 0; i < count; i++)
+        {
+            trimmed[i] = frames[i];
+        }
+
+        return trimmed;
+    }
+
+    private TimelineSpriteSet LoadTimelineSprites()
+    {
+        return new TimelineSpriteSet
+        {
+            AllyNormal = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Ally_Normal", "Ally_Normal"),
+            AllySelected = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Ally_Selected", "Ally_Selected"),
+            AllyActive = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Ally_Active", "Ally_Active"),
+            AllyDone = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Ally_Dim", "Ally_Done"),
+            EnemyNormal = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Enemy_Normal", "Enemy_Normal"),
+            EnemySelected = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Enemy_Selected", "Enemy_Selected"),
+            EnemyActive = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Enemy_Active", "Enemy_Active"),
+            EnemyDone = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Enemy_Dim", "Enemy_Done"),
+            TargetHighlight = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Target_Highlight", "Target_Highlight"),
+            StatusBadge = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Status_Badge", "Status_Badge"),
+            SlotBase = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Slot_Base", "Timeline_SlotBase"),
+            Cursor = LoadNamedPreviewSprite(TimelineIconsAssetPath, "Timeline_Current_Cursor", "Timeline_Cursor")
+        };
+    }
+
+    private AllyUiSpriteSet LoadAllyUiSprites()
+    {
+        return new AllyUiSpriteSet
+        {
+            FrontFrame = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_Front_PortraitFrame", "Front_Frame"),
+            MiddleFrame = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_Middle_PortraitFrame", "Middle_Frame"),
+            BackFrame = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_Back_PortraitFrame", "Back_Frame"),
+            SelectedFrame = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_Selected_Frame", "Selected_Frame"),
+            ActiveFrame = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_Active_Frame", "Active_Frame"),
+            HpBarBack = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_HpBar_Base", "HpBar_Back"),
+            HpBarFill = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_HpBar_Fill", "HpBar_Fill"),
+            SmallIconFrame = LoadNamedPreviewSprite(AllyPortraitFramesAssetPath, "Party_Status_Badge", "SmallIcon_Frame")
+        };
+    }
+
+    private EnemyGridSpriteSet LoadEnemyGridSprites()
+    {
+        return new EnemyGridSpriteSet
+        {
+            Normal = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Normal", "Normal"),
+            Empty = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Empty", "Empty"),
+            Selected = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Selected", "Selected"),
+            Targetable = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Targetable", "Targetable"),
+            Danger = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Danger", "Danger"),
+            Cracked = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Cracked", "Cracked"),
+            Hole = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Hole", "Hole"),
+            Ice = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Ice", "Ice"),
+            Grass = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Grass", "Grass"),
+            Magma = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Magma", "Magma"),
+            Poison = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_Poison", "Poison"),
+            HighlightOverlay = LoadNamedPreviewSprite(EnemyGridPanelsAssetPath, "EnemyGrid_HighlightOverlay", "HighlightOverlay")
+        };
+    }
+
+    private EnemySpriteSet LoadEnemySprites()
+    {
+        return new EnemySpriteSet
+        {
+            NormalEnemy = LoadNamedPreviewSprite(EnemySpritesAssetPath, "Enemy_Normal", "NormalEnemy"),
+            FireEnemy = LoadNamedPreviewSprite(EnemySpritesAssetPath, "Enemy_Fire", "FireEnemy"),
+            IceEnemy = LoadNamedPreviewSprite(EnemySpritesAssetPath, "Enemy_Ice", "IceEnemy")
+        };
+    }
+
+    private void BuildPreviewBackground(Transform parent)
+    {
+        RectTransform backgroundRoot = CreateRect("BackgroundRoot", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Image background = CreateImage(mainBattleSceneMode ? "FlatBattleBackground" : "CyberBattleBackground", backgroundRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.016f, 0.02f, 0.03f, 1f));
         background.raycastTarget = false;
 
-        BuildBackgroundGrid(canvasObject.transform);
-        BuildHeader(canvasObject.transform);
-        BuildTimeline(canvasObject.transform);
-        BuildAllies(canvasObject.transform);
-        BuildEnemyGrid(canvasObject.transform);
-        BuildHandAndCommands(canvasObject.transform);
+        if (useSceneBattleGridPrefabVisuals)
+        {
+            background.color = Color.clear;
+            return;
+        }
+
+        if (!mainBattleSceneMode && battleBackgroundSprite != null)
+        {
+            background.sprite = battleBackgroundSprite;
+            background.type = Image.Type.Simple;
+            background.preserveAspect = false;
+            background.color = Color.white;
+        }
+        else if (mainBattleSceneMode && battleFieldFloorSprite != null)
+        {
+            background.sprite = battleFieldFloorSprite;
+            background.type = Image.Type.Simple;
+            background.preserveAspect = false;
+            background.color = new Color(1f, 1f, 1f, 0.86f);
+        }
+
+        CreateImage("Background Readability Tint", backgroundRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, mainBattleSceneMode ? new Color(0.01f, 0.018f, 0.032f, 0.35f) : new Color(0f, 0.006f, 0.014f, 0.16f)).raycastTarget = false;
+    }
+
+    private void BuildImage2BattleFieldArt(Transform parent)
+    {
+        if (!mainBattleSceneMode || battleGridFullImage2Sprite == null || useSceneBattleGridPrefabVisuals)
+        {
+            return;
+        }
+
+        Image image = CreateImage("Image2 Battle Field Art", parent, BattleGridAnchor, BattleGridAnchor, new Vector2(-670f, -365f), new Vector2(670f, 318f), Color.white);
+        image.sprite = battleGridFullImage2Sprite;
+        image.type = Image.Type.Simple;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+    }
+
+    private void BuildVisualFrame(Transform parent)
+    {
+        if (mainBattleSceneMode)
+        {
+            return;
+        }
+
+        RectTransform frameRoot = CreateRect("VisualFrameRoot", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        if (battleUiFrameSprite == null)
+        {
+            return;
+        }
+
+        Image frame = CreateImage("BattleUIFrame", frameRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(1f, 1f, 1f, 0.86f));
+        frame.sprite = battleUiFrameSprite;
+        frame.type = Image.Type.Simple;
+        frame.preserveAspect = false;
+        frame.raycastTarget = false;
+    }
+
+    private void BuildResultOverlay(Transform parent)
+    {
+        if (mainBattleSceneMode)
+        {
+            GameObject overlayObject = new GameObject("Battle Result Overlay");
+            battleSceneResultOverlay = overlayObject.AddComponent<BattleResultOverlay>();
+            battleSceneResultOverlay.Build(parent, uiFont, RetryBattle, ReturnToMenu, ReturnToDeckBuild);
+            return;
+        }
+
+        GameObject timelineOverlayObject = new GameObject("Timeline Battle Result Overlay");
+        resultOverlay = timelineOverlayObject.AddComponent<TimelineBattleResultOverlay>();
+        resultOverlay.Build(parent, uiFont, RetryBattle, ReturnToMenu, ReturnToDeckBuild);
     }
 
     private void BuildBackgroundGrid(Transform parent)
     {
         Color verticalColor = new Color(0.10f, 0.72f, 0.86f, 0.075f);
         Color horizontalColor = new Color(0.86f, 0.95f, 0.24f, 0.055f);
+        bool visible = !mainBattleSceneMode || showDebugLabels;
+        debugGridLines.Clear();
         for (int i = 0; i <= 24; i++)
         {
             float x = i / 24f;
-            CreateImage("Grid Vertical " + i, parent, new Vector2(x, 0f), new Vector2(x, 1f), new Vector2(-1f, 0f), new Vector2(1f, 0f), verticalColor).raycastTarget = false;
+            Image line = CreateImage("Grid Vertical " + i, parent, new Vector2(x, 0f), new Vector2(x, 1f), new Vector2(-1f, 0f), new Vector2(1f, 0f), verticalColor);
+            line.raycastTarget = false;
+            line.gameObject.SetActive(visible);
+            if (mainBattleSceneMode)
+            {
+                debugGridLines.Add(line.gameObject);
+            }
         }
 
         for (int i = 0; i <= 12; i++)
         {
             float y = i / 12f;
-            CreateImage("Grid Horizontal " + i, parent, new Vector2(0f, y), new Vector2(1f, y), new Vector2(0f, -1f), new Vector2(0f, 1f), horizontalColor).raycastTarget = false;
+            Image line = CreateImage("Grid Horizontal " + i, parent, new Vector2(0f, y), new Vector2(1f, y), new Vector2(0f, -1f), new Vector2(0f, 1f), horizontalColor);
+            line.raycastTarget = false;
+            line.gameObject.SetActive(visible);
+            if (mainBattleSceneMode)
+            {
+                debugGridLines.Add(line.gameObject);
+            }
         }
     }
 
     private void BuildHeader(Transform parent)
     {
+        if (mainBattleSceneMode)
+        {
+            return;
+        }
+
         CreateImage("Header Panel", parent, new Vector2(0.035f, 0.865f), new Vector2(0.965f, 0.965f), Vector2.zero, Vector2.zero, new Color(0.012f, 0.04f, 0.055f, 0.92f)).raycastTarget = false;
         CreateImage("Header Accent", parent, new Vector2(0.035f, 0.865f), new Vector2(0.965f, 0.873f), Vector2.zero, Vector2.zero, new Color(0.1f, 0.88f, 1f, 0.92f)).raycastTarget = false;
-        CreateText("Title", parent, new Vector2(0.055f, 0.91f), new Vector2(0.5f, 0.955f), Vector2.zero, Vector2.zero, "BATTLE TIMELINE PROTOTYPE", 30, TextAnchor.MiddleLeft, new Color(0.9f, 1f, 1f));
-        CreateText("Purpose", parent, new Vector2(0.055f, 0.873f), new Vector2(0.58f, 0.915f), Vector2.zero, Vector2.zero, "Separate MVP scene. Existing BattleScene is not used by this prototype.", 16, TextAnchor.MiddleLeft, new Color(0.72f, 0.9f, 0.96f));
+        CreateText("Title", parent, new Vector2(0.055f, 0.91f), new Vector2(0.5f, 0.955f), Vector2.zero, Vector2.zero, "TIMELINE BATTLE", 30, TextAnchor.MiddleLeft, new Color(0.9f, 1f, 1f));
+        purposeText = CreateText("Purpose", parent, new Vector2(0.055f, 0.873f), new Vector2(0.58f, 0.915f), Vector2.zero, Vector2.zero, "Separate MVP scene. Existing BattleScene is not used by this prototype.", 16, TextAnchor.MiddleLeft, new Color(0.72f, 0.9f, 0.96f));
         turnText = CreateText("Turn Text", parent, new Vector2(0.58f, 0.91f), new Vector2(0.945f, 0.955f), Vector2.zero, Vector2.zero, string.Empty, 24, TextAnchor.MiddleRight, new Color(1f, 0.88f, 0.28f));
         selectedText = CreateText("Selected Text", parent, new Vector2(0.58f, 0.873f), new Vector2(0.945f, 0.915f), Vector2.zero, Vector2.zero, string.Empty, 15, TextAnchor.MiddleRight, new Color(0.9f, 1f, 0.92f));
     }
 
     private void BuildTimeline(Transform parent)
     {
-        RectTransform panel = CreatePanel("Timeline Panel", parent, new Vector2(0.035f, 0.72f), new Vector2(0.965f, 0.85f), new Color(0.018f, 0.035f, 0.045f, 0.94f));
-        CreateText("Timeline Label", panel, new Vector2(0.015f, 0.66f), new Vector2(0.17f, 0.95f), Vector2.zero, Vector2.zero, "TIMELINE", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
-        CreateText("Timeline Hint", panel, new Vector2(0.17f, 0.66f), new Vector2(0.98f, 0.95f), Vector2.zero, Vector2.zero, "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+        RectTransform panel = CreatePanel("Action Bar Panel", parent, mainBattleSceneMode ? new Vector2(0.06f, 0.705f) : new Vector2(0.035f, 0.70f), mainBattleSceneMode ? new Vector2(0.94f, 0.855f) : new Vector2(0.965f, 0.85f), new Color(0.018f, 0.035f, 0.045f, mainBattleSceneMode ? 0.92f : 0.94f));
+        CreateImage("Action Bar Rail", panel, new Vector2(0.06f, 0.47f), new Vector2(0.96f, 0.53f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, mainBattleSceneMode ? 0.42f : 0.22f)).raycastTarget = false;
+        CreateImage("Action Bar Return Arrow", panel, new Vector2(0.955f, 0.43f), new Vector2(0.985f, 0.57f), Vector2.zero, Vector2.zero, new Color(0.95f, 1f, 0.42f, 0.75f)).raycastTarget = false;
+        timelineLabelText = CreateText("Timeline Label", panel, new Vector2(0.018f, 0.76f), new Vector2(0.24f, 0.98f), Vector2.zero, Vector2.zero, mainBattleSceneMode ? "ACTION BAR" : "TIMELINE", mainBattleSceneMode ? 14 : 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, mainBattleSceneMode ? 0.55f : 1f));
+        timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.24f, 0.77f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero, mainBattleSceneMode ? "Left card acts now. Cards loop back by Delay." : "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", mainBattleSceneMode ? 13 : 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
 
         for (int i = 0; i < TimelinePreviewCount; i++)
         {
-            float minX = 0.02f + i * 0.12f;
-            float maxX = minX + 0.105f;
-            RectTransform slot = CreateRect("Timeline Slot " + i, panel, new Vector2(minX, 0.12f), new Vector2(maxX, 0.62f), Vector2.zero, Vector2.zero);
+            float slotStart = mainBattleSceneMode ? 0.055f : 0.025f;
+            float slotStep = mainBattleSceneMode ? 0.112f : 0.12f;
+            float slotWidth = mainBattleSceneMode ? 0.096f : 0.102f;
+            float minX = slotStart + i * slotStep;
+            float maxX = minX + slotWidth;
+            RectTransform slot = CreateRect("Timeline Slot " + i, panel, new Vector2(minX, mainBattleSceneMode ? 0.11f : 0.10f), new Vector2(maxX, mainBattleSceneMode ? 0.76f : 0.60f), Vector2.zero, Vector2.zero);
             Image slotPanel = slot.gameObject.AddComponent<Image>();
-            slotPanel.color = new Color(0.035f, 0.07f, 0.09f, 0.96f);
-            Image accent = CreateImage("Timeline Slot Accent " + i, slot, new Vector2(0f, 0.88f), Vector2.one, Vector2.zero, Vector2.zero, Color.white);
+            slotPanel.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(timelineSprites, s => s.SlotBase);
+            slotPanel.color = slotPanel.sprite != null ? Color.white : new Color(0.035f, 0.07f, 0.09f, 0.96f);
+            if (mainBattleSceneMode)
+            {
+                Outline slotOutline = slot.gameObject.AddComponent<Outline>();
+                slotOutline.effectColor = new Color(0.62f, 0.95f, 1f, 0.55f);
+                slotOutline.effectDistance = new Vector2(2f, -2f);
+            }
+
+            Image accent = CreateImage("Timeline Slot Accent " + i, slot, mainBattleSceneMode ? new Vector2(0f, 0.84f) : new Vector2(0f, 0.82f), Vector2.one, Vector2.zero, Vector2.zero, Color.white);
             accent.raycastTarget = false;
-            Text name = CreateText("Timeline Slot Name " + i, slot, new Vector2(0.06f, 0.45f), new Vector2(0.94f, 0.88f), Vector2.zero, Vector2.zero, string.Empty, 15, TextAnchor.MiddleCenter, Color.white);
-            Text detail = CreateText("Timeline Slot Detail " + i, slot, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.45f), Vector2.zero, Vector2.zero, string.Empty, 12, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
-            timelineViews.Add(new TimelineSlotView { Panel = slotPanel, Accent = accent, NameText = name, DetailText = detail });
+            Image unitIcon = CreateImage("Timeline Unit Icon " + i, slot, mainBattleSceneMode ? new Vector2(0.16f, 0.38f) : new Vector2(0.19f, 0.24f), mainBattleSceneMode ? new Vector2(0.84f, 0.80f) : new Vector2(0.81f, 0.84f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.22f, 0.28f, 0.92f));
+            unitIcon.raycastTarget = false;
+            Image cursor = CreateImage("Timeline Cursor " + i, slot, mainBattleSceneMode ? new Vector2(0.18f, -0.09f) : new Vector2(0.28f, 0.02f), mainBattleSceneMode ? new Vector2(0.82f, 0.12f) : new Vector2(0.72f, 0.22f), Vector2.zero, Vector2.zero, new Color(1f, 0.9f, 0.2f, 0.95f));
+            cursor.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(timelineSprites, s => s.Cursor);
+            cursor.raycastTarget = false;
+            Text name = CreateText("Timeline Slot Name " + i, slot, mainBattleSceneMode ? new Vector2(0.04f, 0.44f) : new Vector2(0.06f, 0.05f), mainBattleSceneMode ? new Vector2(0.96f, 0.79f) : new Vector2(0.94f, 0.30f), Vector2.zero, Vector2.zero, string.Empty, mainBattleSceneMode ? 28 : 13, TextAnchor.MiddleCenter, Color.white);
+            Text detail = CreateText("Timeline Slot Detail " + i, slot, mainBattleSceneMode ? new Vector2(0.04f, 0.09f) : new Vector2(0.06f, 0.30f), mainBattleSceneMode ? new Vector2(0.96f, 0.39f) : new Vector2(0.94f, 0.54f), Vector2.zero, Vector2.zero, string.Empty, mainBattleSceneMode ? 11 : 10, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
+            timelineViews.Add(new TimelineSlotView { Panel = slotPanel, Accent = accent, UnitIcon = unitIcon, Cursor = cursor, NameText = name, DetailText = detail });
         }
     }
 
     private void BuildAllies(Transform parent)
     {
-        RectTransform panel = CreatePanel("Ally Panel", parent, new Vector2(0.035f, 0.295f), new Vector2(0.45f, 0.695f), new Color(0.014f, 0.032f, 0.04f, 0.94f));
-        CreateText("Ally Label", panel, new Vector2(0.04f, 0.88f), new Vector2(0.62f, 0.98f), Vector2.zero, Vector2.zero, "ALLY PARTY", 21, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
-        CreateText("Ally Hint", panel, new Vector2(0.48f, 0.88f), new Vector2(0.96f, 0.98f), Vector2.zero, Vector2.zero, "Front / Middle / Back", 15, TextAnchor.MiddleRight, new Color(0.78f, 0.92f, 0.96f));
+        RectTransform panel = mainBattleSceneMode
+            ? CreateBattleGridSidePanel("Ally Panel", parent, true)
+            : CreatePanel("Ally Panel", parent, new Vector2(0.035f, 0.305f), new Vector2(0.45f, 0.675f), new Color(0.014f, 0.032f, 0.04f, 0.88f));
+        allyLabelText = CreateText("Ally Label", panel, new Vector2(0.02f, 0.90f), new Vector2(0.44f, 1.00f), Vector2.zero, Vector2.zero, "ALLY PARTY", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
+        allyHintText = CreateText("Ally Hint", panel, new Vector2(0.44f, 0.90f), new Vector2(0.98f, 1.00f), Vector2.zero, Vector2.zero, "Click an ally to open chips", 13, TextAnchor.MiddleRight, new Color(0.78f, 0.92f, 0.96f));
+        if (mainBattleSceneMode)
+        {
+            allyLabelText.gameObject.SetActive(false);
+            allyHintText.gameObject.SetActive(false);
+        }
+
+        if (mainBattleSceneMode)
+        {
+            if (!useSceneBattleGridPrefabVisuals)
+            {
+                BuildBattleGridCells(panel, true);
+            }
+
+            CreateAllyGridView(panel, PartyPosition.Middle, 0, 1);
+            CreateAllyGridView(panel, PartyPosition.Front, 1, 1);
+            CreateAllyGridView(panel, PartyPosition.Back, 2, 1);
+            return;
+        }
 
         CreateAllyView(panel, PartyPosition.Front, 0.62f);
         CreateAllyView(panel, PartyPosition.Middle, 0.36f);
         CreateAllyView(panel, PartyPosition.Back, 0.10f);
     }
 
+    private void BuildBattleGridCells(Transform parent, bool allySide)
+    {
+        if (useSceneBattleGridPrefabVisuals)
+        {
+            return;
+        }
+
+        bool generatedGridArt = HasImage2BattleGridArt();
+        Color baseColor = generatedGridArt ? Color.clear : allySide ? new Color(0.82f, 0.08f, 0.06f, 0.92f) : new Color(0.06f, 0.33f, 0.82f, 0.92f);
+        Color innerColor = generatedGridArt ? Color.clear : allySide ? new Color(0.95f, 0.70f, 0.62f, 0.94f) : new Color(0.68f, 0.84f, 1f, 0.94f);
+        for (int row = 0; row < 3; row++)
+        {
+            for (int column = 0; column < 3; column++)
+            {
+                Vector2 min;
+                Vector2 max;
+                GetGridCellAnchors(row, column, allySide, out min, out max);
+                Sprite frameSprite = GetBattlePanelBaseSprite(allySide);
+                Image frame = CreateImage((allySide ? "Ally" : "Enemy") + " Battle Panel " + row + "-" + column, parent, min, max, Vector2.zero, Vector2.zero, baseColor);
+                frame.sprite = frameSprite;
+                frame.type = Image.Type.Simple;
+                frame.preserveAspect = false;
+                frame.color = frameSprite != null ? Color.white : baseColor;
+                frame.raycastTarget = false;
+
+                Image inner = CreateImage("Panel Inner", frame.transform, new Vector2(0.08f, 0.16f), new Vector2(0.92f, 0.84f), Vector2.zero, Vector2.zero, frameSprite != null ? Color.clear : innerColor);
+                inner.raycastTarget = false;
+            }
+        }
+    }
+
+    private void GetGridCellAnchors(int row, int column, bool allySide, out Vector2 anchorMin, out Vector2 anchorMax)
+    {
+        if (mainBattleSceneMode)
+        {
+            GetContiguousGridCellAnchors(row, column, out anchorMin, out anchorMax);
+            return;
+        }
+
+        const float left = -0.012f;
+        const float right = 1.012f;
+        const float bottom = -0.006f;
+        const float top = 1.006f;
+        const float gapX = -0.040f;
+        const float gapY = -0.052f;
+        float width = (right - left - gapX * 2f) / 3f;
+        float height = (top - bottom - gapY * 2f) / 3f;
+        float minX = left + column * (width + gapX);
+        float maxX = minX + width;
+        float maxY = top - row * (height + gapY);
+        float minY = maxY - height;
+        anchorMin = new Vector2(minX, minY);
+        anchorMax = new Vector2(maxX, maxY);
+    }
+
+    private static void GetContiguousGridCellAnchors(int row, int column, out Vector2 anchorMin, out Vector2 anchorMax)
+    {
+        int clampedRow = Mathf.Clamp(row, 0, BattleGridRows - 1);
+        int clampedColumn = Mathf.Clamp(column, 0, BattleGridAllyCols - 1);
+        float tileWidth = 1f / BattleGridAllyCols;
+        float tileHeight = 1f / BattleGridRows;
+        float minX = clampedColumn * tileWidth;
+        float maxX = minX + tileWidth;
+        float minY = (BattleGridRows - clampedRow - 1) * tileHeight;
+        float maxY = minY + tileHeight;
+        anchorMin = new Vector2(minX, minY);
+        anchorMax = new Vector2(maxX, maxY);
+    }
+
+    private void CreateAllyGridView(Transform parent, PartyPosition position, int row, int column)
+    {
+        Vector2 cellMin;
+        Vector2 cellMax;
+        GetGridCellAnchors(row, column, true, out cellMin, out cellMax);
+        RectTransform root = CreateRect("Ally Grid " + position, parent, cellMin, cellMax, Vector2.zero, Vector2.zero);
+        Image panel = root.gameObject.AddComponent<Image>();
+        panel.color = new Color(0.03f, 0.08f, 0.10f, 0.08f);
+        Button button = root.gameObject.AddComponent<Button>();
+        button.targetGraphic = panel;
+        PartyPosition capturedPosition = position;
+        button.onClick.AddListener(() => SelectAllyAtPosition(capturedPosition));
+        RegisterHoverEvents(root.gameObject, isHovering =>
+        {
+            allyPanelHoverStates[capturedPosition] = isHovering;
+            RefreshAllies();
+        });
+
+        Image hoverOverlay = CreateImage("Hover Overlay " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+        hoverOverlay.raycastTarget = false;
+        Image selectedHighlight = CreateImage("Selected Highlight " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.35f, 0.95f, 1f, 0.36f));
+        selectedHighlight.raycastTarget = false;
+        Image targetableOverlay = CreateImage("Targetable Overlay " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+        targetableOverlay.raycastTarget = false;
+        Image activeHighlight = CreateImage("Active Highlight " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(1f, 0.86f, 0.22f, 0.34f));
+        activeHighlight.raycastTarget = false;
+        Image dangerOverlay = CreateImage("Danger Overlay " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+        dangerOverlay.raycastTarget = false;
+        Image disabledOverlay = CreateImage("Disabled Overlay " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+        disabledOverlay.raycastTarget = false;
+
+        RectTransform unitAnchor = CreateRect("UnitAnchor " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        OrientBattleBillboard(unitAnchor);
+        Image portrait = CreateImage("Ally Token " + position, root, new Vector2(0.10f, 0.18f), new Vector2(0.90f, 0.92f), Vector2.zero, Vector2.zero, GetPositionColor(position));
+        portrait.rectTransform.SetParent(unitAnchor, false);
+        portrait.preserveAspect = true;
+        portrait.raycastTarget = false;
+        Image accent = CreateImage("Ally Token Accent " + position, portrait.transform, new Vector2(0.05f, 0.05f), new Vector2(0.95f, 0.22f), Vector2.zero, Vector2.zero, new Color(0.01f, 0.02f, 0.04f, 0.75f));
+        accent.raycastTarget = false;
+        accent.gameObject.SetActive(!mainBattleSceneMode);
+        Text positionText = CreateText("Ally Position " + position, root, new Vector2(0.04f, 0.68f), new Vector2(0.20f, 0.94f), Vector2.zero, Vector2.zero, ShortPosition(position), 20, TextAnchor.MiddleCenter, Color.white);
+        Text nameText = CreateText("Ally HP Number " + position, root, new Vector2(0.23f, 0.015f), new Vector2(0.77f, 0.18f), Vector2.zero, Vector2.zero, string.Empty, 22, TextAnchor.MiddleCenter, Color.white);
+        ConfigureHpNumberText(nameText);
+        Image hpBack = CreateImage("Ally Hp Back " + position, root, new Vector2(0.16f, 0.145f), new Vector2(0.84f, 0.215f), Vector2.zero, Vector2.zero, new Color(0.02f, 0.03f, 0.04f, 0.96f));
+        hpBack.raycastTarget = false;
+        Image hpFill = CreateImage("Ally Hp Fill " + position, hpBack.transform, Vector2.zero, Vector2.one, new Vector2(2f, 2f), new Vector2(-2f, -2f), new Color(0.28f, 1f, 0.45f, 0.95f));
+        hpFill.type = Image.Type.Filled;
+        hpFill.fillMethod = Image.FillMethod.Horizontal;
+        hpFill.fillOrigin = 0;
+        hpFill.raycastTarget = false;
+        hpBack.gameObject.SetActive(!mainBattleSceneMode);
+        Text detailText = CreateText("Ally Detail " + position, root, new Vector2(0.02f, 0.80f), new Vector2(0.98f, 1.02f), Vector2.zero, Vector2.zero, string.Empty, 11, TextAnchor.MiddleCenter, new Color(0.82f, 0.94f, 0.96f));
+        if (useSceneBattleGridPrefabVisuals)
+        {
+            portrait.gameObject.SetActive(false);
+        }
+
+        allyViews[position] = new AllyView { Panel = panel, Accent = accent, Portrait = portrait, SelectedHighlight = selectedHighlight, ActiveHighlight = activeHighlight, TargetableOverlay = targetableOverlay, DangerOverlay = dangerOverlay, HoverOverlay = hoverOverlay, DisabledOverlay = disabledOverlay, UnitAnchor = unitAnchor, HpBack = hpBack, HpFill = hpFill, HpFillRect = hpFill.rectTransform, PositionText = positionText, NameText = nameText, DetailText = detailText, Button = button };
+    }
+
     private void CreateAllyView(Transform parent, PartyPosition position, float y)
     {
         RectTransform root = CreateRect("Ally " + position, parent, new Vector2(0.04f, y), new Vector2(0.96f, y + 0.20f), Vector2.zero, Vector2.zero);
         Image panel = root.gameObject.AddComponent<Image>();
-        panel.color = new Color(0.028f, 0.055f, 0.07f, 0.96f);
+        panel.sprite = mainBattleSceneMode ? null : GetAllyFrameSprite(position);
+        panel.color = panel.sprite != null ? Color.white : new Color(0.028f, 0.055f, 0.07f, 0.96f);
         Button button = root.gameObject.AddComponent<Button>();
         button.targetGraphic = panel;
         PartyPosition capturedPosition = position;
         button.onClick.AddListener(() => SelectAllyAtPosition(capturedPosition));
 
+        Image selectedHighlight = CreateImage("Selected Highlight " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.35f, 0.95f, 1f, 0.95f));
+        selectedHighlight.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(allySprites, s => s.SelectedFrame);
+        selectedHighlight.raycastTarget = false;
+        Image activeHighlight = CreateImage("Active Highlight " + position, root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(1f, 0.86f, 0.22f, 0.95f));
+        activeHighlight.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(allySprites, s => s.ActiveFrame);
+        activeHighlight.raycastTarget = false;
+
+        Image portrait = CreateImage("Portrait " + position, root, new Vector2(0.055f, 0.18f), new Vector2(0.23f, 0.82f), Vector2.zero, Vector2.zero, GetPositionColor(position));
+        portrait.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(allySprites, s => s.SmallIconFrame);
+        portrait.preserveAspect = true;
+        portrait.raycastTarget = false;
+
         Image accent = CreateImage("Ally Accent " + position, root, Vector2.zero, new Vector2(0.018f, 1f), Vector2.zero, Vector2.zero, GetPositionColor(position));
         accent.raycastTarget = false;
-        Text positionText = CreateText("Ally Position " + position, root, new Vector2(0.05f, 0.58f), new Vector2(0.25f, 0.95f), Vector2.zero, Vector2.zero, position.ToString().ToUpperInvariant(), 18, TextAnchor.MiddleLeft, GetPositionColor(position));
-        Text nameText = CreateText("Ally Name " + position, root, new Vector2(0.25f, 0.55f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleLeft, Color.white);
-        Text detailText = CreateText("Ally Detail " + position, root, new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.55f), Vector2.zero, Vector2.zero, string.Empty, 15, TextAnchor.MiddleLeft, new Color(0.82f, 0.94f, 0.96f));
+        Text positionText = CreateText("Ally Position " + position, root, new Vector2(0.26f, 0.58f), new Vector2(0.43f, 0.95f), Vector2.zero, Vector2.zero, ShortPosition(position), 21, TextAnchor.MiddleLeft, GetPositionColor(position));
+        Text nameText = CreateText("Ally Name " + position, root, new Vector2(0.40f, 0.55f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleLeft, Color.white);
+        Image hpBack = CreateImage("Ally Hp Back " + position, root, new Vector2(0.27f, 0.22f), new Vector2(0.92f, 0.40f), Vector2.zero, Vector2.zero, new Color(0.05f, 0.08f, 0.09f, 0.96f));
+        hpBack.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(allySprites, s => s.HpBarBack);
+        hpBack.raycastTarget = false;
+        Image hpFill = CreateImage("Ally Hp Fill " + position, hpBack.transform, Vector2.zero, Vector2.one, new Vector2(3f, 3f), new Vector2(-3f, -3f), new Color(0.28f, 1f, 0.45f, 0.95f));
+        hpFill.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(allySprites, s => s.HpBarFill);
+        hpFill.type = Image.Type.Filled;
+        hpFill.fillMethod = Image.FillMethod.Horizontal;
+        hpFill.fillOrigin = 0;
+        hpFill.raycastTarget = false;
+        Text detailText = CreateText("Ally Detail " + position, root, new Vector2(0.27f, 0.02f), new Vector2(0.95f, 0.22f), Vector2.zero, Vector2.zero, string.Empty, 12, TextAnchor.MiddleLeft, new Color(0.82f, 0.94f, 0.96f));
 
-        allyViews[position] = new AllyView { Panel = panel, Accent = accent, PositionText = positionText, NameText = nameText, DetailText = detailText, Button = button };
+        allyViews[position] = new AllyView { Panel = panel, Accent = accent, Portrait = portrait, SelectedHighlight = selectedHighlight, ActiveHighlight = activeHighlight, HpBack = hpBack, HpFill = hpFill, HpFillRect = hpFill.rectTransform, PositionText = positionText, NameText = nameText, DetailText = detailText, Button = button };
     }
 
     private void BuildEnemyGrid(Transform parent)
     {
-        RectTransform panel = CreatePanel("Enemy Grid Panel", parent, new Vector2(0.485f, 0.295f), new Vector2(0.965f, 0.695f), new Color(0.014f, 0.032f, 0.04f, 0.94f));
-        CreateText("Enemy Label", panel, new Vector2(0.04f, 0.88f), new Vector2(0.48f, 0.98f), Vector2.zero, Vector2.zero, "ENEMY 3x3 GRID", 21, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
-        CreateText("Enemy Hint", panel, new Vector2(0.48f, 0.88f), new Vector2(0.96f, 0.98f), Vector2.zero, Vector2.zero, "Click an enemy cell to choose target", 15, TextAnchor.MiddleRight, new Color(0.78f, 0.92f, 0.96f));
+        RectTransform panel = mainBattleSceneMode
+            ? CreateBattleGridSidePanel("Enemy Grid Panel", parent, false)
+            : CreatePanel("Enemy Grid Panel", parent, new Vector2(0.485f, 0.305f), new Vector2(0.965f, 0.675f), new Color(0.014f, 0.032f, 0.04f, 0.88f));
+        enemyLabelText = CreateText("Enemy Label", panel, new Vector2(0.04f, 0.90f), new Vector2(0.50f, 1.00f), Vector2.zero, Vector2.zero, "ENEMY 3x3 GRID", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
+        enemyHintText = CreateText("Enemy Hint", panel, new Vector2(0.50f, 0.90f), new Vector2(0.98f, 1.00f), Vector2.zero, Vector2.zero, "Select target", 13, TextAnchor.MiddleRight, new Color(0.78f, 0.92f, 0.96f));
+        if (mainBattleSceneMode)
+        {
+            enemyLabelText.gameObject.SetActive(false);
+            enemyHintText.gameObject.SetActive(false);
+        }
 
         for (int row = 0; row < 3; row++)
         {
             for (int column = 0; column < 3; column++)
             {
-                float minX = 0.09f + column * 0.28f;
-                float maxX = minX + 0.22f;
-                float maxY = 0.82f - row * 0.25f;
-                float minY = maxY - 0.18f;
-                RectTransform cell = CreateRect("Enemy Cell " + row + "-" + column, panel, new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.zero, Vector2.zero);
+                Vector2 cellMin;
+                Vector2 cellMax;
+                if (mainBattleSceneMode)
+                {
+                    GetGridCellAnchors(row, column, false, out cellMin, out cellMax);
+                }
+                else
+                {
+                    float minX = 0.09f + column * 0.28f;
+                    float maxX = minX + 0.22f;
+                    float maxY = 0.82f - row * 0.25f;
+                    float minY = maxY - 0.18f;
+                    cellMin = new Vector2(minX, minY);
+                    cellMax = new Vector2(maxX, maxY);
+                }
+
+                RectTransform cell = CreateRect("Enemy Cell " + row + "-" + column, panel, cellMin, cellMax, Vector2.zero, Vector2.zero);
                 Image image = cell.gameObject.AddComponent<Image>();
-                image.color = new Color(0.025f, 0.052f, 0.065f, 0.98f);
+                image.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(enemyGridSprites, s => s.Empty);
+                image.color = image.sprite != null ? Color.white : mainBattleSceneMode ? new Color(0.02f, 0.04f, 0.05f, 0.02f) : new Color(0.025f, 0.052f, 0.065f, 0.98f);
+
                 Button button = cell.gameObject.AddComponent<Button>();
                 button.targetGraphic = image;
                 int capturedRow = row;
                 int capturedColumn = column;
                 button.onClick.AddListener(() => SelectEnemyAt(capturedRow, capturedColumn));
-                Text label = CreateText("Enemy Cell Label " + row + "-" + column, cell, Vector2.zero, Vector2.one, new Vector2(4f, 4f), new Vector2(-4f, -4f), string.Empty, 15, TextAnchor.MiddleCenter, Color.white);
-                enemyCellViews[row, column] = new EnemyCellView { Panel = image, Label = label, Button = button };
+                RegisterHoverEvents(cell.gameObject, isHovering =>
+                {
+                    enemyPanelHoverStates[capturedRow, capturedColumn] = isHovering;
+                    RefreshEnemies();
+                });
+                Image hoverOverlay = CreateImage("Enemy Hover Overlay " + row + "-" + column, cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+                hoverOverlay.raycastTarget = false;
+                Image highlight = CreateImage("Enemy Highlight " + row + "-" + column, cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0.2f, 0.95f, 1f, 0.55f));
+                highlight.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(enemyGridSprites, s => s.HighlightOverlay);
+                highlight.raycastTarget = false;
+                Image targetableOverlay = CreateImage("Enemy Targetable Overlay " + row + "-" + column, cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+                targetableOverlay.raycastTarget = false;
+                Image dangerOverlay = CreateImage("Enemy Danger Overlay " + row + "-" + column, cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+                dangerOverlay.raycastTarget = false;
+                Image disabledOverlay = CreateImage("Enemy Disabled Overlay " + row + "-" + column, cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
+                disabledOverlay.raycastTarget = false;
+                GameObject enemyRoot = CreateRect("EnemyUnitRoot", cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject;
+                OrientBattleBillboard(enemyRoot.GetComponent<RectTransform>());
+                Image enemySprite = CreateImage("Enemy Sprite", enemyRoot.transform, mainBattleSceneMode ? new Vector2(0.08f, 0.22f) : new Vector2(0.16f, 0.21f), mainBattleSceneMode ? new Vector2(0.92f, 0.92f) : new Vector2(0.84f, 0.88f), Vector2.zero, Vector2.zero, Color.white);
+                enemySprite.preserveAspect = true;
+                enemySprite.raycastTarget = false;
+                if (useSceneBattleGridPrefabVisuals)
+                {
+                    enemySprite.gameObject.SetActive(false);
+                }
+
+                Image hpBack = CreateImage("Enemy Hp Back", enemyRoot.transform, new Vector2(0.15f, 0.12f), new Vector2(0.85f, 0.19f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.04f, 0.05f, 0.95f));
+                hpBack.raycastTarget = false;
+                Image hpFill = CreateImage("Enemy Hp Fill", hpBack.transform, Vector2.zero, Vector2.one, new Vector2(2f, 2f), new Vector2(-2f, -2f), new Color(1f, 0.26f, 0.32f, 0.95f));
+                hpFill.type = Image.Type.Filled;
+                hpFill.fillMethod = Image.FillMethod.Horizontal;
+                hpFill.fillOrigin = 0;
+                hpFill.raycastTarget = false;
+                hpBack.gameObject.SetActive(!mainBattleSceneMode);
+                Text nameText = CreateText("Enemy HP Number", enemyRoot.transform, mainBattleSceneMode ? new Vector2(0.20f, 0.015f) : new Vector2(0.08f, 0.78f), mainBattleSceneMode ? new Vector2(0.80f, 0.18f) : new Vector2(0.92f, 0.95f), Vector2.zero, Vector2.zero, string.Empty, mainBattleSceneMode ? 22 : 11, TextAnchor.MiddleCenter, Color.white);
+                if (mainBattleSceneMode)
+                {
+                    ConfigureBattleSceneEnemyHpNumberText(nameText);
+                }
+                Text label = CreateText("Enemy Cell Label " + row + "-" + column, cell, Vector2.zero, Vector2.one, new Vector2(4f, 4f), new Vector2(-4f, -4f), string.Empty, 12, TextAnchor.MiddleCenter, Color.white);
+                enemyCellViews[row, column] = new EnemyCellView { Panel = image, Highlight = highlight, TargetableOverlay = targetableOverlay, DangerOverlay = dangerOverlay, HoverOverlay = hoverOverlay, DisabledOverlay = disabledOverlay, UnitAnchor = enemyRoot.GetComponent<RectTransform>(), EnemyRoot = enemyRoot, EnemySprite = enemySprite, HpBack = hpBack, HpFill = hpFill, HpFillRect = hpFill.rectTransform, NameText = nameText, Label = label, Button = button };
             }
         }
     }
 
     private void BuildHandAndCommands(Transform parent)
     {
-        RectTransform panel = CreatePanel("Command Panel", parent, new Vector2(0.035f, 0.035f), new Vector2(0.965f, 0.27f), new Color(0.012f, 0.026f, 0.034f, 0.96f));
-        CreateText("Hand Label", panel, new Vector2(0.02f, 0.77f), new Vector2(0.24f, 0.96f), Vector2.zero, Vector2.zero, "COMMON HAND", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
-        queueText = CreateText("Queue Text", panel, new Vector2(0.24f, 0.77f), new Vector2(0.72f, 0.96f), Vector2.zero, Vector2.zero, string.Empty, 15, TextAnchor.MiddleLeft, new Color(1f, 0.92f, 0.55f));
-        deckText = CreateText("Deck Text", panel, new Vector2(0.72f, 0.77f), new Vector2(0.98f, 0.96f), Vector2.zero, Vector2.zero, string.Empty, 14, TextAnchor.MiddleRight, new Color(0.74f, 0.88f, 0.94f));
+        if (!mainBattleSceneMode)
+        {
+            BuildPrototypeHandAndCommands(parent);
+            return;
+        }
 
+        BuildChipSelectPanel(parent);
+    }
+
+    private void BuildPrototypeHandAndCommands(Transform parent)
+    {
+        RectTransform panel = CreatePanel("Command Panel", parent, new Vector2(0.035f, 0.025f), new Vector2(0.965f, 0.285f), new Color(0.012f, 0.026f, 0.034f, 0.82f));
+        handLabelText = CreateText("Hand Label", panel, new Vector2(0.02f, 0.78f), new Vector2(0.22f, 0.96f), Vector2.zero, Vector2.zero, "COMMON HAND", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f));
+        queueText = CreateText("Queue Text", panel, new Vector2(0.22f, 0.78f), new Vector2(0.70f, 0.96f), Vector2.zero, Vector2.zero, string.Empty, 14, TextAnchor.MiddleLeft, new Color(1f, 0.92f, 0.55f));
+        deckText = CreateText("Deck Text", panel, new Vector2(0.70f, 0.78f), new Vector2(0.98f, 0.96f), Vector2.zero, Vector2.zero, string.Empty, 13, TextAnchor.MiddleRight, new Color(0.74f, 0.88f, 0.94f));
+
+        RectTransform cardPreviewRoot = CreateRect("CardPreviewRoot", panel, new Vector2(0.02f, 0.16f), new Vector2(0.70f, 0.74f), Vector2.zero, Vector2.zero);
         for (int i = 0; i < HandSize; i++)
         {
-            float minX = 0.02f + i * 0.132f;
-            float maxX = minX + 0.122f;
-            Button button = CreateButton("Hand Card " + i, panel, new Vector2(minX, 0.18f), new Vector2(maxX, 0.72f), Vector2.zero, Vector2.zero, string.Empty, 14, new Color(0.12f, 0.17f, 0.23f, 1f));
+            float slotWidth = 1f / HandSize;
+            float minX = i * slotWidth + 0.012f;
+            float maxX = (i + 1) * slotWidth - 0.012f;
+            RectTransform slot = CreateRect("CardSlot" + (i + 1), cardPreviewRoot, new Vector2(minX, 0f), new Vector2(maxX, 1f), Vector2.zero, Vector2.zero);
+            Button button = CreateButton("Hand Card " + i, slot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, string.Empty, 13, new Color(0.08f, 0.12f, 0.18f, 0.55f));
+            if (!mainBattleSceneMode)
+            {
+                AddCardFrameImage(button.transform);
+            }
             int capturedIndex = i;
             button.onClick.AddListener(() => QueueCardFromHand(capturedIndex));
             Text[] labels = button.GetComponentsInChildren<Text>();
-            handViews.Add(new CardButtonView { Panel = button.GetComponent<Image>(), NameText = labels[0], DetailText = CreateText("Hand Detail " + i, button.transform, new Vector2(0.08f, 0.04f), new Vector2(0.92f, 0.36f), Vector2.zero, Vector2.zero, string.Empty, 12, TextAnchor.MiddleCenter, new Color(1f, 0.92f, 0.62f)), Button = button });
+            ConfigureCardNameText(labels[0]);
+            handViews.Add(new CardButtonView { Panel = button.GetComponent<Image>(), NameText = labels[0], DetailText = CreateText("Hand Detail " + i, button.transform, new Vector2(0.12f, 0.08f), new Vector2(0.88f, 0.26f), Vector2.zero, Vector2.zero, string.Empty, 11, TextAnchor.MiddleCenter, new Color(1f, 0.92f, 0.62f)), Button = button });
         }
 
-        weaponButton = CreateButton("Weapon Button", panel, new Vector2(0.70f, 0.54f), new Vector2(0.82f, 0.72f), Vector2.zero, Vector2.zero, "Weapon", 15, new Color(0.23f, 0.30f, 0.38f, 1f));
+        weaponButton = CreateButton("Weapon Button", panel, new Vector2(0.73f, 0.54f), new Vector2(0.845f, 0.72f), Vector2.zero, Vector2.zero, "Weapon", 15, new Color(0.23f, 0.30f, 0.38f, 0.92f));
         weaponButton.onClick.AddListener(QueueWeapon);
 
-        swapFrontMiddleButton = CreateButton("Swap Front Middle", panel, new Vector2(0.84f, 0.54f), new Vector2(0.98f, 0.72f), Vector2.zero, Vector2.zero, "Swap F/M", 14, new Color(0.22f, 0.26f, 0.42f, 1f));
+        swapFrontMiddleButton = CreateButton("Swap Front Middle", panel, new Vector2(0.865f, 0.54f), new Vector2(0.98f, 0.72f), Vector2.zero, Vector2.zero, "Swap F/M", 14, new Color(0.22f, 0.26f, 0.42f, 0.92f));
         swapFrontMiddleButton.onClick.AddListener(() => QueueSwap(PartyPosition.Front, PartyPosition.Middle));
 
-        swapMiddleBackButton = CreateButton("Swap Middle Back", panel, new Vector2(0.70f, 0.34f), new Vector2(0.82f, 0.50f), Vector2.zero, Vector2.zero, "Swap M/B", 13, new Color(0.22f, 0.26f, 0.42f, 1f));
+        swapMiddleBackButton = CreateButton("Swap Middle Back", panel, new Vector2(0.865f, 0.34f), new Vector2(0.98f, 0.50f), Vector2.zero, Vector2.zero, "Swap M/B", 13, new Color(0.22f, 0.26f, 0.42f, 0.92f));
         swapMiddleBackButton.onClick.AddListener(() => QueueSwap(PartyPosition.Middle, PartyPosition.Back));
 
-        swapFrontBackButton = CreateButton("Swap Front Back", panel, new Vector2(0.84f, 0.34f), new Vector2(0.98f, 0.50f), Vector2.zero, Vector2.zero, "Swap F/B", 13, new Color(0.22f, 0.26f, 0.42f, 1f));
-        swapFrontBackButton.onClick.AddListener(() => QueueSwap(PartyPosition.Front, PartyPosition.Back));
-
-        resetButton = CreateButton("Reset Selection", panel, new Vector2(0.70f, 0.14f), new Vector2(0.82f, 0.30f), Vector2.zero, Vector2.zero, "Reset", 15, new Color(0.36f, 0.24f, 0.22f, 1f));
+        resetButton = CreateButton("Reset Selection", panel, new Vector2(0.73f, 0.14f), new Vector2(0.845f, 0.50f), Vector2.zero, Vector2.zero, "Reset", 15, new Color(0.36f, 0.24f, 0.22f, 0.92f));
         resetButton.onClick.AddListener(ResetSelection);
 
-        confirmButton = CreateButton("Confirm Button", panel, new Vector2(0.84f, 0.14f), new Vector2(0.98f, 0.30f), Vector2.zero, Vector2.zero, "Confirm", 16, new Color(0.10f, 0.38f, 0.24f, 1f));
+        confirmButton = CreateButton("Confirm Button", panel, new Vector2(0.865f, 0.14f), new Vector2(0.98f, 0.30f), Vector2.zero, Vector2.zero, "Confirm", 16, new Color(0.10f, 0.38f, 0.24f, 0.92f));
         confirmButton.onClick.AddListener(Confirm);
 
-        statusText = CreateText("Status Text", panel, new Vector2(0.02f, 0.02f), new Vector2(0.68f, 0.16f), Vector2.zero, Vector2.zero, string.Empty, 14, TextAnchor.MiddleLeft, new Color(0.92f, 1f, 0.86f));
+        debugButton = CreateButton("Debug Labels Button", panel, new Vector2(0.02f, 0.02f), new Vector2(0.14f, 0.12f), Vector2.zero, Vector2.zero, "DEBUG", 13, new Color(0.10f, 0.12f, 0.16f, 0.70f));
+        debugButton.onClick.AddListener(ToggleDebugLabels);
+
+        statusText = CreateText("Status Text", panel, new Vector2(0.16f, 0.02f), new Vector2(0.70f, 0.12f), Vector2.zero, Vector2.zero, string.Empty, 13, TextAnchor.MiddleLeft, new Color(0.92f, 1f, 0.86f));
+    }
+
+    private void BuildChipSelectPanel(Transform parent)
+    {
+        RectTransform panel = CreatePanel("Chip Select Panel", parent, new Vector2(0.055f, 0.12f), new Vector2(0.44f, 0.86f), new Color(0.82f, 0.88f, 0.94f, 0.98f));
+        cardSelectRoot = panel.gameObject;
+        CreateImage("Chip Select Inner", panel, new Vector2(0.025f, 0.025f), new Vector2(0.975f, 0.975f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.16f, 0.20f, 1f)).raycastTarget = false;
+        chipSelectTitleText = CreateText("Chip Select Title", panel, new Vector2(0.06f, 0.89f), new Vector2(0.92f, 0.97f), Vector2.zero, Vector2.zero, "BATTLE CHIP", 23, TextAnchor.MiddleLeft, new Color(0.86f, 0.92f, 1f));
+
+        RectTransform detail = CreatePanel("Chip Detail Card", panel, new Vector2(0.06f, 0.45f), new Vector2(0.58f, 0.88f), new Color(0.10f, 0.10f, 0.11f, 1f));
+        chipDetailNameText = CreateText("Chip Detail Name", detail, new Vector2(0.08f, 0.78f), new Vector2(0.94f, 0.96f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleLeft, Color.white);
+        chipDetailArtwork = CreateImage("Chip Detail Artwork", detail, new Vector2(0.10f, 0.28f), new Vector2(0.90f, 0.76f), Vector2.zero, Vector2.zero, new Color(0.18f, 0.48f, 0.72f, 1f));
+        chipDetailArtwork.raycastTarget = false;
+        chipDetailRankBox = CreateImage("Chip Detail Rank Box", detail, new Vector2(0.08f, 0.06f), new Vector2(0.27f, 0.24f), Vector2.zero, Vector2.zero, new Color(0.05f, 0.05f, 0.06f, 1f));
+        chipDetailRankBox.raycastTarget = false;
+        chipDetailMetaText = CreateText("Chip Detail Rank", chipDetailRankBox.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, string.Empty, 24, TextAnchor.MiddleCenter, new Color(1f, 0.94f, 0.18f));
+        chipDetailAttributeIcon = CreateImage("Chip Detail Attribute", detail, new Vector2(0.30f, 0.06f), new Vector2(0.46f, 0.24f), Vector2.zero, Vector2.zero, new Color(0.15f, 0.16f, 0.18f, 1f));
+        chipDetailAttributeIcon.raycastTarget = false;
+        chipDetailPowerText = CreateText("Chip Detail Power", detail, new Vector2(0.62f, 0.03f), new Vector2(0.94f, 0.24f), Vector2.zero, Vector2.zero, string.Empty, 30, TextAnchor.MiddleRight, Color.white);
+
+        RectTransform queueColumn = CreatePanel("Chip Queue Column", panel, new Vector2(0.62f, 0.23f), new Vector2(0.76f, 0.88f), new Color(0.05f, 0.07f, 0.08f, 1f));
+        chipQueueSlotTexts.Clear();
+        for (int i = 0; i < MaxQueuedActions + 2; i++)
+        {
+            float top = 0.94f - i * 0.18f;
+            Image slot = CreateImage("Chip Queue Slot " + i, queueColumn, new Vector2(0.17f, top - 0.13f), new Vector2(0.83f, top), Vector2.zero, Vector2.zero, new Color(0.02f, 0.025f, 0.03f, 1f));
+            slot.raycastTarget = false;
+            Text slotText = CreateText("Chip Queue Slot Text " + i, slot.transform, Vector2.zero, Vector2.one, new Vector2(2f, 2f), new Vector2(-2f, -2f), string.Empty, 10, TextAnchor.MiddleCenter, new Color(0.86f, 1f, 0.92f));
+            slotText.resizeTextMinSize = 7;
+            chipQueueSlotTexts.Add(slotText);
+        }
+
+        Button okButton = CreateButton("Chip OK Button", panel, new Vector2(0.62f, 0.10f), new Vector2(0.76f, 0.20f), Vector2.zero, Vector2.zero, "OK", 24, new Color(0.82f, 0.08f, 0.05f, 1f));
+        okButton.onClick.AddListener(Confirm);
+        Button closeButton = CreateButton("Chip Close Button", panel, new Vector2(0.80f, 0.10f), new Vector2(0.94f, 0.20f), Vector2.zero, Vector2.zero, "CLOSE", 14, new Color(0.18f, 0.20f, 0.24f, 1f));
+        closeButton.onClick.AddListener(CloseCardSelect);
+
+        RectTransform chipList = CreatePanel("Chip Select List", panel, new Vector2(0.06f, 0.06f), new Vector2(0.56f, 0.42f), new Color(0.84f, 0.91f, 0.98f, 1f));
+        for (int i = 0; i < HandSize; i++)
+        {
+            int row = i / 3;
+            int column = i % 3;
+            float width = 0.30f;
+            float height = 0.42f;
+            float minX = 0.04f + column * 0.32f;
+            float maxX = minX + width;
+            float maxY = 0.92f - row * 0.46f;
+            float minY = maxY - height;
+            Button button = CreateButton("Chip Card " + i, chipList, new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.zero, Vector2.zero, string.Empty, 10, new Color(0.10f, 0.10f, 0.11f, 1f));
+            int capturedIndex = i;
+            button.onClick.AddListener(() => QueueCardFromHand(capturedIndex));
+            CardButtonView view = BuildChipCardView(button, i);
+            handViews.Add(view);
+        }
+
+        cardSelectRoot.SetActive(false);
+    }
+
+    private CardButtonView BuildChipCardView(Button button, int index)
+    {
+        Image panel = button.GetComponent<Image>();
+        Text name = button.GetComponentInChildren<Text>();
+        ConfigureChipCardNameText(name);
+        Image artwork = CreateImage("Chip Artwork " + index, button.transform, new Vector2(0.12f, 0.38f), new Vector2(0.88f, 0.73f), Vector2.zero, Vector2.zero, new Color(0.20f, 0.40f, 0.62f, 1f));
+        artwork.raycastTarget = false;
+        Image rankBox = CreateImage("Chip Rank Box " + index, button.transform, new Vector2(0.09f, 0.08f), new Vector2(0.28f, 0.28f), Vector2.zero, Vector2.zero, new Color(0.05f, 0.05f, 0.06f, 1f));
+        rankBox.raycastTarget = false;
+        Text rankText = CreateText("Chip Rank " + index, rankBox.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, string.Empty, 15, TextAnchor.MiddleCenter, new Color(1f, 0.94f, 0.18f));
+        Image attributeIcon = CreateImage("Chip Attribute " + index, button.transform, new Vector2(0.32f, 0.08f), new Vector2(0.50f, 0.28f), Vector2.zero, Vector2.zero, new Color(0.15f, 0.16f, 0.18f, 1f));
+        attributeIcon.raycastTarget = false;
+        Text powerText = CreateText("Chip Power " + index, button.transform, new Vector2(0.54f, 0.04f), new Vector2(0.92f, 0.29f), Vector2.zero, Vector2.zero, string.Empty, 18, TextAnchor.MiddleRight, Color.white);
+        Text detail = CreateText("Chip Detail " + index, button.transform, new Vector2(0.06f, 0.28f), new Vector2(0.94f, 0.37f), Vector2.zero, Vector2.zero, string.Empty, 8, TextAnchor.MiddleCenter, new Color(0.72f, 0.9f, 1f));
+        return new CardButtonView { Panel = panel, Artwork = artwork, AttributeIcon = attributeIcon, RankBox = rankBox, NameText = name, DetailText = detail, RankText = rankText, PowerText = powerText, Button = button };
+    }
+
+    private void AddCardFrameImage(Transform parent)
+    {
+        if (cardFrameSprite == null)
+        {
+            return;
+        }
+
+        Image cardFrame = CreateImage("CardFrame", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.white);
+        cardFrame.sprite = cardFrameSprite;
+        cardFrame.type = Image.Type.Simple;
+        cardFrame.preserveAspect = true;
+        cardFrame.raycastTarget = false;
+        cardFrame.transform.SetAsFirstSibling();
+    }
+
+    private static void ConfigureCardNameText(Text text)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        RectTransform rectTransform = text.rectTransform;
+        rectTransform.anchorMin = new Vector2(0.16f, 0.78f);
+        rectTransform.anchorMax = new Vector2(0.90f, 0.94f);
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+        text.fontSize = 12;
+        text.resizeTextMinSize = 7;
+        text.resizeTextMaxSize = 12;
+    }
+
+    private static void ConfigureChipCardNameText(Text text)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        RectTransform rectTransform = text.rectTransform;
+        rectTransform.anchorMin = new Vector2(0.08f, 0.74f);
+        rectTransform.anchorMax = new Vector2(0.94f, 0.96f);
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+        text.fontSize = 15;
+        text.alignment = TextAnchor.MiddleLeft;
+        text.resizeTextMinSize = 8;
+        text.resizeTextMaxSize = 15;
     }
 
     private void QueueCardFromHand(int handIndex)
     {
+        if (mainBattleSceneMode && !cardSelectOpen)
+        {
+            OpenCardSelect();
+        }
+
         if (!IsPlayerTurn())
         {
             RefreshAll("Enemy turn. Press Confirm to resolve the enemy action.");
@@ -540,7 +1951,8 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        CardData card = hand[handIndex];
+        PrototypeCard card = hand[handIndex];
+        selectedHandIndex = handIndex;
         bool consumesAction = !card.IsClearCard;
         if (consumesAction && GetQueuedActionCost() >= MaxQueuedActions)
         {
@@ -561,7 +1973,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         };
         queuedActions.Add(action);
         queuedHandSlots[handIndex] = true;
-        RefreshAll("Queued card: " + action.Label + ".");
+        RefreshAll("Queued card: " + action.Label + ". Delay " + ResolveQueuedActionDelay(action) + ".");
     }
 
     private void QueueWeapon()
@@ -586,7 +1998,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             ConsumesAction = true,
             Label = "Weapon"
         });
-        RefreshAll("Queued Weapon.");
+        RefreshAll("Queued Weapon. Delay " + BattleActionDelayResolver.Resolve(BattleActionDelayKind.Weapon) + ".");
     }
 
     private void QueueSwap(PartyPosition a, PartyPosition b)
@@ -603,6 +2015,18 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
+        if (a == b)
+        {
+            RefreshAll("Swap requires two different positions.");
+            return;
+        }
+
+        if (GetAllyAtPosition(a) == null || GetAllyAtPosition(b) == null)
+        {
+            RefreshAll("Swap failed because one position is empty.");
+            return;
+        }
+
         queuedActions.Add(new QueuedAction
         {
             Kind = ActionKind.Swap,
@@ -612,11 +2036,17 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             ConsumesAction = true,
             Label = "Swap " + ShortPosition(a) + "/" + ShortPosition(b)
         });
-        RefreshAll("Queued swap: " + a + " <-> " + b + ".");
+        RefreshAll("Queued swap: " + a + " <-> " + b + ". Delay " + BattleActionDelayResolver.Resolve(BattleActionDelayKind.Swap) + ".");
     }
 
     private void Confirm()
     {
+        if (battleEnded)
+        {
+            RefreshAll("Battle is already finished. Use the result buttons.");
+            return;
+        }
+
         activeUnit = GetCurrentActiveUnit();
         if (activeUnit == null)
         {
@@ -626,29 +2056,225 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
 
         currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
 
+        if (activeUnit.IsSkill)
+        {
+            string skillName = activeUnit.SkillAction != null ? activeUnit.SkillAction.DisplayName : "Skill";
+            int defeatedCount = ResolveSkillTurn(activeUnit.SkillAction);
+            if (defeatedCount > maxSimultaneousDefeatCount)
+            {
+                maxSimultaneousDefeatCount = defeatedCount;
+            }
+
+            ConsumeSkillTimelineAction(activeUnit.SkillAction);
+            ClearQueuedActions();
+            if (TryShowVictory(playerActionTurnCount))
+            {
+                return;
+            }
+
+            string skillChainSummary = ResolveEnemyTurnsUntilPlayerTurn();
+            if (battleEnded)
+            {
+                return;
+            }
+
+            RefreshAll(skillName + " resolved and left the Action Bar." + skillChainSummary);
+            return;
+        }
+
         if (!activeUnit.IsAlly)
         {
+            int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(activeUnit.Enemy != null && activeUnit.Enemy.IsBoss);
+            string actedEnemyName = activeUnit.Enemy != null ? activeUnit.Enemy.Name : "Enemy";
             ResolveEnemyTurn(activeUnit.Enemy);
             ClearQueuedActions();
-            AdvanceActiveUnit(activeUnit, 1);
-            RefreshAll(activeUnit.Enemy.Name + " acted and returned to the timeline.");
+            AdvanceActiveUnit(activeUnit, enemyDelay);
+            if (TryShowDefeat())
+            {
+                return;
+            }
+
+            string enemyChainSummary = ResolveEnemyTurnsUntilPlayerTurn();
+            if (battleEnded)
+            {
+                return;
+            }
+
+            RefreshAll(actedEnemyName + " acted and returned to the timeline. Delay " + enemyDelay + "." + enemyChainSummary);
             return;
         }
 
         if (queuedActions.Count == 0)
         {
-            RefreshAll("Select a card, weapon, or swap before confirming.");
+            int waitDelay = BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
+            string waitedName = activeUnit.Ally != null ? activeUnit.Ally.Name : "Ally";
+            CloseCardSelect();
+            AdvanceActiveUnit(activeUnit, waitDelay);
+            string waitEnemySummary = ResolveEnemyTurnsUntilPlayerTurn();
+            if (battleEnded)
+            {
+                return;
+            }
+
+            playerActionTurnCount++;
+            RefreshAll(waitedName + " waited. Delay " + waitDelay + "." + waitEnemySummary);
             return;
         }
 
         string summary = activeUnit.Ally.Name + " resolved " + queuedActions.Count + " action(s).";
-        int actionLoad = Mathf.Max(1, GetQueuedActionCost());
+        int actionDelay = ResolveQueuedActionDelay();
+        int resolvedPlayerTurn = playerActionTurnCount;
         ResolveQueuedActions();
         DiscardQueuedCards();
         ClearQueuedActions();
+        CloseCardSelect();
         DrawToHand();
-        AdvanceActiveUnit(activeUnit, actionLoad);
-        RefreshAll(summary);
+        AdvanceActiveUnit(activeUnit, actionDelay);
+        if (TryShowVictory(resolvedPlayerTurn))
+        {
+            return;
+        }
+
+        string enemySummary = ResolveEnemyTurnsUntilPlayerTurn();
+        if (battleEnded)
+        {
+            return;
+        }
+
+        playerActionTurnCount++;
+        RefreshAll(summary + " Delay " + actionDelay + "." + enemySummary);
+    }
+
+    private void RetryBattle()
+    {
+        SceneManager.LoadScene(mainBattleSceneMode ? "BattleScene" : "BattleTimelinePrototypeScene");
+    }
+
+    private void ReturnToMenu()
+    {
+        SceneManager.LoadScene("MenuScene");
+    }
+
+    private void ReturnToDeckBuild()
+    {
+        SceneManager.LoadScene("DeckBuildScene");
+    }
+
+    private bool TryShowVictory(int victoryTurn)
+    {
+        if (GetFirstAliveEnemy() != null)
+        {
+            return false;
+        }
+
+        battleEnded = true;
+        BattleResultData resultData = new BattleResultData(WasBossBattle(), victoryTurn, playerDamageTakenCount, maxSimultaneousDefeatCount);
+        resultData.HuntingLevel = HuntingLevelEvaluator.Evaluate(resultData);
+        RefreshAll(mainBattleSceneMode ? "Victory. Battle result is displayed." : "Victory. Timeline result is displayed.");
+
+        if (battleSceneResultOverlay != null)
+        {
+            battleSceneResultOverlay.Show(resultData, new List<string> { SelectRewardCardName() });
+        }
+        else if (resultOverlay != null)
+        {
+            resultOverlay.Show(resultData, SelectRewardCardName());
+        }
+
+        return true;
+    }
+
+    private bool WasBossBattle()
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (enemies[i].IsBoss)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool TryShowDefeat()
+    {
+        if (GetFirstAliveAlly() != null)
+        {
+            return false;
+        }
+
+        battleEnded = true;
+        RefreshAll("Defeat. Return to menu or retry from the scene.");
+        return true;
+    }
+
+    private string ResolveEnemyTurnsUntilPlayerTurn()
+    {
+        string summary = string.Empty;
+        int safety = 0;
+        activeUnit = GetCurrentActiveUnit();
+
+        while (!battleEnded
+            && activeUnit != null
+            && !activeUnit.IsAlly
+            && GetFirstAliveEnemy() != null
+            && GetFirstAliveAlly() != null
+            && safety < 16)
+        {
+            currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
+            if (activeUnit.IsSkill)
+            {
+                string skillName = activeUnit.SkillAction != null ? activeUnit.SkillAction.DisplayName : "Skill";
+                int defeatedCount = ResolveSkillTurn(activeUnit.SkillAction);
+                if (defeatedCount > maxSimultaneousDefeatCount)
+                {
+                    maxSimultaneousDefeatCount = defeatedCount;
+                }
+
+                ConsumeSkillTimelineAction(activeUnit.SkillAction);
+                summary += " " + skillName + " auto resolved.";
+                if (TryShowVictory(playerActionTurnCount))
+                {
+                    break;
+                }
+            }
+            else
+            {
+                int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(activeUnit.Enemy != null && activeUnit.Enemy.IsBoss);
+                string actedEnemyName = activeUnit.Enemy != null ? activeUnit.Enemy.Name : "Enemy";
+                ResolveEnemyTurn(activeUnit.Enemy);
+                AdvanceActiveUnit(activeUnit, enemyDelay);
+                summary += " " + actedEnemyName + " auto acted D" + enemyDelay + ".";
+
+                if (TryShowDefeat())
+                {
+                    break;
+                }
+            }
+
+            safety++;
+
+            activeUnit = GetCurrentActiveUnit();
+        }
+
+        return summary;
+    }
+
+    private string SelectRewardCardName()
+    {
+        string[] fallbackRewards = { "アクアショット", "フリーズ", "テッキュウナゲ" };
+        if (discardPile.Count > 0)
+        {
+            PrototypeCard card = discardPile[random.Next(0, discardPile.Count)];
+            string displayName = GetCardDisplayName(card);
+            if (!string.IsNullOrEmpty(displayName) && displayName != "-")
+            {
+                return displayName;
+            }
+        }
+
+        return fallbackRewards[random.Next(0, fallbackRewards.Length)];
     }
 
     private void ResolveQueuedActions()
@@ -656,75 +2282,83 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         for (int i = 0; i < queuedActions.Count; i++)
         {
             QueuedAction action = queuedActions[i];
+            int defeatedCount = 0;
             if (action.Kind == ActionKind.Card)
             {
-                ResolveCard(action);
+                defeatedCount = ResolveCard(action);
             }
             else if (action.Kind == ActionKind.Weapon)
             {
-                ResolveWeapon(action);
+                defeatedCount = ResolveWeapon(action);
             }
             else if (action.Kind == ActionKind.Swap)
             {
                 ResolveSwap(action.SwapA, action.SwapB);
             }
+
+            if (defeatedCount > maxSimultaneousDefeatCount)
+            {
+                maxSimultaneousDefeatCount = defeatedCount;
+            }
         }
     }
 
-    private void ResolveCard(QueuedAction action)
+    private int ResolveCard(QueuedAction action)
     {
-        CardData card = action.Card;
+        PrototypeCard card = action.Card;
         if (card == null)
         {
-            return;
+            return 0;
+        }
+
+        if (card.IsUnsupported)
+        {
+            Debug.LogWarning("Unsupported timeline card: " + GetCardDisplayName(card) + " / " + card.UnsupportedReason);
         }
 
         switch (card.Effect)
         {
-            case CardEffectType.Damage:
-                ApplyDamage(action.EnemyTarget, Mathf.Max(1, card.Power), GetCardDisplayName(card));
-                break;
-            case CardEffectType.Repair:
-                HealAlly(action.AllyTarget, Mathf.Max(1, card.Power));
-                break;
-            case CardEffectType.Guard:
-                if (action.Actor != null)
+            case PrototypeCardEffect.SingleDamage:
+                int singleDefeatCount = ApplyDamage(action.Actor, action.EnemyTarget, Mathf.Max(1, card.Power), GetCardDisplayName(card));
+                if (card.AddsEchoSkillEntry)
                 {
-                    action.Actor.Status = "Guard +" + Mathf.Max(1, card.Power);
+                    AddSkillEntry("Echo", action.Actor, EchoSkillInsertDelay, EchoSkillPower, action.EnemyTarget);
                 }
-                break;
-            case CardEffectType.Charge:
-                if (action.Actor != null)
-                {
-                    action.Actor.Status = "Charged +" + Mathf.Max(1, card.Power);
-                }
-                break;
-            case CardEffectType.Freeze:
+
+                return singleDefeatCount;
+            case PrototypeCardEffect.RowDamage:
+                return ApplyRowDamage(action.Actor, action.EnemyTarget, Mathf.Max(1, card.Power), GetCardDisplayName(card));
+            case PrototypeCardEffect.PushDamage:
+                int pushDefeatCount = ApplyDamage(action.Actor, action.EnemyTarget, Mathf.Max(0, card.Power), GetCardDisplayName(card));
                 if (action.EnemyTarget != null && action.EnemyTarget.IsAlive)
                 {
-                    action.EnemyTarget.NextAction = "Frozen";
-                    action.EnemyTarget.NextReadyTick += 12;
+                    PushEnemy(action.EnemyTarget, PushDistance);
                 }
-                break;
+
+                return pushDefeatCount;
+            case PrototypeCardEffect.DelayDamage:
+                int delayDefeatCount = ApplyDamage(action.Actor, action.EnemyTarget, Mathf.Max(0, card.Power), GetCardDisplayName(card));
+                if (action.EnemyTarget != null && action.EnemyTarget.IsAlive)
+                {
+                    DelayEnemy(action.EnemyTarget, DelayTicks);
+                }
+
+                return delayDefeatCount;
+            case PrototypeCardEffect.Heal:
+                HealAlly(action.AllyTarget, Mathf.Max(1, card.Power));
+                return 0;
+            case PrototypeCardEffect.EchoShot:
+                int echoDefeatCount = ApplyDamage(action.Actor, action.EnemyTarget, Mathf.Max(1, card.Power), GetCardDisplayName(card));
+                AddSkillEntry("Echo", action.Actor, EchoSkillInsertDelay, EchoSkillPower, action.EnemyTarget);
+                return echoDefeatCount;
             default:
-                if (card.TargetType == CardTargetType.Enemy)
-                {
-                    ApplyDamage(action.EnemyTarget, Mathf.Max(10, card.Power), GetCardDisplayName(card) + " fallback");
-                }
-                else
-                {
-                    if (action.Actor != null)
-                    {
-                        action.Actor.Status = "Used " + GetCardDisplayName(card);
-                    }
-                }
-                break;
+                return 0;
         }
     }
 
-    private void ResolveWeapon(QueuedAction action)
+    private int ResolveWeapon(QueuedAction action)
     {
-        ApplyDamage(action.EnemyTarget, WeaponPower, "Weapon");
+        return ApplyDamage(action.Actor, action.EnemyTarget, WeaponPower, "Weapon");
     }
 
     private void ResolveSwap(PartyPosition a, PartyPosition b)
@@ -738,6 +2372,11 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
 
         first.Position = b;
         second.Position = a;
+        EnsureUniquePartyPositions();
+        if (activeUnit != null && activeUnit.IsAlly)
+        {
+            activeUnit.Ally.Status = "Swapped " + ShortPosition(a) + "/" + ShortPosition(b);
+        }
     }
 
     private void ResolveEnemyTurn(EnemyUnit enemy)
@@ -747,24 +2386,150 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        AllyUnit target = GetAllyAtPosition(PartyPosition.Front);
-        if (target == null || !target.IsAlive)
-        {
-            target = GetFirstAliveAlly();
-        }
+        AllyUnit target = GetPreferredEnemyAttackTarget();
 
         if (target == null)
         {
             return;
         }
 
-        int damage = enemy.NextAction == "Guard Break" ? 20 : 16;
+        const int baseDamage = 20;
+        int damage = ApplyIncomingDamageModifier(target, baseDamage);
         target.Hp = Mathf.Max(0, target.Hp - damage);
-        target.Status = "Hit -" + damage;
-        enemy.NextAction = enemy.NextAction == "Claw" ? "Shot" : "Claw";
+        if (damage > 0)
+        {
+            playerDamageTakenCount++;
+        }
+
+        target.Status = "Hit -" + damage + " (" + FormatPositionModifier(target.Position) + ")";
+        enemy.Status = "Attacked " + ShortPosition(target.Position);
     }
 
-    private void ApplyDamage(EnemyUnit target, int amount, string source)
+    private SkillTimelineAction AddSkillEntry(string actionName, AllyUnit owner, int delay, int power, EnemyUnit target)
+    {
+        EnemyUnit resolvedTarget = target != null && target.IsAlive ? target : GetFirstAliveEnemy();
+        if (resolvedTarget == null)
+        {
+            return null;
+        }
+
+        int safeDelay = Mathf.Max(1, delay);
+        SkillTimelineAction skillAction = new SkillTimelineAction
+        {
+            Id = "Skill_" + skillTimelineActions.Count + "_" + activeUnitSequence,
+            DisplayName = string.IsNullOrEmpty(actionName) ? "Skill" : actionName,
+            Owner = owner,
+            Target = resolvedTarget,
+            Power = Mathf.Max(1, power),
+            NextReadyTick = currentTick + safeDelay,
+            Delay = safeDelay,
+            DisplayColor = new Color(0.70f, 1f, 0.36f, 1f),
+            Status = "Queued D" + safeDelay
+        };
+
+        skillTimelineActions.Add(skillAction);
+        if (owner != null)
+        {
+            owner.Status = skillAction.DisplayName + " queued D" + safeDelay;
+        }
+
+        return skillAction;
+    }
+
+    private int ResolveSkillTurn(SkillTimelineAction skillAction)
+    {
+        if (skillAction == null || !skillAction.IsAlive)
+        {
+            return 0;
+        }
+
+        EnemyUnit resolvedTarget = skillAction.Target != null && skillAction.Target.IsAlive ? skillAction.Target : GetFirstAliveEnemy();
+        if (resolvedTarget == null)
+        {
+            skillAction.Status = "No target";
+            return 0;
+        }
+
+        int defeatedCount = ApplyDamage(skillAction.Owner, resolvedTarget, Mathf.Max(1, skillAction.Power), skillAction.DisplayName);
+        skillAction.Status = "Resolved";
+        return defeatedCount;
+    }
+
+    private void ConsumeSkillTimelineAction(SkillTimelineAction skillAction)
+    {
+        if (skillAction == null)
+        {
+            return;
+        }
+
+        skillAction.IsAlive = false;
+        skillTimelineActions.Remove(skillAction);
+        activeUnitSequence++;
+        activeUnit = GetCurrentActiveUnit();
+        if (activeUnit != null && activeUnit.IsAlly)
+        {
+            selectedAlly = activeUnit.Ally;
+        }
+    }
+
+    private int ApplyDamage(AllyUnit attacker, EnemyUnit target, int amount, string source)
+    {
+        EnemyUnit resolvedTarget = target != null && target.IsAlive ? target : GetFirstAliveEnemy();
+        if (resolvedTarget == null)
+        {
+            return 0;
+        }
+
+        bool wasAlive = resolvedTarget.IsAlive;
+        int modifiedDamage = ApplyOutgoingDamageModifier(attacker, amount);
+        resolvedTarget.Hp = Mathf.Max(0, resolvedTarget.Hp - modifiedDamage);
+        if (attacker != null)
+        {
+            attacker.Status = source + " -" + modifiedDamage + " (" + FormatPositionModifier(attacker.Position) + ")";
+        }
+
+        if (!resolvedTarget.IsAlive)
+        {
+            resolvedTarget.Status = "KO";
+            if (selectedEnemy == resolvedTarget)
+            {
+                selectedEnemy = GetFirstAliveEnemy();
+            }
+        }
+
+        return wasAlive && !resolvedTarget.IsAlive ? 1 : 0;
+    }
+
+    private int ApplyRowDamage(AllyUnit attacker, EnemyUnit target, int amount, string source)
+    {
+        EnemyUnit rowTarget = target != null && target.IsAlive ? target : GetFirstAliveEnemy();
+        if (rowTarget == null)
+        {
+            return 0;
+        }
+
+        int row = rowTarget.GridPosition.x;
+        int hitCount = 0;
+        int defeatedCount = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyUnit enemy = enemies[i];
+            if (enemy.IsAlive && enemy.GridPosition.x == row)
+            {
+                defeatedCount += ApplyDamage(attacker, enemy, amount, source);
+                hitCount++;
+            }
+        }
+
+        if (attacker != null)
+        {
+            attacker.Status = source + " row hit x" + hitCount + " (" + FormatPositionModifier(attacker.Position) + ")";
+        }
+
+        return defeatedCount;
+    }
+
+    private void PushEnemy(EnemyUnit target, int distance)
     {
         EnemyUnit resolvedTarget = target != null && target.IsAlive ? target : GetFirstAliveEnemy();
         if (resolvedTarget == null)
@@ -772,15 +2537,34 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        resolvedTarget.Hp = Mathf.Max(0, resolvedTarget.Hp - Mathf.Max(0, amount));
-        if (!resolvedTarget.IsAlive)
+        Vector2Int from = resolvedTarget.GridPosition;
+        Vector2Int to = new Vector2Int(from.x, Mathf.Clamp(from.y + Mathf.Max(1, distance), 0, 2));
+        if (to == from)
         {
-            resolvedTarget.NextAction = "KO";
-            if (selectedEnemy == resolvedTarget)
-            {
-                selectedEnemy = GetFirstAliveEnemy();
-            }
+            resolvedTarget.Status = "Push blocked";
+            return;
         }
+
+        if (GetEnemyAt(to.x, to.y) != null)
+        {
+            resolvedTarget.Status = "Push blocked";
+            return;
+        }
+
+        resolvedTarget.GridPosition = to;
+        resolvedTarget.Status = "Pushed";
+    }
+
+    private void DelayEnemy(EnemyUnit target, int ticks)
+    {
+        EnemyUnit resolvedTarget = target != null && target.IsAlive ? target : GetFirstAliveEnemy();
+        if (resolvedTarget == null)
+        {
+            return;
+        }
+
+        resolvedTarget.NextReadyTick += Mathf.Max(1, ticks);
+        resolvedTarget.Status = "Delayed +" + Mathf.Max(1, ticks);
     }
 
     private void HealAlly(AllyUnit target, int amount)
@@ -791,25 +2575,26 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        resolvedTarget.Hp = Mathf.Min(resolvedTarget.MaxHp, resolvedTarget.Hp + Mathf.Max(0, amount));
-        resolvedTarget.Status = "Healed +" + amount;
+        int modifiedHealing = ApplyHealingModifier(resolvedTarget, amount);
+        resolvedTarget.Hp = Mathf.Min(resolvedTarget.MaxHp, resolvedTarget.Hp + modifiedHealing);
+        resolvedTarget.Status = "Healed +" + modifiedHealing + " (" + FormatPositionModifier(resolvedTarget.Position) + ")";
     }
 
-    private void AdvanceActiveUnit(TimelineUnit unit, int actionLoad)
+    private void AdvanceActiveUnit(TimelineUnit unit, int actionDelay)
     {
         if (unit == null)
         {
             return;
         }
 
-        int recovery = CalculateRecovery(unit.Speed, actionLoad);
+        int delay = Mathf.Max(1, actionDelay);
         if (unit.IsAlly)
         {
-            unit.Ally.NextReadyTick = currentTick + recovery;
+            unit.Ally.NextReadyTick = currentTick + delay;
         }
         else
         {
-            unit.Enemy.NextReadyTick = currentTick + recovery;
+            unit.Enemy.NextReadyTick = currentTick + delay;
         }
 
         activeUnitSequence++;
@@ -820,9 +2605,108 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         }
     }
 
-    private int CalculateRecovery(int speed, int actionLoad)
+    private void EnsureUniquePartyPositions()
     {
-        return Mathf.Clamp(72 - Mathf.RoundToInt(speed * 0.58f) + (actionLoad - 1) * 8, 18, 80);
+        if (allies.Count < 3)
+        {
+            return;
+        }
+
+        bool hasFront = HasAllyAtPosition(PartyPosition.Front);
+        bool hasMiddle = HasAllyAtPosition(PartyPosition.Middle);
+        bool hasBack = HasAllyAtPosition(PartyPosition.Back);
+        if (hasFront && hasMiddle && hasBack)
+        {
+            return;
+        }
+
+        PartyPosition[] positions = { PartyPosition.Front, PartyPosition.Middle, PartyPosition.Back };
+        for (int i = 0; i < allies.Count && i < positions.Length; i++)
+        {
+            allies[i].Position = positions[i];
+        }
+    }
+
+    private bool HasAllyAtPosition(PartyPosition position)
+    {
+        int count = 0;
+        for (int i = 0; i < allies.Count; i++)
+        {
+            if (allies[i].Position == position)
+            {
+                count++;
+            }
+        }
+
+        return count == 1;
+    }
+
+    private int ApplyOutgoingDamageModifier(AllyUnit attacker, int amount)
+    {
+        if (attacker == null)
+        {
+            return Mathf.Max(0, amount);
+        }
+
+        return Mathf.Max(0, Mathf.RoundToInt(amount * GetOutgoingDamageMultiplier(attacker.Position)));
+    }
+
+    private int ApplyIncomingDamageModifier(AllyUnit target, int amount)
+    {
+        if (target == null)
+        {
+            return Mathf.Max(0, amount);
+        }
+
+        return Mathf.Max(0, Mathf.RoundToInt(amount * GetIncomingDamageMultiplier(target.Position)));
+    }
+
+    private int ApplyHealingModifier(AllyUnit target, int amount)
+    {
+        if (target == null)
+        {
+            return Mathf.Max(0, amount);
+        }
+
+        return Mathf.Max(0, Mathf.RoundToInt(amount * GetHealingReceivedMultiplier(target.Position)));
+    }
+
+    private float GetOutgoingDamageMultiplier(PartyPosition position)
+    {
+        return position == PartyPosition.Front ? FrontOutgoingDamageMultiplier : MiddleModifierMultiplier;
+    }
+
+    private float GetIncomingDamageMultiplier(PartyPosition position)
+    {
+        if (position == PartyPosition.Front)
+        {
+            return FrontIncomingDamageMultiplier;
+        }
+
+        if (position == PartyPosition.Back)
+        {
+            return BackIncomingDamageMultiplier;
+        }
+
+        return MiddleModifierMultiplier;
+    }
+
+    private float GetHealingReceivedMultiplier(PartyPosition position)
+    {
+        return position == PartyPosition.Back ? BackHealingReceivedMultiplier : MiddleModifierMultiplier;
+    }
+
+    private string FormatPositionModifier(PartyPosition position)
+    {
+        switch (position)
+        {
+            case PartyPosition.Front:
+                return "DMG +20% / TAKEN +20%";
+            case PartyPosition.Back:
+                return "TAKEN -20% / HEAL +20%";
+            default:
+                return "No modifier";
+        }
     }
 
     private void DiscardQueuedCards()
@@ -851,7 +2735,14 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
     private void ResetSelection()
     {
         ClearQueuedActions();
+        CloseCardSelect();
         RefreshAll("Selection reset.");
+    }
+
+    private void ToggleDebugLabels()
+    {
+        showDebugLabels = !showDebugLabels;
+        RefreshAll(showDebugLabels ? "Debug labels on." : "Debug labels off.");
     }
 
     private void ClearQueuedActions()
@@ -884,18 +2775,18 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
                 Shuffle(drawPile);
             }
 
-            CardData card = drawPile[0];
+            PrototypeCard card = drawPile[0];
             drawPile.RemoveAt(0);
             hand.Add(card);
         }
     }
 
-    private void Shuffle(List<CardData> cards)
+    private void Shuffle(List<PrototypeCard> cards)
     {
         for (int i = 0; i < cards.Count; i++)
         {
             int swapIndex = random.Next(i, cards.Count);
-            CardData temp = cards[i];
+            PrototypeCard temp = cards[i];
             cards[i] = cards[swapIndex];
             cards[swapIndex] = temp;
         }
@@ -907,7 +2798,30 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         if (ally != null)
         {
             selectedAlly = ally;
-            RefreshAll("Selected ally target: " + ally.Name + ".");
+            if (mainBattleSceneMode && IsPlayerTurn())
+            {
+                OpenCardSelect();
+                RefreshAll("Chip select opened for " + ally.Name + ".");
+            }
+            else
+            {
+                RefreshAll("Selected ally target: " + ally.Name + ".");
+            }
+        }
+    }
+
+    private void OpenCardSelect()
+    {
+        cardSelectOpen = true;
+        selectedHandIndex = Mathf.Clamp(selectedHandIndex, 0, Mathf.Max(0, hand.Count - 1));
+    }
+
+    private void CloseCardSelect()
+    {
+        cardSelectOpen = false;
+        if (cardSelectRoot != null)
+        {
+            cardSelectRoot.SetActive(false);
         }
     }
 
@@ -930,14 +2844,25 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         RefreshHand();
         RefreshCommands();
         RefreshHeader();
-        statusText.text = message;
+        RefreshDebugVisibility();
+        if (statusText != null)
+        {
+            statusText.text = message;
+        }
     }
 
     private void RefreshHeader()
     {
-        string activeName = activeUnit != null ? activeUnit.DisplayName : "None";
-        string side = activeUnit != null && activeUnit.IsAlly ? "PLAYER TURN" : "ENEMY TURN";
-        if (GetFirstAliveEnemy() == null)
+        string activeName = activeUnit != null
+            ? activeUnit.IsSkill ? ShortSkillName(activeUnit.SkillAction) : activeUnit.IsAlly ? GetAllyDisplayName(activeUnit.Ally) : ShortEnemyName(activeUnit.Enemy)
+            : "None";
+        string side = activeUnit != null && activeUnit.IsAlly ? "PLAYER TURN" : activeUnit != null && activeUnit.IsSkill ? "SKILL TURN" : "ENEMY TURN";
+        if (battleEnded && GetFirstAliveEnemy() == null)
+        {
+            side = "RESULT";
+            activeName = "Timeline result";
+        }
+        else if (GetFirstAliveEnemy() == null)
         {
             side = "VICTORY";
             activeName = "All enemies defeated";
@@ -948,8 +2873,50 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             activeName = "Party defeated";
         }
 
-        turnText.text = side + " / TICK " + currentTick.ToString("000") + " / ACTIVE: " + activeName;
-        selectedText.text = "Selected Ally: " + (selectedAlly != null ? selectedAlly.Name : "-") + "   Target: " + (selectedEnemy != null ? selectedEnemy.Name : "-");
+        if (turnText != null)
+        {
+            turnText.text = showDebugLabels
+                ? side + " / TICK " + currentTick.ToString("000") + " / ACTIVE: " + activeName
+                : side + "  " + activeName;
+        }
+
+        if (selectedText != null)
+        {
+            selectedText.gameObject.SetActive(showDebugLabels);
+            selectedText.text = "Selected Ally: " + (selectedAlly != null ? selectedAlly.Name : "-") + "   Target: " + (selectedEnemy != null ? selectedEnemy.Name : "-");
+        }
+
+        if (purposeText != null)
+        {
+            purposeText.gameObject.SetActive(showDebugLabels);
+        }
+
+        if (playerHpText != null)
+        {
+            AllyUnit hpSource = selectedAlly != null && selectedAlly.IsAlive ? selectedAlly : GetFirstAliveAlly();
+            playerHpText.text = hpSource != null ? hpSource.Hp.ToString("000") : "000";
+        }
+
+        SetOptionalDebugText(timelineHintText);
+        SetOptionalDebugText(allyHintText);
+        SetOptionalDebugText(enemyHintText);
+    }
+
+    private void RefreshDebugVisibility()
+    {
+        bool showGameDebug = !mainBattleSceneMode || showDebugLabels;
+        SetActiveIfPresent(timelineLabelText, showGameDebug);
+        SetActiveIfPresent(allyLabelText, showGameDebug);
+        SetActiveIfPresent(enemyLabelText, showGameDebug);
+        SetActiveIfPresent(handLabelText, showGameDebug);
+
+        for (int i = 0; i < debugGridLines.Count; i++)
+        {
+            if (debugGridLines[i] != null)
+            {
+                debugGridLines[i].SetActive(showDebugLabels);
+            }
+        }
     }
 
     private void RefreshTimeline()
@@ -968,12 +2935,45 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             view.Panel.gameObject.SetActive(true);
             bool active = i == 0;
             bool ally = preview.Unit.IsAlly;
-            view.Panel.color = active
-                ? new Color(0.09f, 0.15f, 0.11f, 0.98f)
-                : new Color(0.035f, 0.07f, 0.09f, 0.96f);
-            view.Accent.color = ally ? GetPositionColor(preview.Unit.Ally.Position) : new Color(1f, 0.32f, 0.42f, 1f);
-            view.NameText.text = preview.Unit.DisplayName;
-            view.DetailText.text = (ally ? preview.Unit.Ally.Position.ToString() : preview.Unit.Enemy.NextAction) + "\nT+" + preview.DeltaTick + " SPD " + preview.Unit.Speed;
+            bool skill = preview.Unit.IsSkill;
+            bool selected = skill ? false : ally
+                ? selectedAlly != null && preview.Unit.Ally == selectedAlly
+                : selectedEnemy != null && preview.Unit.Enemy == selectedEnemy;
+            Sprite frameSprite = mainBattleSceneMode || skill ? null : GetTimelineFrameSprite(ally, active, selected, i > 0);
+            view.Panel.sprite = mainBattleSceneMode ? null : (frameSprite != null ? frameSprite : GetSpriteOrNull(timelineSprites, s => s.SlotBase));
+            view.Panel.color = view.Panel.sprite != null
+                ? Color.white
+                : active ? new Color(0.14f, 0.16f, 0.09f, 0.98f) : skill ? new Color(0.055f, 0.12f, 0.075f, 0.96f) : new Color(0.03f, 0.055f, 0.075f, 0.96f);
+            Color entryColor = GetTimelineEntryColor(preview.Unit);
+            Outline outline = mainBattleSceneMode ? view.Panel.GetComponent<Outline>() : null;
+            if (outline != null)
+            {
+                outline.effectColor = active ? new Color(1f, 0.88f, 0.22f, 0.95f) : Color.Lerp(entryColor, Color.white, 0.12f);
+                outline.effectDistance = active ? new Vector2(3f, -3f) : new Vector2(2f, -2f);
+            }
+
+            view.Accent.color = entryColor;
+            view.UnitIcon.sprite = GetTimelineUnitIconSprite(preview.Unit, ally, active, selected);
+            view.UnitIcon.preserveAspect = true;
+            view.UnitIcon.color = view.UnitIcon.sprite != null ? Color.white : active ? Color.Lerp(entryColor, Color.white, 0.18f) : entryColor;
+            view.Cursor.gameObject.SetActive(active);
+            view.NameText.text = GetTimelineDisplayName(preview.Unit);
+            view.NameText.color = active ? new Color(1f, 0.96f, 0.58f, 1f) : Color.white;
+            bool showTimelineDetail = !mainBattleSceneMode || showDebugLabels;
+            view.DetailText.gameObject.SetActive(showTimelineDetail);
+            BattleTimelineEntry entry = preview.Unit.Entry;
+            int nextActTick = entry != null ? entry.NextActTick : preview.Unit.ReadyTick;
+            if (showTimelineDetail)
+            {
+                view.DetailText.text = mainBattleSceneMode
+                    ? GetTimelineCardTypeLabel(preview.Unit) + "  T+" + preview.DeltaTick
+                    : GetTimelineDebugLine(preview.Unit)
+                        + "\nT+" + preview.DeltaTick + " next " + nextActTick + " delay " + GetPreviewLoopDelay(preview.Unit);
+            }
+            else
+            {
+                view.DetailText.text = string.Empty;
+            }
         }
     }
 
@@ -984,7 +2984,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         {
             if (allies[i].IsAlive)
             {
-                simulatedUnits.Add(new TimelineUnit { IsAlly = true, Ally = allies[i], ReadyTick = allies[i].NextReadyTick, Sequence = i });
+                simulatedUnits.Add(CreateTimelineUnit(allies[i], null, allies[i].NextReadyTick, i));
             }
         }
 
@@ -992,7 +2992,16 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         {
             if (enemies[i].IsAlive)
             {
-                simulatedUnits.Add(new TimelineUnit { IsAlly = false, Enemy = enemies[i], ReadyTick = enemies[i].NextReadyTick, Sequence = allies.Count + i });
+                simulatedUnits.Add(CreateTimelineUnit(null, enemies[i], enemies[i].NextReadyTick, allies.Count + i));
+            }
+        }
+
+        for (int i = 0; i < skillTimelineActions.Count; i++)
+        {
+            SkillTimelineAction skillAction = skillTimelineActions[i];
+            if (skillAction.IsAlive)
+            {
+                simulatedUnits.Add(CreateSkillTimelineUnit(skillAction, allies.Count + enemies.Count + i));
             }
         }
 
@@ -1001,11 +3010,99 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         {
             TimelineUnit next = GetEarliestUnit(simulatedUnits);
             previews.Add(new TimelinePreview { Unit = next, DeltaTick = Mathf.Max(0, next.ReadyTick - currentTick) });
-            next.ReadyTick += CalculateRecovery(next.Speed, 1);
-            next.Sequence += 10;
+            if (next.IsSkill)
+            {
+                simulatedUnits.Remove(next);
+            }
+            else
+            {
+                next.ReadyTick += GetPreviewLoopDelay(next);
+                next.Sequence += 10;
+            }
         }
 
         return previews;
+    }
+
+    private int GetPreviewLoopDelay(TimelineUnit unit)
+    {
+        if (unit == null)
+        {
+            return BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
+        }
+
+        if (unit.IsSkill)
+        {
+            return unit.SkillAction != null ? unit.SkillAction.Delay : 0;
+        }
+
+        if (!unit.IsAlly)
+        {
+            return BattleActionDelayResolver.ResolveEnemyActionDelay(unit.Enemy != null && unit.Enemy.IsBoss);
+        }
+
+        return BattleActionDelayResolver.Resolve(BattleActionDelayKind.NormalCard);
+    }
+
+    private Color GetTimelineEntryColor(TimelineUnit unit)
+    {
+        if (unit == null)
+        {
+            return Color.gray;
+        }
+
+        if (unit.IsSkill)
+        {
+            return unit.SkillAction != null ? unit.SkillAction.DisplayColor : new Color(0.70f, 1f, 0.36f, 1f);
+        }
+
+        return unit.IsAlly ? GetPositionColor(unit.Ally.Position) : GetAttributeColor(unit.Enemy.Attribute);
+    }
+
+    private string GetTimelineDisplayName(TimelineUnit unit)
+    {
+        if (unit == null)
+        {
+            return "-";
+        }
+
+        if (unit.IsSkill)
+        {
+            return ShortSkillName(unit.SkillAction);
+        }
+
+        return unit.IsAlly ? ShortAllyTimelineName(unit.Ally) : ShortEnemyTimelineName(unit.Enemy);
+    }
+
+    private string GetTimelineDebugLine(TimelineUnit unit)
+    {
+        if (unit == null)
+        {
+            return "-";
+        }
+
+        if (unit.IsSkill)
+        {
+            string owner = unit.SkillAction != null && unit.SkillAction.Owner != null ? ShortPosition(unit.SkillAction.Owner.Position) : "-";
+            return "Skill from " + owner;
+        }
+
+        return unit.IsAlly ? unit.Ally.Position.ToString() : "Grid " + unit.Enemy.GridPosition.x + "," + unit.Enemy.GridPosition.y;
+    }
+
+    private static string GetTimelineCardTypeLabel(TimelineUnit unit)
+    {
+        if (unit == null)
+        {
+            return "-";
+        }
+
+        if (unit.IsSkill)
+        {
+            return "SKILL";
+        }
+
+        return unit.IsAlly ? "ALLY" : "ENEMY";
     }
 
     private void RefreshAllies()
@@ -1017,16 +3114,516 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             AllyUnit ally = GetAllyAtPosition(position);
             bool selected = ally != null && selectedAlly == ally;
             bool active = activeUnit != null && activeUnit.IsAlly && activeUnit.Ally == ally;
-            view.Panel.color = active
-                ? new Color(0.08f, 0.16f, 0.12f, 0.98f)
+            view.Panel.sprite = mainBattleSceneMode ? null : GetAllyFrameSprite(position);
+            view.Panel.color = view.Panel.sprite != null ? Color.white
+                : mainBattleSceneMode ? active
+                    ? new Color(1f, 0.88f, 0.22f, 0.16f)
+                    : selected ? new Color(0.20f, 0.95f, 1f, 0.14f) : new Color(0.02f, 0.04f, 0.05f, 0.02f)
+                : active ? new Color(0.08f, 0.16f, 0.12f, 0.98f)
                 : selected ? new Color(0.08f, 0.12f, 0.16f, 0.98f) : new Color(0.028f, 0.055f, 0.07f, 0.96f);
             view.Accent.color = GetPositionColor(position);
-            view.PositionText.text = position.ToString().ToUpperInvariant();
-            view.NameText.text = ally != null ? ally.Name : "-";
+            view.SelectedHighlight.gameObject.SetActive(selected);
+            view.ActiveHighlight.gameObject.SetActive(active);
+            bool targetable = IsAllyPanelTargetable(ally);
+            bool danger = ally != null && activeUnit != null && !activeUnit.IsAlly && GetPreferredEnemyAttackTarget() == ally;
+            bool hover = allyPanelHoverStates.ContainsKey(position) && allyPanelHoverStates[position];
+            bool disabled = ally == null || !ally.IsAlive;
+            RefreshAllyPanelOverlays(view, selected, active, targetable, danger, hover, disabled);
+            if (useSceneBattleGridPrefabVisuals)
+            {
+                HideSceneGridOverlay(view);
+            }
+
+            if (mainBattleSceneMode)
+            {
+                view.PositionText.gameObject.SetActive(showDebugLabels);
+                view.NameText.gameObject.SetActive(false);
+                view.NameText.text = string.Empty;
+            }
+            else
+            {
+                view.PositionText.gameObject.SetActive(true);
+                view.PositionText.text = ShortPosition(position);
+                view.NameText.gameObject.SetActive(true);
+                view.NameText.text = ally != null ? GetAllyDisplayName(ally) : "-";
+            }
+            float hpRate = ally != null && ally.MaxHp > 0 ? Mathf.Clamp01((float)ally.Hp / ally.MaxHp) : 0f;
+            view.HpBack.gameObject.SetActive(!mainBattleSceneMode);
+            view.HpFill.fillAmount = hpRate;
+            view.HpFill.color = hpRate > 0.45f ? new Color(0.28f, 1f, 0.45f, 0.95f) : hpRate > 0.2f ? new Color(1f, 0.75f, 0.22f, 0.95f) : new Color(1f, 0.24f, 0.28f, 0.95f);
+            view.Portrait.color = ally != null ? GetPositionColor(position) : new Color(0.2f, 0.2f, 0.2f, 0.7f);
+            view.DetailText.gameObject.SetActive(showDebugLabels);
             view.DetailText.text = ally != null
-                ? "HP " + ally.Hp + "/" + ally.MaxHp + "   SPD " + ally.Speed + "   " + ally.Status
+                ? "HP " + ally.Hp + "/" + ally.MaxHp + "   SPD " + ally.Speed + "   " + FormatPositionModifier(position) + "   " + ally.Status
                 : "Empty";
+            ApplyAllySprite(view, ally, position);
         }
+    }
+
+    private void UpdateAllyIdleAnimation()
+    {
+        if (!mainBattleSceneMode || allySpriteDefinitions.Count == 0)
+        {
+            return;
+        }
+
+        float frameSeconds = Mathf.Max(0.05f, allyIdleFrameSeconds);
+        allyIdleTimer += Time.unscaledDeltaTime;
+        if (allyIdleTimer < frameSeconds)
+        {
+            return;
+        }
+
+        allyIdleTimer -= frameSeconds;
+        allyIdleFrameIndex = (allyIdleFrameIndex + 1) % AllyIdleFrameCount;
+        foreach (KeyValuePair<PartyPosition, AllyView> pair in allyViews)
+        {
+            ApplyAllySprite(pair.Value, GetAllyAtPosition(pair.Key), pair.Key);
+        }
+    }
+
+    private void UpdateEnemyIdleAnimation()
+    {
+        if (!mainBattleSceneMode || enemySpriteDefinitions.Count == 0)
+        {
+            return;
+        }
+
+        float frameSeconds = Mathf.Max(0.05f, enemyIdleFrameSeconds);
+        enemyIdleTimer += Time.unscaledDeltaTime;
+        if (enemyIdleTimer < frameSeconds)
+        {
+            return;
+        }
+
+        enemyIdleTimer -= frameSeconds;
+        enemyIdleFrameIndex = (enemyIdleFrameIndex + 1) % EnemyIdleFrameCount;
+        RefreshEnemySprites();
+    }
+
+    private void CacheSceneBattleGridUnitRenderers()
+    {
+        sceneBattleGridUnitRenderers.Clear();
+        battleSceneEnemyHpTexts.Clear();
+        if (!useSceneBattleGridPrefabVisuals)
+        {
+            return;
+        }
+
+        GameObject grid = GameObject.Find(BattleGridBottomPrefabName);
+        Transform units = grid != null ? grid.transform.Find("Units") : null;
+        if (units == null)
+        {
+            return;
+        }
+
+        CacheSceneBattleGridUnitRenderer(units, "Ally_Front_CyberKnight");
+        CacheSceneBattleGridUnitRenderer(units, "Ally_Middle_CyberWolf");
+        CacheSceneBattleGridUnitRenderer(units, "Ally_Back_DigitalFairy");
+        CacheSceneBattleGridUnitRenderer(units, "Enemy_DrillMole");
+        CacheSceneBattleGridUnitRenderer(units, "Enemy_ElecGecko");
+        CacheSceneBattleGridUnitRenderer(units, "Enemy_BladeBug");
+        DisableLegacyBattleSceneEnemyHpTexts(units);
+    }
+
+    private void CacheSceneBattleGridUnitRenderer(Transform units, string unitName)
+    {
+        Transform unit = units.Find(unitName);
+        DisableLegacyBattleSceneEnemyHpTexts(unit);
+        SpriteRenderer renderer = unit != null ? unit.GetComponentInChildren<SpriteRenderer>(true) : null;
+        if (renderer != null)
+        {
+            sceneBattleGridUnitRenderers[unitName] = renderer;
+        }
+    }
+
+    private TextMeshPro EnsureBattleSceneEnemyHpText(Transform hpRoot, EnemyUnit enemy)
+    {
+        if (hpRoot == null || enemy == null)
+        {
+            return null;
+        }
+
+        DisableRetiredBattleSceneEnemyHpTexts(hpRoot);
+        string hpObjectName = GetBattleSceneEnemyHpObjectName(enemy);
+        Transform hpTransform = hpRoot.Find(hpObjectName);
+        if (hpTransform == null)
+        {
+            GameObject hpObject = new GameObject(hpObjectName);
+            hpTransform = hpObject.transform;
+            hpTransform.SetParent(hpRoot, false);
+        }
+
+        TextMeshPro hpText = hpTransform.GetComponent<TextMeshPro>();
+        if (hpText == null)
+        {
+            hpText = hpTransform.gameObject.AddComponent<TextMeshPro>();
+        }
+
+        ConfigureBattleSceneEnemyWorldHpText(hpText);
+        return hpText;
+    }
+
+    private static Transform EnsureBattleSceneEnemyHpRoot()
+    {
+        GameObject grid = GameObject.Find(BattleGridBottomPrefabName);
+        if (grid == null)
+        {
+            return null;
+        }
+
+        Transform hpRoot = grid.transform.Find(BattleSceneEnemyHpRootName);
+        if (hpRoot == null)
+        {
+            GameObject hpRootObject = new GameObject(BattleSceneEnemyHpRootName);
+            hpRoot = hpRootObject.transform;
+            hpRoot.SetParent(grid.transform, false);
+        }
+
+        hpRoot.localPosition = Vector3.zero;
+        hpRoot.localRotation = Quaternion.identity;
+        hpRoot.localScale = Vector3.one;
+        return hpRoot;
+    }
+
+    private static void DisableLegacyBattleSceneEnemyHpTexts(Transform root)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform child = root.GetChild(i);
+            if (child == null)
+            {
+                continue;
+            }
+
+            string childName = child.name;
+            bool isLegacyHpText =
+                childName == BattleSceneEnemyHpTextName ||
+                (childName.StartsWith("Enemy_", StringComparison.Ordinal) &&
+                childName.EndsWith("_" + BattleSceneEnemyHpTextName, StringComparison.Ordinal));
+            if (isLegacyHpText)
+            {
+                child.gameObject.SetActive(false);
+            }
+
+            DisableLegacyBattleSceneEnemyHpTexts(child);
+        }
+    }
+
+    private static void DisableRetiredBattleSceneEnemyHpTexts(Transform hpRoot)
+    {
+        if (hpRoot == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < hpRoot.childCount; i++)
+        {
+            Transform child = hpRoot.GetChild(i);
+            if (child == null)
+            {
+                continue;
+            }
+
+            string childName = child.name;
+            bool isRetiredGeneratedHp =
+                childName.StartsWith("Enemy_", StringComparison.Ordinal) &&
+                childName.EndsWith("_" + BattleSceneEnemyHpTextName, StringComparison.Ordinal);
+            bool isUnexpectedHp =
+                childName == BattleSceneEnemyHpTextName ||
+                (childName.StartsWith(BattleSceneEnemyHpObjectPrefix, StringComparison.Ordinal) &&
+                childName != "EnemyHp_70" &&
+                childName != "EnemyHp_90" &&
+                childName != "EnemyHp_75");
+            if (isRetiredGeneratedHp || isUnexpectedHp)
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private static string GetBattleSceneEnemyHpObjectName(EnemyUnit enemy)
+    {
+        if (enemy == null)
+        {
+            return BattleSceneEnemyHpObjectPrefix + "Unknown";
+        }
+
+        int labelNumber = enemy.MaxHp > 0 ? enemy.MaxHp : enemy.Hp;
+        return BattleSceneEnemyHpObjectPrefix + Mathf.Max(0, labelNumber);
+    }
+
+    private void ApplySceneBattleGridUnitSprites()
+    {
+        if (!useSceneBattleGridPrefabVisuals || sceneBattleGridUnitRenderers.Count == 0)
+        {
+            return;
+        }
+
+        ApplySceneBattleGridUnitSprite("Ally_Front_CyberKnight");
+        ApplySceneBattleGridUnitSprite("Ally_Middle_CyberWolf");
+        ApplySceneBattleGridUnitSprite("Ally_Back_DigitalFairy");
+        ApplySceneBattleGridUnitSprite("Enemy_DrillMole");
+        ApplySceneBattleGridUnitSprite("Enemy_ElecGecko");
+        ApplySceneBattleGridUnitSprite("Enemy_BladeBug");
+    }
+
+    private void ApplySceneBattleGridUnitSprite(string unitName)
+    {
+        SpriteRenderer renderer;
+        SceneUnitSpriteAnimation animation;
+        if (!sceneBattleGridUnitRenderers.TryGetValue(unitName, out renderer)
+            || !sceneBattleGridUnitAnimations.TryGetValue(unitName, out animation)
+            || animation.IdleFrames == null
+            || animation.IdleFrames.Length == 0)
+        {
+            return;
+        }
+
+        int frameIndex = animation.IsEnemy ? enemyIdleFrameIndex : allyIdleFrameIndex;
+        Sprite sprite = animation.IdleFrames[Mathf.Abs(frameIndex) % animation.IdleFrames.Length];
+        if (sprite != null)
+        {
+            renderer.sprite = sprite;
+        }
+
+        renderer.flipX = animation.FlipX;
+    }
+
+    private void RefreshEnemySprites()
+    {
+        for (int row = 0; row < 3; row++)
+        {
+            for (int column = 0; column < 3; column++)
+            {
+                EnemyCellView view = enemyCellViews[row, column];
+                EnemyUnit enemy = GetEnemyAt(row, column);
+                if (view != null && view.EnemyRoot != null && view.EnemyRoot.activeSelf && enemy != null && enemy.IsAlive)
+                {
+                    ApplyEnemySprite(view, enemy);
+                }
+            }
+        }
+    }
+
+    private void ApplyAllySprite(AllyView view, AllyUnit ally, PartyPosition slotPosition)
+    {
+        if (view == null || view.Portrait == null || !mainBattleSceneMode)
+        {
+            return;
+        }
+
+        AllySpriteDefinition definition = GetAllySpriteDefinition(ally);
+        if (definition == null)
+        {
+            view.Portrait.sprite = null;
+            view.Portrait.color = ally != null ? GetPositionColor(slotPosition) : new Color(0.2f, 0.2f, 0.2f, 0.7f);
+            int fallbackRow = GetAllyGridRow(slotPosition);
+            SetAllySpriteRect(view.Portrait.rectTransform, ScaleSpriteForBattleRow(new Vector2(0.72f, 0.76f), fallbackRow), OffsetSpriteForBattleRow(Vector2.zero, fallbackRow));
+            return;
+        }
+
+        int row = GetAllyGridRow(slotPosition);
+        SetAllySpriteRect(view.Portrait.rectTransform, ScaleSpriteForBattleRow(definition.Scale, row), OffsetSpriteForBattleRow(definition.Offset, row));
+        Sprite sprite = GetAllyIdleSprite(definition);
+        view.Portrait.sprite = sprite;
+        view.Portrait.preserveAspect = true;
+        view.Portrait.color = sprite != null ? Color.white : definition.FallbackColor;
+    }
+
+    private void ApplyEnemySprite(EnemyCellView view, EnemyUnit enemy)
+    {
+        if (view == null || view.EnemySprite == null || !mainBattleSceneMode)
+        {
+            return;
+        }
+
+        EnemySpriteDefinition definition = GetEnemySpriteDefinition(enemy);
+        if (definition == null)
+        {
+            view.EnemySprite.sprite = null;
+            view.EnemySprite.rectTransform.localScale = Vector3.one;
+            view.EnemySprite.color = enemy != null ? GetAttributeColor(enemy.Attribute) : new Color(0.2f, 0.2f, 0.2f, 0.7f);
+            int fallbackRow = enemy != null ? enemy.GridPosition.x : 1;
+            SetEnemySpriteRect(view.EnemySprite.rectTransform, ScaleSpriteForBattleRow(new Vector2(0.72f, 0.70f), fallbackRow), OffsetSpriteForBattleRow(Vector2.zero, fallbackRow));
+            return;
+        }
+
+        int row = enemy != null ? enemy.GridPosition.x : 1;
+        SetEnemySpriteRect(view.EnemySprite.rectTransform, ScaleSpriteForBattleRow(definition.Scale, row), OffsetSpriteForBattleRow(definition.Offset, row));
+        Sprite sprite = GetEnemyIdleSprite(definition);
+        view.EnemySprite.sprite = sprite;
+        view.EnemySprite.preserveAspect = true;
+        view.EnemySprite.color = sprite != null ? Color.white : definition.FallbackColor;
+        view.EnemySprite.rectTransform.localScale = definition.FlipX ? new Vector3(-1f, 1f, 1f) : Vector3.one;
+    }
+
+    private void RefreshAllyPanelOverlays(AllyView view, bool selected, bool active, bool targetable, bool danger, bool hover, bool disabled)
+    {
+        if (!mainBattleSceneMode || view == null)
+        {
+            return;
+        }
+
+        Sprite selectedSprite = null;
+        Sprite targetableSprite = battlePanelSprites != null ? battlePanelSprites.TargetableOverlay : null;
+        Sprite dangerSprite = battlePanelSprites != null ? battlePanelSprites.DangerOverlay : null;
+        Sprite hoverSprite = battlePanelSprites != null ? battlePanelSprites.HoverOverlay : null;
+        Sprite disabledSprite = battlePanelSprites != null ? battlePanelSprites.DisabledOverlay : null;
+        ApplyOverlayImage(view.HoverOverlay, hover, hoverSprite, new Color(1f, 1f, 1f, 0.18f));
+        ApplyOverlayImage(view.SelectedHighlight, selected, selectedSprite, new Color(0.35f, 0.95f, 1f, 0.36f));
+        ApplyOverlayImage(view.TargetableOverlay, targetable && !selected, targetableSprite, new Color(1f, 0.92f, 0.20f, 0.24f));
+        ApplyOverlayImage(view.ActiveHighlight, active, targetableSprite, new Color(1f, 0.86f, 0.22f, 0.34f));
+        ApplyOverlayImage(view.DangerOverlay, danger, dangerSprite, new Color(1f, 0.22f, 0.22f, 0.36f));
+        ApplyOverlayImage(view.DisabledOverlay, disabled, disabledSprite, new Color(0.05f, 0.05f, 0.06f, 0.55f));
+    }
+
+    private void HideSceneGridOverlay(AllyView view)
+    {
+        if (view == null)
+        {
+            return;
+        }
+
+        view.Panel.sprite = null;
+        view.Panel.color = Color.clear;
+        ApplyOverlayImage(view.HoverOverlay, false, null, Color.clear);
+        ApplyOverlayImage(view.SelectedHighlight, false, null, Color.clear);
+        ApplyOverlayImage(view.TargetableOverlay, false, null, Color.clear);
+        ApplyOverlayImage(view.ActiveHighlight, false, null, Color.clear);
+        ApplyOverlayImage(view.DangerOverlay, false, null, Color.clear);
+        ApplyOverlayImage(view.DisabledOverlay, false, null, Color.clear);
+    }
+
+    private void HideSceneGridOverlay(EnemyCellView view)
+    {
+        if (view == null)
+        {
+            return;
+        }
+
+        view.Panel.sprite = null;
+        view.Panel.color = Color.clear;
+        ApplyOverlayImage(view.Highlight, false, null, Color.clear);
+        ApplyOverlayImage(view.TargetableOverlay, false, null, Color.clear);
+        ApplyOverlayImage(view.DangerOverlay, false, null, Color.clear);
+        ApplyOverlayImage(view.HoverOverlay, false, null, Color.clear);
+        ApplyOverlayImage(view.DisabledOverlay, false, null, Color.clear);
+    }
+
+    private bool IsAllyPanelTargetable(AllyUnit ally)
+    {
+        if (ally == null || !ally.IsAlive || !IsPlayerTurn())
+        {
+            return false;
+        }
+
+        PrototypeCard card = GetSelectedChipCard();
+        return card != null && card.TargetKind == PrototypeTargetKind.Ally;
+    }
+
+    private static void SetAllySpriteRect(RectTransform rectTransform, Vector2 scale, Vector2 offset)
+    {
+        Vector2 clampedScale = ClampSpriteScale(scale);
+        Vector2 center = new Vector2(0.5f + offset.x, 0.56f + offset.y);
+        center.x = Mathf.Clamp(center.x, clampedScale.x * 0.5f, 1f - clampedScale.x * 0.5f);
+        center.y = Mathf.Clamp(center.y, clampedScale.y * 0.5f + 0.08f, 0.96f - clampedScale.y * 0.5f);
+        rectTransform.anchorMin = new Vector2(center.x - clampedScale.x * 0.5f, center.y - clampedScale.y * 0.5f);
+        rectTransform.anchorMax = new Vector2(center.x + clampedScale.x * 0.5f, center.y + clampedScale.y * 0.5f);
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+    }
+
+    private static void SetEnemySpriteRect(RectTransform rectTransform, Vector2 scale, Vector2 offset)
+    {
+        Vector2 clampedScale = ClampSpriteScale(scale);
+        Vector2 center = new Vector2(0.5f + offset.x, 0.58f + offset.y);
+        center.x = Mathf.Clamp(center.x, clampedScale.x * 0.5f, 1f - clampedScale.x * 0.5f);
+        center.y = Mathf.Clamp(center.y, clampedScale.y * 0.5f + 0.12f, 0.94f - clampedScale.y * 0.5f);
+        rectTransform.anchorMin = new Vector2(center.x - clampedScale.x * 0.5f, center.y - clampedScale.y * 0.5f);
+        rectTransform.anchorMax = new Vector2(center.x + clampedScale.x * 0.5f, center.y + clampedScale.y * 0.5f);
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+    }
+
+    private static int GetAllyGridRow(PartyPosition position)
+    {
+        switch (position)
+        {
+            case PartyPosition.Middle:
+                return 0;
+            case PartyPosition.Front:
+                return 1;
+            default:
+                return 2;
+        }
+    }
+
+    private static Vector2 ScaleSpriteForBattleRow(Vector2 scale, int row)
+    {
+        float depthScale = GetBattleSpriteRowScale(row);
+        return new Vector2(scale.x * depthScale, scale.y * depthScale);
+    }
+
+    private static Vector2 OffsetSpriteForBattleRow(Vector2 offset, int row)
+    {
+        float yOffset = (Mathf.Clamp(row, 0, BattleGridRows - 1) - 1f) * BattleSpriteYOffsetRowDelta;
+        return new Vector2(offset.x, offset.y + yOffset);
+    }
+
+    private static float GetBattleSpriteRowScale(int row)
+    {
+        return 1f + (Mathf.Clamp(row, 0, BattleGridRows - 1) - 1f) * BattleSpriteScaleRowDelta;
+    }
+
+    private AllySpriteDefinition GetAllySpriteDefinition(AllyUnit ally)
+    {
+        if (ally == null || string.IsNullOrEmpty(ally.Name))
+        {
+            return null;
+        }
+
+        AllySpriteDefinition definition;
+        return allySpriteDefinitions.TryGetValue(ally.Name, out definition) ? definition : null;
+    }
+
+    private Sprite GetAllyIdleSprite(AllySpriteDefinition definition)
+    {
+        if (definition == null || definition.IdleFrames == null || definition.IdleFrames.Length == 0)
+        {
+            return null;
+        }
+
+        int index = Mathf.Abs(allyIdleFrameIndex) % definition.IdleFrames.Length;
+        return definition.IdleFrames[index];
+    }
+
+    private EnemySpriteDefinition GetEnemySpriteDefinition(EnemyUnit enemy)
+    {
+        if (enemy == null)
+        {
+            return null;
+        }
+
+        string key = !string.IsNullOrEmpty(enemy.SpriteKey) ? enemy.SpriteKey : enemy.Name;
+        EnemySpriteDefinition definition;
+        return enemySpriteDefinitions.TryGetValue(key, out definition) ? definition : null;
+    }
+
+    private Sprite GetEnemyIdleSprite(EnemySpriteDefinition definition)
+    {
+        if (definition == null || definition.IdleFrames == null || definition.IdleFrames.Length == 0)
+        {
+            return null;
+        }
+
+        int index = Mathf.Abs(enemyIdleFrameIndex) % definition.IdleFrames.Length;
+        return definition.IdleFrames[index];
     }
 
     private void RefreshEnemies()
@@ -1038,18 +3635,459 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
                 EnemyCellView view = enemyCellViews[row, column];
                 EnemyUnit enemy = GetEnemyAt(row, column);
                 bool selected = enemy != null && selectedEnemy == enemy;
+                bool active = activeUnit != null && !activeUnit.IsAlly && activeUnit.Enemy == enemy;
+                bool targetable = IsPlayerTurn() && enemy != null && enemy.IsAlive;
                 if (enemy == null)
                 {
-                    view.Panel.color = new Color(0.025f, 0.052f, 0.065f, 0.98f);
+                    view.Panel.sprite = mainBattleSceneMode ? GetBattlePanelBaseSprite(false) : GetSpriteOrNull(enemyGridSprites, s => s.Empty);
+                    view.Panel.color = view.Panel.sprite != null ? Color.white : mainBattleSceneMode ? new Color(0.02f, 0.04f, 0.05f, 0.02f) : new Color(0.025f, 0.052f, 0.065f, 0.98f);
+                    view.Highlight.gameObject.SetActive(false);
+                    ApplyOverlayImage(view.TargetableOverlay, false, null, Color.clear);
+                    ApplyOverlayImage(view.DangerOverlay, false, null, Color.clear);
+                    ApplyOverlayImage(view.HoverOverlay, enemyPanelHoverStates[row, column], battlePanelSprites != null ? battlePanelSprites.HoverOverlay : null, new Color(1f, 1f, 1f, 0.12f));
+                    ApplyOverlayImage(view.DisabledOverlay, false, null, Color.clear);
+                    view.EnemyRoot.SetActive(false);
+                    view.NameText.gameObject.SetActive(false);
+                    view.NameText.text = string.Empty;
+                    view.Label.gameObject.SetActive(showDebugLabels);
                     view.Label.text = "EMPTY\n[" + row + "," + column + "]";
+                    if (useSceneBattleGridPrefabVisuals)
+                    {
+                        HideSceneGridOverlay(view);
+                    }
+
                     continue;
                 }
 
-                view.Panel.color = selected
-                    ? new Color(0.18f, 0.08f, 0.12f, 0.98f)
+                view.Panel.sprite = GetEnemyPanelSprite(enemy, selected, active, targetable);
+                view.Panel.color = view.Panel.sprite != null ? Color.white
+                    : mainBattleSceneMode ? selected
+                        ? new Color(1f, 0.45f, 0.55f, 0.16f)
+                        : active ? new Color(1f, 0.86f, 0.22f, 0.14f) : new Color(0.02f, 0.04f, 0.05f, 0.02f)
+                    : selected ? new Color(0.18f, 0.08f, 0.12f, 0.98f)
                     : new Color(0.07f, 0.035f, 0.048f, 0.98f);
-                view.Label.text = enemy.Name + "\nHP " + enemy.Hp + "/" + enemy.MaxHp + "\n" + enemy.Attribute + "\nNext: " + enemy.NextAction;
+                bool disabled = !enemy.IsAlive;
+                Sprite hoverOverlay = mainBattleSceneMode && battlePanelSprites != null ? battlePanelSprites.HoverOverlay : null;
+                Sprite selectedOverlay = mainBattleSceneMode ? null : GetSpriteOrNull(enemyGridSprites, s => s.HighlightOverlay);
+                Sprite targetableOverlay = mainBattleSceneMode && battlePanelSprites != null ? battlePanelSprites.TargetableOverlay : null;
+                Sprite dangerOverlay = mainBattleSceneMode && battlePanelSprites != null ? battlePanelSprites.DangerOverlay : null;
+                Sprite disabledOverlay = mainBattleSceneMode && battlePanelSprites != null ? battlePanelSprites.DisabledOverlay : null;
+                ApplyOverlayImage(view.HoverOverlay, enemyPanelHoverStates[row, column], hoverOverlay, new Color(1f, 1f, 1f, 0.18f));
+                ApplyOverlayImage(view.Highlight, selected, selectedOverlay, new Color(0.2f, 0.95f, 1f, 0.58f));
+                ApplyOverlayImage(view.TargetableOverlay, targetable && !selected && !disabled, targetableOverlay, new Color(1f, 0.92f, 0.20f, 0.24f));
+                ApplyOverlayImage(view.DangerOverlay, active, dangerOverlay, new Color(1f, 0.22f, 0.22f, 0.36f));
+                ApplyOverlayImage(view.DisabledOverlay, disabled, disabledOverlay, new Color(0.05f, 0.05f, 0.06f, 0.55f));
+                view.EnemyRoot.SetActive(enemy.IsAlive);
+                if (mainBattleSceneMode)
+                {
+                    ApplyEnemySprite(view, enemy);
+                }
+                else
+                {
+                    view.EnemySprite.sprite = GetEnemyUnitSprite(enemy);
+                    view.EnemySprite.rectTransform.localScale = Vector3.one;
+                    view.EnemySprite.color = view.EnemySprite.sprite != null ? Color.white : GetAttributeColor(enemy.Attribute);
+                }
+                float hpRate = enemy.MaxHp > 0 ? Mathf.Clamp01((float)enemy.Hp / enemy.MaxHp) : 0f;
+                view.HpBack.gameObject.SetActive(!mainBattleSceneMode);
+                view.HpFill.fillAmount = hpRate;
+                if (mainBattleSceneMode)
+                {
+                    view.NameText.gameObject.SetActive(!useSceneBattleGridPrefabVisuals && enemy.IsAlive);
+                    view.NameText.text = useSceneBattleGridPrefabVisuals ? string.Empty : FormatHpNumber(enemy.Hp);
+                    if (!useSceneBattleGridPrefabVisuals)
+                    {
+                        UpdateEnemyHpNumberPosition(view, enemy);
+                    }
+                }
+                else
+                {
+                    view.NameText.gameObject.SetActive(enemy.IsAlive);
+                    view.NameText.text = showDebugLabels ? enemy.Name : ShortEnemyTimelineName(enemy);
+                }
+                view.Label.gameObject.SetActive(showDebugLabels);
+                view.Label.text = enemy.Name + "\nHP " + enemy.Hp + "/" + enemy.MaxHp + "\n" + enemy.Attribute + " / Weak " + enemy.Weakness + "\n" + enemy.Status;
+                if (useSceneBattleGridPrefabVisuals)
+                {
+                    HideSceneGridOverlay(view);
+                }
             }
+        }
+    }
+
+    private void EnsureBattleSceneEnemyHpOverlay()
+    {
+        if (!mainBattleSceneMode || useSceneBattleGridPrefabVisuals || battleSceneTimelineRoot == null)
+        {
+            return;
+        }
+
+        bool createdOverlay = battleSceneEnemyHpOverlayRoot == null;
+        if (createdOverlay)
+        {
+            battleSceneEnemyHpOverlayRoot = CreateRect("BattleSceneEnemyHpOverlayRoot", battleSceneTimelineRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            battleSceneEnemyHpOverlayRoot.SetAsLastSibling();
+        }
+
+        for (int row = 0; row < 3; row++)
+        {
+            for (int column = 0; column < 3; column++)
+            {
+                EnemyCellView view = enemyCellViews[row, column];
+                if (view != null && view.NameText != null && view.NameText.transform.parent != battleSceneEnemyHpOverlayRoot)
+                {
+                    view.NameText.rectTransform.SetParent(battleSceneEnemyHpOverlayRoot, false);
+                    view.NameText.raycastTarget = false;
+                    ConfigureBattleSceneEnemyHpNumberText(view.NameText);
+                }
+            }
+        }
+    }
+
+    private void UpdateSceneEnemyHpNumbers()
+    {
+        if (!mainBattleSceneMode)
+        {
+            return;
+        }
+
+        if (useSceneBattleGridPrefabVisuals)
+        {
+            UpdateSceneEnemyRootHpTexts();
+            return;
+        }
+
+        for (int row = 0; row < 3; row++)
+        {
+            for (int column = 0; column < 3; column++)
+            {
+                EnemyCellView view = enemyCellViews[row, column];
+                EnemyUnit enemy = GetEnemyAt(row, column);
+                if (view == null || view.NameText == null)
+                {
+                    continue;
+                }
+
+                bool visible = enemy != null && enemy.IsAlive;
+                view.NameText.gameObject.SetActive(visible);
+                if (!visible)
+                {
+                    view.NameText.text = string.Empty;
+                    continue;
+                }
+
+                view.NameText.text = FormatHpNumber(enemy.Hp);
+                UpdateEnemyHpNumberPosition(view, enemy);
+            }
+        }
+    }
+
+    private void UpdateSceneEnemyRootHpTexts()
+    {
+        if (battleSceneEnemyHpTexts.Count == 0)
+        {
+            CacheSceneBattleGridUnitRenderers();
+        }
+
+        GameObject grid = GameObject.Find(BattleGridBottomPrefabName);
+        DisableLegacyBattleSceneEnemyHpTexts(grid != null ? grid.transform.Find("Units") : null);
+
+        Transform hpRoot = EnsureBattleSceneEnemyHpRoot();
+        if (hpRoot == null)
+        {
+            return;
+        }
+
+        DisableRetiredBattleSceneEnemyHpTexts(hpRoot);
+        HashSet<string> visibleEnemyKeys = new HashSet<string>();
+        for (int row = 0; row < 3; row++)
+        {
+            for (int column = 0; column < 3; column++)
+            {
+                EnemyCellView view = enemyCellViews[row, column];
+                if (view != null && view.NameText != null)
+                {
+                    view.NameText.gameObject.SetActive(false);
+                    view.NameText.text = string.Empty;
+                }
+
+                EnemyUnit enemy = GetEnemyAt(row, column);
+                if (enemy == null || string.IsNullOrEmpty(enemy.Name))
+                {
+                    continue;
+                }
+
+                string enemyKey = enemy.Name;
+                if (!battleSceneEnemyHpTexts.TryGetValue(enemyKey, out TextMeshPro hpText) || hpText == null)
+                {
+                    hpText = EnsureBattleSceneEnemyHpText(hpRoot, enemy);
+                    if (hpText == null)
+                    {
+                        continue;
+                    }
+
+                    battleSceneEnemyHpTexts[enemyKey] = hpText;
+                }
+
+                bool visible = enemy != null && enemy.IsAlive;
+                hpText.gameObject.SetActive(visible);
+                PositionBattleSceneEnemyWorldHpText(hpText, row, column);
+                if (visible)
+                {
+                    hpText.text = FormatHpNumber(enemy.Hp);
+                    visibleEnemyKeys.Add(enemyKey);
+                }
+                else
+                {
+                    hpText.text = string.Empty;
+                }
+            }
+        }
+
+        foreach (KeyValuePair<string, TextMeshPro> pair in battleSceneEnemyHpTexts)
+        {
+            if (!visibleEnemyKeys.Contains(pair.Key) && pair.Value != null)
+            {
+                pair.Value.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private static void ConfigureBattleSceneEnemyWorldHpText(TextMeshPro hpText)
+    {
+        if (hpText == null)
+        {
+            return;
+        }
+
+        Transform textTransform = hpText.transform;
+        textTransform.localRotation = Quaternion.identity;
+        textTransform.localScale = BattleSceneEnemyHpLocalScale;
+
+        RectTransform rectTransform = hpText.rectTransform;
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.sizeDelta = BattleSceneEnemyHpWorldTextSize;
+
+        hpText.alignment = TextAlignmentOptions.Center;
+        hpText.fontSize = 4.75f;
+        hpText.fontStyle = FontStyles.Bold;
+        hpText.fontWeight = FontWeight.Black;
+        hpText.enableWordWrapping = false;
+        hpText.richText = false;
+        hpText.raycastTarget = false;
+        hpText.extraPadding = true;
+        hpText.color = Color.white;
+        hpText.faceColor = new Color32(255, 255, 255, 255);
+        hpText.outlineColor = new Color32(0, 0, 0, 255);
+        hpText.outlineWidth = 0.2f;
+        ConfigureBattleSceneEnemyWorldHpMaterial(hpText);
+
+        MeshRenderer meshRenderer = hpText.GetComponent<MeshRenderer>();
+        if (meshRenderer != null)
+        {
+            meshRenderer.sortingOrder = 260;
+        }
+    }
+
+    private static void ConfigureBattleSceneEnemyWorldHpMaterial(TextMeshPro hpText)
+    {
+        if (hpText == null)
+        {
+            return;
+        }
+
+        Material material = hpText.fontMaterial;
+        if (material == null)
+        {
+            return;
+        }
+
+        if (material.HasProperty("_FaceColor"))
+        {
+            material.SetColor("_FaceColor", Color.white);
+        }
+
+        if (material.HasProperty("_OutlineColor"))
+        {
+            material.SetColor("_OutlineColor", Color.black);
+        }
+
+        if (material.HasProperty("_OutlineWidth"))
+        {
+            material.SetFloat("_OutlineWidth", 0.2f);
+        }
+
+        if (material.HasProperty("_UnderlayColor"))
+        {
+            material.EnableKeyword("UNDERLAY_ON");
+            material.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.72f));
+        }
+
+        if (material.HasProperty("_UnderlayOffsetX"))
+        {
+            material.SetFloat("_UnderlayOffsetX", 0.22f);
+        }
+
+        if (material.HasProperty("_UnderlayOffsetY"))
+        {
+            material.SetFloat("_UnderlayOffsetY", -0.22f);
+        }
+
+        if (material.HasProperty("_UnderlaySoftness"))
+        {
+            material.SetFloat("_UnderlaySoftness", 0.08f);
+        }
+
+        hpText.UpdateMeshPadding();
+    }
+
+    private static void PositionBattleSceneEnemyWorldHpText(TextMeshPro hpText, int row, int column)
+    {
+        ConfigureBattleSceneEnemyWorldHpText(hpText);
+        if (hpText == null)
+        {
+            return;
+        }
+
+        Transform textTransform = hpText.transform;
+        if (TryGetBattleSceneEnemyPanelHpLocalPosition(textTransform.parent, row, column, out Vector3 localPosition))
+        {
+            textTransform.localPosition = localPosition;
+        }
+        else
+        {
+            textTransform.localPosition = BattleSceneEnemyHpFallbackLocalPosition;
+        }
+    }
+
+    private static bool TryGetBattleSceneEnemyPanelHpLocalPosition(Transform hpParent, int row, int column, out Vector3 localPosition)
+    {
+        localPosition = BattleSceneEnemyHpFallbackLocalPosition;
+        if (hpParent == null)
+        {
+            return false;
+        }
+
+        if (!TryGetBattleSceneEnemyPanelHpWorldPosition(row, column, hpParent.position.z, out Vector3 worldPosition))
+        {
+            return false;
+        }
+
+        localPosition = hpParent.InverseTransformPoint(worldPosition);
+        localPosition.z = BattleSceneEnemyHpFallbackLocalPosition.z;
+        return true;
+    }
+
+    private static bool TryGetBattleSceneEnemyPanelHpWorldPosition(int row, int column, float z, out Vector3 worldPosition)
+    {
+        worldPosition = Vector3.zero;
+        GameObject cellObject = GameObject.Find(GetBattleSceneEnemyCellName(row, column));
+        if (cellObject == null)
+        {
+            return false;
+        }
+
+        Transform hpAnchor = cellObject.transform.Find(BattleSceneEnemyHpAnchorName);
+        if (hpAnchor != null)
+        {
+            worldPosition = hpAnchor.position;
+            worldPosition.z = z;
+            return true;
+        }
+
+        Collider2D cellCollider = cellObject.GetComponent<Collider2D>();
+        if (cellCollider != null)
+        {
+            worldPosition = GetBattleSceneEnemyPanelHpWorldPosition(cellCollider.bounds, z);
+            return true;
+        }
+
+        SpriteRenderer cellRenderer = cellObject.GetComponentInChildren<SpriteRenderer>();
+        if (cellRenderer != null)
+        {
+            worldPosition = GetBattleSceneEnemyPanelHpWorldPosition(cellRenderer.bounds, z);
+            return true;
+        }
+
+        worldPosition = new Vector3(
+            cellObject.transform.position.x,
+            cellObject.transform.position.y + BattleSceneEnemyHpFallbackLocalPosition.y,
+            z);
+        return true;
+    }
+
+    private static Vector3 GetBattleSceneEnemyPanelHpWorldPosition(Bounds bounds, float z)
+    {
+        return new Vector3(
+            bounds.center.x,
+            bounds.min.y + bounds.size.y * BattleSceneEnemyHpPanelYRatioFromBottom,
+            z);
+    }
+
+    private static string GetBattleSceneEnemyCellName(int row, int column)
+    {
+        return "Enemy_Cell_R" + row + "_C" + column;
+    }
+
+    private void UpdateEnemyHpNumberPosition(EnemyCellView view, EnemyUnit enemy)
+    {
+        if (!mainBattleSceneMode || view == null || view.NameText == null || enemy == null)
+        {
+            return;
+        }
+
+        EnsureBattleSceneEnemyHpOverlay();
+        RectTransform textRect = view.NameText.rectTransform;
+        textRect.anchorMin = new Vector2(0.5f, 0.5f);
+        textRect.anchorMax = new Vector2(0.5f, 0.5f);
+        textRect.pivot = new Vector2(0.5f, 0.5f);
+        textRect.sizeDelta = BattleSceneEnemyHpTextSize;
+
+        if (!TryGetBattleSceneEnemyPanelHpWorldPosition(enemy.GridPosition.x, enemy.GridPosition.y, 0f, out Vector3 worldPoint))
+        {
+            view.NameText.gameObject.SetActive(false);
+            return;
+        }
+
+        Camera camera = Camera.main;
+        RectTransform parentRect = textRect.parent as RectTransform;
+        if (camera == null || parentRect == null)
+        {
+            return;
+        }
+
+        Vector3 screenPoint = camera.WorldToScreenPoint(worldPoint);
+        if (screenPoint.z < 0f)
+        {
+            view.NameText.gameObject.SetActive(false);
+            return;
+        }
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, null, out Vector2 localPoint))
+        {
+            textRect.anchoredPosition = localPoint;
+        }
+    }
+
+    private static string GetSceneEnemyUnitName(EnemyUnit enemy)
+    {
+        if (enemy == null)
+        {
+            return null;
+        }
+
+        switch (!string.IsNullOrEmpty(enemy.SpriteKey) ? enemy.SpriteKey : enemy.Name)
+        {
+            case "DrillMole":
+                return "Enemy_DrillMole";
+            case "ElecGecko":
+                return "Enemy_ElecGecko";
+            case "BladeBug":
+                return "Enemy_BladeBug";
+            default:
+                return null;
         }
     }
 
@@ -1061,45 +4099,342 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             if (i >= hand.Count || hand[i] == null)
             {
                 view.Button.interactable = false;
-                view.Panel.color = new Color(0.07f, 0.08f, 0.10f, 0.8f);
-                view.NameText.text = "-";
-                view.DetailText.text = string.Empty;
+                if (mainBattleSceneMode && view.Artwork != null)
+                {
+                    RefreshChipCardView(view, null, false, false, i);
+                }
+                else
+                {
+                    view.Panel.color = new Color(0.07f, 0.08f, 0.10f, 0.35f);
+                    view.NameText.text = "-";
+                    view.DetailText.text = string.Empty;
+                }
                 continue;
             }
 
-            CardData card = hand[i];
+            PrototypeCard card = hand[i];
             bool queued = queuedHandSlots[i];
             view.Button.interactable = IsPlayerTurn() && !queued;
-            view.Panel.color = queued ? new Color(0.35f, 0.30f, 0.12f, 1f) : GetCardColor(card);
-            view.NameText.text = (i + 1) + ". " + GetCardDisplayName(card);
-            view.DetailText.text = FormatCardMeta(card);
+            if (mainBattleSceneMode && view.Artwork != null)
+            {
+                RefreshChipCardView(view, card, queued, cardSelectOpen && selectedHandIndex == i, i);
+            }
+            else
+            {
+                view.Panel.color = queued ? new Color(0.35f, 0.30f, 0.12f, 0.72f) : GetCardColor(card);
+                view.NameText.text = (i + 1) + ". " + GetCardDisplayName(card);
+                view.DetailText.text = FormatCardMeta(card, showDebugLabels);
+            }
         }
 
-        deckText.text = "Deck " + drawPile.Count + " / Discard " + discardPile.Count;
-        queueText.text = FormatQueueText();
+        if (deckText != null)
+        {
+            deckText.text = "Deck " + drawPile.Count + " / Discard " + discardPile.Count + " / " + (loadedSavedDeck ? "Saved" : "Test");
+        }
+
+        if (queueText != null)
+        {
+            queueText.text = FormatQueueText();
+        }
+
+        RefreshChipDetail();
     }
 
     private void RefreshCommands()
     {
-        bool canAct = IsPlayerTurn() && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
-        weaponButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
-        swapFrontMiddleButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
-        swapMiddleBackButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
-        swapFrontBackButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
-        resetButton.interactable = queuedActions.Count > 0;
-        confirmButton.interactable = activeUnit != null && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
-        Text confirmLabel = confirmButton.GetComponentInChildren<Text>();
-        if (confirmLabel != null)
+        bool canAct = !battleEnded && IsPlayerTurn() && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
+        if (weaponButton != null)
         {
-            confirmLabel.text = IsPlayerTurn() ? "Confirm" : "Enemy Act";
+            weaponButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
         }
+
+        if (swapFrontMiddleButton != null)
+        {
+            swapFrontMiddleButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
+        }
+
+        if (swapMiddleBackButton != null)
+        {
+            swapMiddleBackButton.interactable = canAct && GetQueuedActionCost() < MaxQueuedActions;
+        }
+
+        if (resetButton != null)
+        {
+            resetButton.interactable = !battleEnded && queuedActions.Count > 0;
+        }
+
+        if (confirmButton != null)
+        {
+            confirmButton.interactable = !battleEnded && activeUnit != null && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
+            Text confirmLabel = confirmButton.GetComponentInChildren<Text>();
+            if (confirmLabel != null)
+            {
+                confirmLabel.text = IsPlayerTurn() ? "Confirm" : activeUnit != null && activeUnit.IsSkill ? "Skill Act" : "Enemy Act";
+            }
+        }
+
+        if (debugButton != null)
+        {
+            Text debugLabel = debugButton.GetComponentInChildren<Text>();
+            if (debugLabel != null)
+            {
+                debugLabel.text = showDebugLabels ? "DEBUG ON" : "DEBUG";
+            }
+        }
+
+        if (cardSelectRoot != null)
+        {
+            cardSelectRoot.SetActive(mainBattleSceneMode && cardSelectOpen && canAct);
+        }
+
+        RefreshChipQueueSlots();
+        RefreshChipDetail();
+    }
+
+    private void RefreshChipCardView(CardButtonView view, PrototypeCard card, bool queued, bool selected, int index)
+    {
+        if (view == null)
+        {
+            return;
+        }
+
+        if (view.Panel != null)
+        {
+            view.Panel.sprite = null;
+            view.Panel.color = card == null
+                ? new Color(0.05f, 0.055f, 0.065f, 0.78f)
+                : queued ? new Color(0.42f, 0.32f, 0.08f, 1f)
+                : selected ? new Color(0.12f, 0.22f, 0.25f, 1f)
+                : new Color(0.105f, 0.105f, 0.11f, 1f);
+        }
+
+        if (view.NameText != null)
+        {
+            view.NameText.text = card == null ? "-" : GetCardDisplayName(card);
+            view.NameText.color = card == null ? new Color(0.45f, 0.48f, 0.52f, 1f) : Color.white;
+        }
+
+        if (view.Artwork != null)
+        {
+            view.Artwork.sprite = null;
+            view.Artwork.color = card == null ? new Color(0.08f, 0.08f, 0.09f, 1f) : GetChipArtworkColor(card, index);
+        }
+
+        if (view.AttributeIcon != null)
+        {
+            view.AttributeIcon.sprite = null;
+            view.AttributeIcon.color = card == null ? new Color(0.06f, 0.065f, 0.075f, 1f) : GetAttributeColor(card.Attribute);
+        }
+
+        if (view.RankBox != null)
+        {
+            view.RankBox.sprite = null;
+            view.RankBox.color = card != null && card.IsClearCard
+                ? new Color(0.10f, 0.28f, 0.16f, 1f)
+                : new Color(0.045f, 0.045f, 0.05f, 1f);
+        }
+
+        if (view.RankText != null)
+        {
+            view.RankText.text = card == null ? string.Empty : GetChipRank(card);
+        }
+
+        if (view.PowerText != null)
+        {
+            view.PowerText.text = card == null ? string.Empty : GetChipPowerText(card);
+        }
+
+        if (view.DetailText != null)
+        {
+            view.DetailText.gameObject.SetActive(card != null);
+            view.DetailText.text = card == null
+                ? string.Empty
+                : showDebugLabels ? GetCardEffectLabel(card, true) + " D" + card.ActionDelay : GetChipAttributeCode(card.Attribute);
+        }
+    }
+
+    private void RefreshChipDetail()
+    {
+        if (chipDetailNameText == null)
+        {
+            return;
+        }
+
+        PrototypeCard card = GetSelectedChipCard();
+        if (chipSelectTitleText != null)
+        {
+            chipSelectTitleText.text = selectedAlly != null
+                ? "BATTLE CHIP  " + ShortPosition(selectedAlly.Position)
+                : "BATTLE CHIP";
+        }
+
+        chipDetailNameText.text = card == null ? "-" : GetCardDisplayName(card);
+        if (chipDetailArtwork != null)
+        {
+            chipDetailArtwork.sprite = null;
+            chipDetailArtwork.color = card == null ? new Color(0.08f, 0.08f, 0.09f, 1f) : GetChipArtworkColor(card, selectedHandIndex);
+        }
+
+        if (chipDetailAttributeIcon != null)
+        {
+            chipDetailAttributeIcon.sprite = null;
+            chipDetailAttributeIcon.color = card == null ? new Color(0.06f, 0.065f, 0.075f, 1f) : GetAttributeColor(card.Attribute);
+        }
+
+        if (chipDetailRankBox != null)
+        {
+            chipDetailRankBox.sprite = null;
+            chipDetailRankBox.color = card != null && card.IsClearCard
+                ? new Color(0.10f, 0.28f, 0.16f, 1f)
+                : new Color(0.045f, 0.045f, 0.05f, 1f);
+        }
+
+        if (chipDetailMetaText != null)
+        {
+            chipDetailMetaText.text = card == null ? string.Empty : GetChipRank(card);
+        }
+
+        if (chipDetailPowerText != null)
+        {
+            chipDetailPowerText.text = card == null ? string.Empty : GetChipPowerText(card);
+        }
+    }
+
+    private void RefreshChipQueueSlots()
+    {
+        for (int i = 0; i < chipQueueSlotTexts.Count; i++)
+        {
+            Text label = chipQueueSlotTexts[i];
+            if (label == null)
+            {
+                continue;
+            }
+
+            if (i < queuedActions.Count)
+            {
+                label.text = ShortChipLabel(queuedActions[i].Label);
+                label.color = queuedActions[i].ConsumesAction ? new Color(1f, 0.94f, 0.36f, 1f) : new Color(0.45f, 1f, 0.65f, 1f);
+            }
+            else
+            {
+                label.text = string.Empty;
+            }
+        }
+    }
+
+    private PrototypeCard GetSelectedChipCard()
+    {
+        if (hand.Count == 0)
+        {
+            return null;
+        }
+
+        selectedHandIndex = Mathf.Clamp(selectedHandIndex, 0, hand.Count - 1);
+        return hand[selectedHandIndex];
+    }
+
+    private static string ShortChipLabel(string label)
+    {
+        if (string.IsNullOrEmpty(label))
+        {
+            return string.Empty;
+        }
+
+        return label.Length <= 6 ? label : label.Substring(0, 6);
+    }
+
+    private static string GetChipRank(PrototypeCard card)
+    {
+        if (card == null)
+        {
+            return string.Empty;
+        }
+
+        switch (card.DeckType)
+        {
+            case CardDeckType.G:
+                return "S";
+            case CardDeckType.HC:
+                return "A";
+            default:
+                return card.IsClearCard ? "C" : "B";
+        }
+    }
+
+    private static string GetChipPowerText(PrototypeCard card)
+    {
+        if (card == null)
+        {
+            return string.Empty;
+        }
+
+        return card.Power > 0 ? card.Power.ToString() : "--";
+    }
+
+    private static string GetChipAttributeCode(CardAttribute attribute)
+    {
+        switch (attribute)
+        {
+            case CardAttribute.Slash:
+                return "SLASH";
+            case CardAttribute.Shot:
+                return "SHOT";
+            case CardAttribute.Fire:
+                return "FIRE";
+            case CardAttribute.Ice:
+                return "ICE";
+            case CardAttribute.Electric:
+                return "ELEC";
+            case CardAttribute.Water:
+                return "WATER";
+            case CardAttribute.Grass:
+                return "GRASS";
+            case CardAttribute.Break:
+                return "BREAK";
+            default:
+                return "NEUTRAL";
+        }
+    }
+
+    private static Color GetChipArtworkColor(PrototypeCard card, int index)
+    {
+        if (card == null)
+        {
+            return new Color(0.08f, 0.08f, 0.09f, 1f);
+        }
+
+        Color attribute = GetAttributeColor(card.Attribute);
+        Color effect;
+        switch (card.Effect)
+        {
+            case PrototypeCardEffect.RowDamage:
+                effect = new Color(0.60f, 0.20f, 0.88f, 1f);
+                break;
+            case PrototypeCardEffect.PushDamage:
+                effect = new Color(1f, 0.56f, 0.18f, 1f);
+                break;
+            case PrototypeCardEffect.DelayDamage:
+                effect = new Color(0.38f, 1f, 0.95f, 1f);
+                break;
+            case PrototypeCardEffect.Heal:
+                effect = new Color(0.38f, 0.92f, 0.38f, 1f);
+                break;
+            case PrototypeCardEffect.Unsupported:
+                effect = new Color(0.42f, 0.44f, 0.48f, 1f);
+                break;
+            default:
+                effect = new Color(0.26f + 0.08f * (index % 3), 0.42f, 0.78f, 1f);
+                break;
+        }
+
+        return Color.Lerp(attribute, effect, 0.58f);
     }
 
     private string FormatQueueText()
     {
         if (queuedActions.Count == 0)
         {
-            return "Queue: empty / normal actions " + GetQueuedActionCost() + "/" + MaxQueuedActions;
+            return "Queue: empty / normal actions " + GetQueuedActionCost() + "/" + MaxQueuedActions + " / wait D" + BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
         }
 
         string text = "Queue: ";
@@ -1113,7 +4448,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
             text += queuedActions[i].Label + (queuedActions[i].ConsumesAction ? "" : " [CLEAR]");
         }
 
-        text += " / normal actions " + GetQueuedActionCost() + "/" + MaxQueuedActions;
+        text += " / normal actions " + GetQueuedActionCost() + "/" + MaxQueuedActions + " / total D" + ResolveQueuedActionDelay();
         return text;
     }
 
@@ -1131,9 +4466,47 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         return cost;
     }
 
+    private int ResolveQueuedActionDelay()
+    {
+        if (queuedActions.Count == 0)
+        {
+            return BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
+        }
+
+        int totalDelay = 0;
+        for (int i = 0; i < queuedActions.Count; i++)
+        {
+            totalDelay += ResolveQueuedActionDelay(queuedActions[i]);
+        }
+
+        return Mathf.Max(1, totalDelay);
+    }
+
+    private int ResolveQueuedActionDelay(QueuedAction action)
+    {
+        if (action == null)
+        {
+            return BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
+        }
+
+        switch (action.Kind)
+        {
+            case ActionKind.Card:
+                return action.Card != null && action.Card.ActionDelay > 0
+                    ? action.Card.ActionDelay
+                    : BattleActionDelayResolver.Resolve(BattleActionDelayKind.NormalCard);
+            case ActionKind.Weapon:
+                return BattleActionDelayResolver.Resolve(BattleActionDelayKind.Weapon);
+            case ActionKind.Swap:
+                return BattleActionDelayResolver.Resolve(BattleActionDelayKind.Swap);
+            default:
+                return BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
+        }
+    }
+
     private bool IsPlayerTurn()
     {
-        return activeUnit != null && activeUnit.IsAlly && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
+        return !battleEnded && activeUnit != null && activeUnit.IsAlly && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
     }
 
     private TimelineUnit GetCurrentActiveUnit()
@@ -1143,7 +4516,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         {
             if (allies[i].IsAlive)
             {
-                units.Add(new TimelineUnit { IsAlly = true, Ally = allies[i], ReadyTick = allies[i].NextReadyTick, Sequence = i });
+                units.Add(CreateTimelineUnit(allies[i], null, allies[i].NextReadyTick, i));
             }
         }
 
@@ -1151,11 +4524,88 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         {
             if (enemies[i].IsAlive)
             {
-                units.Add(new TimelineUnit { IsAlly = false, Enemy = enemies[i], ReadyTick = enemies[i].NextReadyTick, Sequence = allies.Count + i });
+                units.Add(CreateTimelineUnit(null, enemies[i], enemies[i].NextReadyTick, allies.Count + i));
+            }
+        }
+
+        for (int i = 0; i < skillTimelineActions.Count; i++)
+        {
+            SkillTimelineAction skillAction = skillTimelineActions[i];
+            if (skillAction.IsAlive)
+            {
+                units.Add(CreateSkillTimelineUnit(skillAction, allies.Count + enemies.Count + i));
             }
         }
 
         return GetEarliestUnit(units);
+    }
+
+    private TimelineUnit CreateTimelineUnit(AllyUnit ally, EnemyUnit enemy, int nextActTick, int sequence)
+    {
+        bool isAlly = ally != null;
+        BattleTimelineEntry entry = new BattleTimelineEntry
+        {
+            UnitId = isAlly ? ally.Name : enemy != null ? enemy.Name : "Unknown",
+            UnitName = isAlly ? GetAllyDisplayName(ally) : ShortEnemyName(enemy),
+            EntryType = isAlly ? ActionTimelineEntryType.Ally : ActionTimelineEntryType.Enemy,
+            IsAlly = isAlly,
+            IsEnemy = !isAlly,
+            IsSkill = false,
+            IsWeapon = false,
+            NextActTick = nextActTick,
+            Speed = isAlly ? ally.Speed : enemy != null ? enemy.Speed : 0,
+            Delay = isAlly ? BattleActionDelayResolver.Resolve(BattleActionDelayKind.NormalCard) : BattleActionDelayResolver.ResolveEnemyActionDelay(enemy != null && enemy.IsBoss),
+            IsAlive = isAlly ? ally.IsAlive : enemy != null && enemy.IsAlive,
+            IsActive = activeUnit != null && ((isAlly && activeUnit.Ally == ally) || (!isAlly && activeUnit.Enemy == enemy)),
+            DisplayColor = isAlly ? GetPositionColor(ally.Position) : enemy != null ? GetAttributeColor(enemy.Attribute) : Color.gray,
+            CurrentState = isAlly ? ally.Status : enemy != null ? enemy.Status : string.Empty,
+            OwnerUnit = isAlly ? (object)ally : enemy,
+            ActionData = null
+        };
+
+        return new TimelineUnit
+        {
+            Ally = ally,
+            Enemy = enemy,
+            IsAlly = isAlly,
+            IsSkill = false,
+            ReadyTick = nextActTick,
+            Sequence = sequence,
+            Entry = entry
+        };
+    }
+
+    private TimelineUnit CreateSkillTimelineUnit(SkillTimelineAction skillAction, int sequence)
+    {
+        BattleTimelineEntry entry = new BattleTimelineEntry
+        {
+            UnitId = skillAction.Id,
+            UnitName = skillAction.DisplayName,
+            EntryType = ActionTimelineEntryType.Skill,
+            IsAlly = false,
+            IsEnemy = false,
+            IsSkill = true,
+            IsWeapon = false,
+            NextActTick = skillAction.NextReadyTick,
+            Speed = 0,
+            Delay = skillAction.Delay,
+            IsAlive = skillAction.IsAlive,
+            IsActive = activeUnit != null && activeUnit.SkillAction == skillAction,
+            DisplayColor = skillAction.DisplayColor,
+            CurrentState = skillAction.Status,
+            OwnerUnit = skillAction.Owner,
+            ActionData = skillAction
+        };
+
+        return new TimelineUnit
+        {
+            SkillAction = skillAction,
+            IsAlly = false,
+            IsSkill = true,
+            ReadyTick = skillAction.NextReadyTick,
+            Sequence = sequence,
+            Entry = entry
+        };
     }
 
     private TimelineUnit GetEarliestUnit(List<TimelineUnit> units)
@@ -1209,6 +4659,34 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         return null;
     }
 
+    private AllyUnit GetPreferredEnemyAttackTarget()
+    {
+        PartyPosition[] positions = { PartyPosition.Front, PartyPosition.Middle, PartyPosition.Back };
+        for (int i = 0; i < positions.Length; i++)
+        {
+            AllyUnit ally = GetAliveAllyAtPosition(positions[i]);
+            if (ally != null)
+            {
+                return ally;
+            }
+        }
+
+        return null;
+    }
+
+    private AllyUnit GetAliveAllyAtPosition(PartyPosition position)
+    {
+        for (int i = 0; i < allies.Count; i++)
+        {
+            if (allies[i].Position == position && allies[i].IsAlive)
+            {
+                return allies[i];
+            }
+        }
+
+        return null;
+    }
+
     private EnemyUnit GetEnemyAt(int row, int column)
     {
         for (int i = 0; i < enemies.Count; i++)
@@ -1236,7 +4714,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         return null;
     }
 
-    private static string GetCardDisplayName(CardData card)
+    private static string GetCardDisplayName(PrototypeCard card)
     {
         if (card == null)
         {
@@ -1246,7 +4724,7 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         return string.IsNullOrEmpty(card.Name) ? card.CardId : card.Name;
     }
 
-    private static string FormatCardMeta(CardData card)
+    private static string FormatCardMeta(PrototypeCard card, bool includeDebug)
     {
         if (card == null)
         {
@@ -1254,40 +4732,622 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         string clear = card.IsClearCard ? " CLEAR" : string.Empty;
-        if (card.Effect == CardEffectType.Repair)
-        {
-            return card.DeckType + clear + "\nHeal " + card.Power;
-        }
-
-        if (card.Effect == CardEffectType.Damage)
-        {
-            return card.DeckType + clear + "\n" + card.Attribute + " " + card.Power;
-        }
-
-        return card.DeckType + clear + "\n" + card.Effect + " " + card.Power;
+        string unsupported = includeDebug && card.IsUnsupported ? " WIP" : string.Empty;
+        return card.DeckType + clear + unsupported + "\n" + card.Attribute + " / " + GetCardEffectLabel(card, includeDebug) + " / D" + card.ActionDelay;
     }
 
-    private static Color GetCardColor(CardData card)
+    private static Color GetCardColor(PrototypeCard card)
     {
         if (card == null)
         {
-            return new Color(0.10f, 0.12f, 0.15f, 1f);
+            return new Color(0.10f, 0.12f, 0.15f, 0.55f);
         }
 
         if (card.IsClearCard)
         {
-            return new Color(0.16f, 0.32f, 0.24f, 1f);
+            return new Color(0.16f, 0.32f, 0.24f, 0.62f);
         }
 
         switch (card.DeckType)
         {
             case CardDeckType.HC:
-                return new Color(0.14f, 0.25f, 0.42f, 1f);
+                return new Color(0.14f, 0.25f, 0.42f, 0.62f);
             case CardDeckType.G:
-                return new Color(0.38f, 0.16f, 0.18f, 1f);
+                return new Color(0.38f, 0.16f, 0.18f, 0.62f);
             default:
-                return new Color(0.13f, 0.17f, 0.22f, 1f);
+                return new Color(0.13f, 0.17f, 0.22f, 0.62f);
         }
+    }
+
+    private static string GetCardEffectLabel(PrototypeCard card, bool includeDebug)
+    {
+        switch (card.Effect)
+        {
+            case PrototypeCardEffect.SingleDamage:
+                return "Single " + card.Power;
+            case PrototypeCardEffect.RowDamage:
+                return "Row " + card.Power;
+            case PrototypeCardEffect.PushDamage:
+                return "Push " + card.Power;
+            case PrototypeCardEffect.DelayDamage:
+                return "Delay " + card.Power;
+            case PrototypeCardEffect.Heal:
+                return "Heal " + card.Power;
+            case PrototypeCardEffect.Unsupported:
+                return includeDebug ? "Unsupported" : "No effect";
+            default:
+                return card.Effect + " " + card.Power;
+        }
+    }
+
+    private static Sprite LoadNamedPreviewSprite(string assetPath, params string[] spriteNames)
+    {
+#if UNITY_EDITOR
+        UnityEngine.Object[] assets = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
+        for (int i = 0; i < spriteNames.Length; i++)
+        {
+            string spriteName = spriteNames[i];
+            for (int j = 0; j < assets.Length; j++)
+            {
+                Sprite sprite = assets[j] as Sprite;
+                if (sprite != null && string.Equals(sprite.name, spriteName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return sprite;
+                }
+            }
+        }
+
+        Sprite importedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (importedSprite != null)
+        {
+            return importedSprite;
+        }
+#endif
+
+        return LoadPreviewSprite(assetPath);
+    }
+
+    private static Sprite[] LoadSpritesFromImportedSheet(string assetPath, int expectedCount)
+    {
+#if UNITY_EDITOR
+        UnityEngine.Object[] assets = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
+        List<Sprite> sprites = new List<Sprite>();
+        for (int i = 0; i < assets.Length; i++)
+        {
+            Sprite sprite = assets[i] as Sprite;
+            if (sprite != null)
+            {
+                sprites.Add(sprite);
+            }
+        }
+
+        if (sprites.Count > 0)
+        {
+            sprites.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
+            return sprites.ToArray();
+        }
+
+        Sprite importedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (importedSprite != null && expectedCount <= 1)
+        {
+            return new[] { importedSprite };
+        }
+#endif
+
+        return new Sprite[0];
+    }
+
+    private static Sprite[] LoadIndividualSpriteFiles(string[] assetPaths)
+    {
+        List<Sprite> sprites = new List<Sprite>();
+        for (int i = 0; i < assetPaths.Length; i++)
+        {
+            Sprite sprite = LoadSpriteFromFile(assetPaths[i]);
+            if (sprite != null)
+            {
+                sprites.Add(sprite);
+            }
+        }
+
+        return sprites.ToArray();
+    }
+
+    private static Sprite[] SliceSpriteSheetFromFile(string assetPath, int columns, int rows)
+    {
+        Texture2D texture = LoadTextureFromAssetFile(assetPath);
+        if (texture == null || columns <= 0 || rows <= 0)
+        {
+            return new Sprite[0];
+        }
+
+        int frameWidth = texture.width / columns;
+        int frameHeight = texture.height / rows;
+        if (frameWidth <= 0 || frameHeight <= 0)
+        {
+            UnityEngine.Object.Destroy(texture);
+            return new Sprite[0];
+        }
+
+        List<Sprite> frames = new List<Sprite>();
+        for (int row = rows - 1; row >= 0; row--)
+        {
+            for (int column = 0; column < columns; column++)
+            {
+                Rect rect = new Rect(column * frameWidth, row * frameHeight, frameWidth, frameHeight);
+                frames.Add(Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect));
+            }
+        }
+
+        return frames.ToArray();
+    }
+
+    private static Sprite LoadSpriteFromFile(string assetPath)
+    {
+        Texture2D texture = LoadTextureFromAssetFile(assetPath);
+        if (texture == null)
+        {
+            return null;
+        }
+
+        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+    }
+
+    private static Sprite LoadOptionalSprite(string assetPath)
+    {
+#if UNITY_EDITOR
+        Sprite importedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (importedSprite != null)
+        {
+            return importedSprite;
+        }
+#endif
+
+        return LoadSpriteFromFile(assetPath);
+    }
+
+    private static Texture2D LoadTextureFromAssetFile(string assetPath)
+    {
+        string fullPath = GetFullAssetFilePath(assetPath);
+        if (!System.IO.File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!texture.LoadImage(bytes))
+        {
+            UnityEngine.Object.Destroy(texture);
+            Debug.LogWarning("BattleScene failed to load ally sprite texture: " + assetPath);
+            return null;
+        }
+
+        texture.name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Point;
+        ApplyMagentaTransparency(texture);
+        return texture;
+    }
+
+    private static string GetFullAssetFilePath(string assetPath)
+    {
+        string relativePath = assetPath.StartsWith("Assets/", StringComparison.Ordinal)
+            ? assetPath.Substring("Assets/".Length)
+            : assetPath;
+        return System.IO.Path.Combine(Application.dataPath, relativePath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+    }
+
+    private static void ApplyMagentaTransparency(Texture2D texture)
+    {
+        Color32[] pixels = texture.GetPixels32();
+        bool changed = false;
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            Color32 pixel = pixels[i];
+            if (pixel.r >= 220 && pixel.g <= 70 && pixel.b >= 220)
+            {
+                pixel.a = 0;
+                pixels[i] = pixel;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            texture.SetPixels32(pixels);
+            texture.Apply(false, false);
+        }
+    }
+
+    private static Sprite LoadPreviewSprite(string assetPath)
+    {
+#if UNITY_EDITOR
+        Sprite importedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (importedSprite != null)
+        {
+            return importedSprite;
+        }
+#endif
+
+        string relativePath = assetPath.StartsWith("Assets/", StringComparison.Ordinal)
+            ? assetPath.Substring("Assets/".Length)
+            : assetPath;
+        string fullPath = System.IO.Path.Combine(Application.dataPath, relativePath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+        if (!System.IO.File.Exists(fullPath))
+        {
+            Debug.LogWarning("BattleTimelinePrototypeScene preview art not found: " + assetPath);
+            return null;
+        }
+
+        byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!texture.LoadImage(bytes))
+        {
+            UnityEngine.Object.Destroy(texture);
+            Debug.LogWarning("BattleTimelinePrototypeScene failed to load preview art: " + assetPath);
+            return null;
+        }
+
+        texture.name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+    }
+
+    private static Sprite GetSpriteOrNull<T>(T spriteSet, Func<T, Sprite> selector) where T : class
+    {
+        if (spriteSet == null || selector == null)
+        {
+            return null;
+        }
+
+        return selector(spriteSet);
+    }
+
+    private Sprite GetTimelineFrameSprite(bool ally, bool active, bool selected, bool done)
+    {
+        if (timelineSprites == null)
+        {
+            return null;
+        }
+
+        if (ally)
+        {
+            if (active && timelineSprites.AllyActive != null)
+            {
+                return timelineSprites.AllyActive;
+            }
+
+            if (selected && timelineSprites.AllySelected != null)
+            {
+                return timelineSprites.AllySelected;
+            }
+
+            return done && timelineSprites.AllyDone != null ? timelineSprites.AllyDone : timelineSprites.AllyNormal;
+        }
+
+        if (active && timelineSprites.EnemyActive != null)
+        {
+            return timelineSprites.EnemyActive;
+        }
+
+        if (selected && timelineSprites.EnemySelected != null)
+        {
+            return timelineSprites.EnemySelected;
+        }
+
+        return done && timelineSprites.EnemyDone != null ? timelineSprites.EnemyDone : timelineSprites.EnemyNormal;
+    }
+
+    private Sprite GetTimelineUnitIconSprite(bool ally, bool active, bool selected)
+    {
+        if (timelineSprites == null)
+        {
+            return null;
+        }
+
+        if (ally)
+        {
+            return active && timelineSprites.AllyActive != null
+                ? timelineSprites.AllyActive
+                : selected && timelineSprites.AllySelected != null ? timelineSprites.AllySelected : timelineSprites.AllyNormal;
+        }
+
+        return active && timelineSprites.EnemyActive != null
+            ? timelineSprites.EnemyActive
+            : selected && timelineSprites.EnemySelected != null ? timelineSprites.EnemySelected : timelineSprites.EnemyNormal;
+    }
+
+    private Sprite GetTimelineUnitIconSprite(TimelineUnit unit, bool ally, bool active, bool selected)
+    {
+        if (mainBattleSceneMode && unit != null && unit.IsAlly)
+        {
+            Sprite sprite = GetAllyIdleSprite(GetAllySpriteDefinition(unit.Ally));
+            if (sprite != null)
+            {
+                return sprite;
+            }
+        }
+
+        return unit != null && unit.IsSkill ? null : GetTimelineUnitIconSprite(ally, active, selected);
+    }
+
+    private Sprite GetAllyFrameSprite(PartyPosition position)
+    {
+        if (allySprites == null)
+        {
+            return null;
+        }
+
+        switch (position)
+        {
+            case PartyPosition.Front:
+                return allySprites.FrontFrame;
+            case PartyPosition.Middle:
+                return allySprites.MiddleFrame;
+            default:
+                return allySprites.BackFrame;
+        }
+    }
+
+    private Sprite GetEnemyPanelSprite(EnemyUnit enemy, bool selected, bool active, bool targetable)
+    {
+        if (mainBattleSceneMode)
+        {
+            return GetBattlePanelBaseSprite(false);
+        }
+
+        if (enemyGridSprites == null)
+        {
+            return null;
+        }
+
+        if (active && enemyGridSprites.Danger != null)
+        {
+            return enemyGridSprites.Danger;
+        }
+
+        if (selected && enemyGridSprites.Selected != null)
+        {
+            return enemyGridSprites.Selected;
+        }
+
+        if (targetable && enemyGridSprites.Targetable != null)
+        {
+            return enemyGridSprites.Targetable;
+        }
+
+        if (enemy != null)
+        {
+            if (enemy.Attribute == CardAttribute.Ice && enemyGridSprites.Ice != null)
+            {
+                return enemyGridSprites.Ice;
+            }
+
+            if (enemy.Attribute == CardAttribute.Fire && enemyGridSprites.Magma != null)
+            {
+                return enemyGridSprites.Magma;
+            }
+        }
+
+        return enemyGridSprites.Normal;
+    }
+
+    private Sprite GetEnemyUnitSprite(EnemyUnit enemy)
+    {
+        if (enemy == null || enemySprites == null)
+        {
+            return null;
+        }
+
+        if (enemy.Attribute == CardAttribute.Fire && enemySprites.FireEnemy != null)
+        {
+            return enemySprites.FireEnemy;
+        }
+
+        if (enemy.Attribute == CardAttribute.Ice && enemySprites.IceEnemy != null)
+        {
+            return enemySprites.IceEnemy;
+        }
+
+        return enemySprites.NormalEnemy;
+    }
+
+    private static string GetAllyDisplayName(AllyUnit ally)
+    {
+        if (ally == null)
+        {
+            return "-";
+        }
+
+        if (ally.Name == "AllyFront")
+        {
+            return "Ally A";
+        }
+
+        if (ally.Name == "AllyMiddle")
+        {
+            return "Ally B";
+        }
+
+        if (ally.Name == "AllyBack")
+        {
+            return "Ally C";
+        }
+
+        return ally.Name;
+    }
+
+    private static string ShortAllyTimelineName(AllyUnit ally)
+    {
+        if (ally == null)
+        {
+            return "-";
+        }
+
+        if (ally.Name == "AllyFront")
+        {
+            return "A";
+        }
+
+        if (ally.Name == "AllyMiddle")
+        {
+            return "B";
+        }
+
+        if (ally.Name == "AllyBack")
+        {
+            return "C";
+        }
+
+        return !string.IsNullOrEmpty(ally.Name) ? ally.Name.Substring(0, 1) : "-";
+    }
+
+    private static string FormatHpNumber(int hp)
+    {
+        return Mathf.Max(0, hp).ToString();
+    }
+
+    private static string ShortEnemyTimelineName(EnemyUnit enemy)
+    {
+        if (enemy == null)
+        {
+            return "-";
+        }
+
+        if (enemy.Name == "Enemy1")
+        {
+            return "E1";
+        }
+
+        if (enemy.Name == "Enemy2")
+        {
+            return "E2";
+        }
+
+        if (enemy.Name == "Enemy3")
+        {
+            return "E3";
+        }
+
+        return ShortEnemyName(enemy);
+    }
+
+    private static string ShortEnemyName(EnemyUnit enemy)
+    {
+        if (enemy == null)
+        {
+            return "-";
+        }
+
+        if (enemy.Name == "Enemy1")
+        {
+            return "Enemy 1";
+        }
+
+        if (enemy.Name == "Enemy2")
+        {
+            return "Enemy 2";
+        }
+
+        if (enemy.Name == "Enemy3")
+        {
+            return "Enemy 3";
+        }
+
+        if (enemy.Attribute == CardAttribute.Fire)
+        {
+            return "FIRE";
+        }
+
+        if (enemy.Attribute == CardAttribute.Ice)
+        {
+            return "ICE";
+        }
+
+        return "ENEMY";
+    }
+
+    private static string ShortSkillName(SkillTimelineAction skillAction)
+    {
+        if (skillAction == null || string.IsNullOrEmpty(skillAction.DisplayName))
+        {
+            return "SK";
+        }
+
+        if (skillAction.DisplayName.Length <= 5)
+        {
+            return skillAction.DisplayName;
+        }
+
+        return skillAction.DisplayName.Substring(0, 5);
+    }
+
+    private static Color GetAttributeColor(CardAttribute attribute)
+    {
+        switch (attribute)
+        {
+            case CardAttribute.Fire:
+                return new Color(1f, 0.34f, 0.18f, 1f);
+            case CardAttribute.Ice:
+                return new Color(0.35f, 0.84f, 1f, 1f);
+            case CardAttribute.Electric:
+                return new Color(1f, 0.92f, 0.22f, 1f);
+            case CardAttribute.Water:
+                return new Color(0.2f, 0.56f, 1f, 1f);
+            default:
+                return new Color(0.86f, 0.95f, 1f, 1f);
+        }
+    }
+
+    private void SetOptionalDebugText(Text text)
+    {
+        if (text != null)
+        {
+            text.gameObject.SetActive(showDebugLabels);
+        }
+    }
+
+    private static void SetActiveIfPresent(Text text, bool active)
+    {
+        if (text != null)
+        {
+            text.gameObject.SetActive(active);
+        }
+    }
+
+    private Sprite GetBattlePanelBaseSprite(bool playerSide)
+    {
+        if (HasImage2BattleGridArt())
+        {
+            return null;
+        }
+
+        if (battlePanelSprites == null)
+        {
+            return null;
+        }
+
+        return playerSide ? battlePanelSprites.PlayerNormal : battlePanelSprites.EnemyNormal;
+    }
+
+    private bool HasImage2BattleGridArt()
+    {
+        return mainBattleSceneMode && battleGridFullImage2Sprite != null;
+    }
+
+    private static void ApplyOverlayImage(Image image, bool visible, Sprite sprite, Color fallbackColor)
+    {
+        if (image == null)
+        {
+            return;
+        }
+
+        image.gameObject.SetActive(visible);
+        image.sprite = sprite;
+        image.type = Image.Type.Simple;
+        image.preserveAspect = false;
+        image.color = sprite != null ? Color.white : fallbackColor;
     }
 
     private static Color GetPositionColor(PartyPosition position)
@@ -1318,10 +5378,40 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
 
     private RectTransform CreatePanel(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Color color)
     {
-        RectTransform rectTransform = CreateRect(name, parent, anchorMin, anchorMax, Vector2.zero, Vector2.zero);
+        return CreatePanel(name, parent, anchorMin, anchorMax, Vector2.zero, Vector2.zero, color);
+    }
+
+    private RectTransform CreatePanel(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, Color color)
+    {
+        RectTransform rectTransform = CreateRect(name, parent, anchorMin, anchorMax, offsetMin, offsetMax);
         Image image = rectTransform.gameObject.AddComponent<Image>();
         image.color = color;
         return rectTransform;
+    }
+
+    private RectTransform CreateBattleFieldRoot(Transform parent)
+    {
+        RectTransform rectTransform = CreateRect("Battle Field Root", parent, BattleGridAnchor, BattleGridAnchor, BattleFieldOffsetMin, BattleFieldOffsetMax);
+        rectTransform.localEulerAngles = new Vector3(BattleFieldTiltDegrees, 0f, 0f);
+        rectTransform.localScale = Vector3.one;
+        return rectTransform;
+    }
+
+    private static void OrientBattleBillboard(RectTransform rectTransform)
+    {
+        if (rectTransform != null)
+        {
+            rectTransform.localEulerAngles = new Vector3(-BattleFieldTiltDegrees, 0f, 0f);
+        }
+    }
+
+    private RectTransform CreateBattleGridSidePanel(string name, Transform parent, bool allySide)
+    {
+        int startColumn = allySide ? 0 : BattleGridAllyCols;
+        int columns = allySide ? BattleGridAllyCols : BattleGridEnemyCols;
+        Vector2 offsetMin = BattleGridOrigin + new Vector2(BattleGridTileSize * startColumn, 0f);
+        Vector2 offsetMax = offsetMin + new Vector2(BattleGridTileSize * columns, BattleGridTileSize * BattleGridRows);
+        return CreatePanel(name, parent, BattleGridAnchor, BattleGridAnchor, offsetMin, offsetMax, new Color(0.014f, 0.032f, 0.04f, 0f));
     }
 
     private RectTransform CreateRect(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
@@ -1342,6 +5432,28 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         Image image = rectTransform.gameObject.AddComponent<Image>();
         image.color = color;
         return image;
+    }
+
+    private static void RegisterHoverEvents(GameObject target, Action<bool> setHover)
+    {
+        if (target == null || setHover == null)
+        {
+            return;
+        }
+
+        EventTrigger trigger = target.GetComponent<EventTrigger>();
+        if (trigger == null)
+        {
+            trigger = target.AddComponent<EventTrigger>();
+        }
+
+        EventTrigger.Entry enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        enter.callback.AddListener(_ => setHover(true));
+        trigger.triggers.Add(enter);
+
+        EventTrigger.Entry exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        exit.callback.AddListener(_ => setHover(false));
+        trigger.triggers.Add(exit);
     }
 
     private Text CreateText(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, string text, int fontSize, TextAnchor alignment, Color color)
@@ -1367,6 +5479,50 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         return label;
     }
 
+    private static void ConfigureHpNumberText(Text label)
+    {
+        if (label == null)
+        {
+            return;
+        }
+
+        label.fontSize = 24;
+        label.resizeTextMinSize = 16;
+        label.resizeTextMaxSize = 24;
+        label.horizontalOverflow = HorizontalWrapMode.Overflow;
+        label.color = new Color(1f, 0.96f, 0.78f, 1f);
+
+        Outline outline = label.GetComponent<Outline>();
+        if (outline == null)
+        {
+            outline = label.gameObject.AddComponent<Outline>();
+        }
+
+        outline.effectColor = new Color(0f, 0f, 0f, 0.86f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+    }
+
+    private static void ConfigureBattleSceneEnemyHpNumberText(Text label)
+    {
+        ConfigureHpNumberText(label);
+        if (label == null)
+        {
+            return;
+        }
+
+        label.fontSize = 28;
+        label.resizeTextMinSize = 20;
+        label.resizeTextMaxSize = 28;
+        label.alignment = TextAnchor.MiddleCenter;
+
+        Shadow shadow = label.GetComponent<Shadow>();
+        if (shadow != null)
+        {
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.82f);
+            shadow.effectDistance = new Vector2(2f, -2f);
+        }
+    }
+
     private Button CreateButton(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, string labelText, int fontSize, Color color)
     {
         Image image = CreateImage(name, parent, anchorMin, anchorMax, offsetMin, offsetMax, color);
@@ -1383,4 +5539,5 @@ public sealed class BattleTimelinePrototypeController : MonoBehaviour
         CreateText(name + " Text", image.transform, Vector2.zero, Vector2.one, new Vector2(8f, 6f), new Vector2(-8f, -6f), labelText, fontSize, TextAnchor.MiddleCenter, Color.white);
         return button;
     }
+
 }

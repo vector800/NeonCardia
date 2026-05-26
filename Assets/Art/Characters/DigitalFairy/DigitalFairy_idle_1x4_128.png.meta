@@ -1,0 +1,429 @@
+fileFormatVersion: 2
+guid: d420e95e40a99e64aa51d70aacd45818
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5264424456154847275
+    second: DigitalFairy_idle_1x4_128_0
+  - first:
+      213: -5606094749620900341
+    second: DigitalFairy_idle_1x4_128_1
+  - first:
+      213: -4554301079775999724
+    second: DigitalFairy_idle_1x4_128_2
+  - first:
+      213: 2677386787335467706
+    second: DigitalFairy_idle_1x4_128_3
+  - first:
+      213: 1988606304260347070
+    second: DigitalFairy_idle_1x4_128_4
+  - first:
+      213: 3377746487226496414
+    second: DigitalFairy_idle_1x4_128_5
+  - first:
+      213: 3851548820752480122
+    second: DigitalFairy_idle_1x4_128_6
+  - first:
+      213: -5435575228741537095
+    second: DigitalFairy_idle_1x4_128_7
+  - first:
+      213: 2084222366631169207
+    second: DigitalFairy_idle_1x4_128_8
+  - first:
+      213: -1907175767149304696
+    second: DigitalFairy_idle_1x4_128_9
+  - first:
+      213: -7521881453143287967
+    second: DigitalFairy_idle_1x4_128_10
+  - first:
+      213: -658739325166188821
+    second: DigitalFairy_idle_1x4_128_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_0
+      rect:
+        serializedVersion: 2
+        x: 25
+        y: 6
+        width: 83
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b281df7962efe0940800000000000000
+      internalID: 5264424456154847275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_1
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 86
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0ee9af07862332b0800000000000000
+      internalID: -5606094749620900341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_2
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 6
+        width: 85
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41906c33c4fdbc0c0800000000000000
+      internalID: -4554301079775999724
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_3
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 6
+        width: 95
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab27471091df72520800000000000000
+      internalID: 2677386787335467706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_4
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 80
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb45a8bc5e2f89b10800000000000000
+      internalID: 1988606304260347070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_5
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 80
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e957578b88a20ee20800000000000000
+      internalID: 3377746487226496414
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_6
+      rect:
+        serializedVersion: 2
+        x: 409
+        y: 6
+        width: 83
+        height: 107
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a77b6000f33737530800000000000000
+      internalID: 3851548820752480122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_7
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 79
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b2b2fcd025f094b0800000000000000
+      internalID: -5435575228741537095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_8
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 70
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bc89f32335acec10800000000000000
+      internalID: 2084222366631169207
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_9
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 67
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88425d29eb95885e0800000000000000
+      internalID: -1907175767149304696
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_10
+      rect:
+        serializedVersion: 2
+        x: 276
+        y: 67
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1679bc6cba8ec9790800000000000000
+      internalID: -7521881453143287967
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DigitalFairy_idle_1x4_128_11
+      rect:
+        serializedVersion: 2
+        x: 407
+        y: 64
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be683ebe210bbd6f0800000000000000
+      internalID: -658739325166188821
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      DigitalFairy_idle_1x4_128_0: 5264424456154847275
+      DigitalFairy_idle_1x4_128_1: -5606094749620900341
+      DigitalFairy_idle_1x4_128_10: -7521881453143287967
+      DigitalFairy_idle_1x4_128_11: -658739325166188821
+      DigitalFairy_idle_1x4_128_2: -4554301079775999724
+      DigitalFairy_idle_1x4_128_3: 2677386787335467706
+      DigitalFairy_idle_1x4_128_4: 1988606304260347070
+      DigitalFairy_idle_1x4_128_5: 3377746487226496414
+      DigitalFairy_idle_1x4_128_6: 3851548820752480122
+      DigitalFairy_idle_1x4_128_7: -5435575228741537095
+      DigitalFairy_idle_1x4_128_8: 2084222366631169207
+      DigitalFairy_idle_1x4_128_9: -1907175767149304696
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

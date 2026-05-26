@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29d5e03fea4b4bd38ad3756840edca0e, type: 3}
+  m_Name: BattlePanelVisualSet_Default
+  m_EditorClassIdentifier: 
+  PlayerNormal: {fileID: 21300000, guid: 71886180eb764c509c127026fd99115d, type: 3}
+  PlayerSelected: {fileID: 21300000, guid: cb1cd5eb56714df3b717a122f2f0e3b2, type: 3}
+  EnemyNormal: {fileID: 21300000, guid: 2993d95cd2054862bfb5b5f627ef8575, type: 3}
+  EnemySelected: {fileID: 21300000, guid: 3758ec9ca4774cf1b5d7d270a9cd902a, type: 3}
+  TargetableOverlay: {fileID: 21300000, guid: 2ade78877bc6491ab9e5a7317e7e5179, type: 3}
+  DangerOverlay: {fileID: 21300000, guid: 49b2eb8113544fecaa838fbe302ac104, type: 3}
+  HoverOverlay: {fileID: 21300000, guid: 3b4f3aed18e24e2c91efcb028c2cbd6e, type: 3}
+  DisabledOverlay: {fileID: 21300000, guid: 5f022ef47afb44fc81d057609fbe9bda, type: 3}
+  BreakHintOverlay: {fileID: 21300000, guid: 4f65ff2d772445f08a0996471f99531a, type: 3}
+  HealHintOverlay: {fileID: 21300000, guid: 19b0de4c34724c2683ac84b1b8471af2, type: 3}

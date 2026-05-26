@@ -1,0 +1,663 @@
+fileFormatVersion: 2
+guid: c74dd6e061b29e544bdcaa3d929324c8
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1138641723971719441
+    second: CyberKnight_Right_1x20_128_0
+  - first:
+      213: 1280685492983822482
+    second: CyberKnight_Right_1x20_128_1
+  - first:
+      213: 1116448546092009947
+    second: CyberKnight_Right_1x20_128_2
+  - first:
+      213: -2751831337511083814
+    second: CyberKnight_Right_1x20_128_3
+  - first:
+      213: 2071067906299834475
+    second: CyberKnight_Right_1x20_128_4
+  - first:
+      213: 9059150491098889184
+    second: CyberKnight_Right_1x20_128_5
+  - first:
+      213: 6095709383803234184
+    second: CyberKnight_Right_1x20_128_6
+  - first:
+      213: -1872045535488475901
+    second: CyberKnight_Right_1x20_128_7
+  - first:
+      213: -1148060743585634156
+    second: CyberKnight_Right_1x20_128_8
+  - first:
+      213: 5331209771391781781
+    second: CyberKnight_Right_1x20_128_9
+  - first:
+      213: -8914894413890980946
+    second: CyberKnight_Right_1x20_128_10
+  - first:
+      213: -4763545304874840857
+    second: CyberKnight_Right_1x20_128_11
+  - first:
+      213: 5453647707245335813
+    second: CyberKnight_Right_1x20_128_12
+  - first:
+      213: -704420571987659336
+    second: CyberKnight_Right_1x20_128_13
+  - first:
+      213: -3425651017943128543
+    second: CyberKnight_Right_1x20_128_14
+  - first:
+      213: 4330759073972857141
+    second: CyberKnight_Right_1x20_128_15
+  - first:
+      213: -7633934925745911358
+    second: CyberKnight_Right_1x20_128_16
+  - first:
+      213: 1201505350866976464
+    second: CyberKnight_Right_1x20_128_17
+  - first:
+      213: 1158414350780755867
+    second: CyberKnight_Right_1x20_128_18
+  - first:
+      213: -3740427012669907731
+    second: CyberKnight_Right_1x20_128_19
+  - first:
+      213: -8224883069601406641
+    second: CyberKnight_Right_1x20_128_20
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_0
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 6
+        width: 53
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fee2a34826bb230f0800000000000000
+      internalID: -1138641723971719441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_1
+      rect:
+        serializedVersion: 2
+        x: 166
+        y: 6
+        width: 52
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 298fb46aba8e5c110800000000000000
+      internalID: 1280685492983822482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_2
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 6
+        width: 53
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd9c0d7990c6e7f00800000000000000
+      internalID: 1116448546092009947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_3
+      rect:
+        serializedVersion: 2
+        x: 420
+        y: 6
+        width: 55
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad02dd57af78fc9d0800000000000000
+      internalID: -2751831337511083814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_4
+      rect:
+        serializedVersion: 2
+        x: 551
+        y: 6
+        width: 50
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b60b6bca949edbc10800000000000000
+      internalID: 2071067906299834475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_5
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 6
+        width: 66
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0eb31cccf5198bd70800000000000000
+      internalID: 9059150491098889184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_6
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 6
+        width: 64
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8876b9b536f489450800000000000000
+      internalID: 6095709383803234184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_7
+      rect:
+        serializedVersion: 2
+        x: 935
+        y: 6
+        width: 50
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 30d7ad501882506e0800000000000000
+      internalID: -1872045535488475901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_8
+      rect:
+        serializedVersion: 2
+        x: 1050
+        y: 6
+        width: 76
+        height: 104
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 498e10e16d44110f0800000000000000
+      internalID: -1148060743585634156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_9
+      rect:
+        serializedVersion: 2
+        x: 1165
+        y: 6
+        width: 101
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59b06e68a034cf940800000000000000
+      internalID: 5331209771391781781
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_10
+      rect:
+        serializedVersion: 2
+        x: 1287
+        y: 6
+        width: 114
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea3f9e183cee74480800000000000000
+      internalID: -8914894413890980946
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_11
+      rect:
+        serializedVersion: 2
+        x: 1426
+        y: 6
+        width: 91
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ec847798cc74edb0800000000000000
+      internalID: -4763545304874840857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_12
+      rect:
+        serializedVersion: 2
+        x: 1560
+        y: 8
+        width: 80
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5055b70f1bf3fab40800000000000000
+      internalID: 5453647707245335813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_13
+      rect:
+        serializedVersion: 2
+        x: 1669
+        y: 8
+        width: 114
+        height: 89
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b5b232d8356936f0800000000000000
+      internalID: -704420571987659336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_14
+      rect:
+        serializedVersion: 2
+        x: 1801
+        y: 8
+        width: 112
+        height: 86
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1266b0f8c84a570d0800000000000000
+      internalID: -3425651017943128543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_15
+      rect:
+        serializedVersion: 2
+        x: 1948
+        y: 8
+        width: 74
+        height: 92
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 539a3f3be62f91c30800000000000000
+      internalID: 4330759073972857141
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_16
+      rect:
+        serializedVersion: 2
+        x: 2079
+        y: 6
+        width: 65
+        height: 110
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c98770a1a0de0690800000000000000
+      internalID: -7633934925745911358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_17
+      rect:
+        serializedVersion: 2
+        x: 2195
+        y: 6
+        width: 90
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0de382230ca9ca010800000000000000
+      internalID: 1201505350866976464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_18
+      rect:
+        serializedVersion: 2
+        x: 2324
+        y: 6
+        width: 86
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b9f6009e6b3831010800000000000000
+      internalID: 1158414350780755867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_19
+      rect:
+        serializedVersion: 2
+        x: 2401
+        y: 66
+        width: 11
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: decd8891375571cc0800000000000000
+      internalID: -3740427012669907731
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CyberKnight_Right_1x20_128_20
+      rect:
+        serializedVersion: 2
+        x: 2458
+        y: 6
+        width: 76
+        height: 114
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f41a84dec685bdd80800000000000000
+      internalID: -8224883069601406641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      CyberKnight_Right_1x20_128_0: -1138641723971719441
+      CyberKnight_Right_1x20_128_1: 1280685492983822482
+      CyberKnight_Right_1x20_128_10: -8914894413890980946
+      CyberKnight_Right_1x20_128_11: -4763545304874840857
+      CyberKnight_Right_1x20_128_12: 5453647707245335813
+      CyberKnight_Right_1x20_128_13: -704420571987659336
+      CyberKnight_Right_1x20_128_14: -3425651017943128543
+      CyberKnight_Right_1x20_128_15: 4330759073972857141
+      CyberKnight_Right_1x20_128_16: -7633934925745911358
+      CyberKnight_Right_1x20_128_17: 1201505350866976464
+      CyberKnight_Right_1x20_128_18: 1158414350780755867
+      CyberKnight_Right_1x20_128_19: -3740427012669907731
+      CyberKnight_Right_1x20_128_2: 1116448546092009947
+      CyberKnight_Right_1x20_128_20: -8224883069601406641
+      CyberKnight_Right_1x20_128_3: -2751831337511083814
+      CyberKnight_Right_1x20_128_4: 2071067906299834475
+      CyberKnight_Right_1x20_128_5: 9059150491098889184
+      CyberKnight_Right_1x20_128_6: 6095709383803234184
+      CyberKnight_Right_1x20_128_7: -1872045535488475901
+      CyberKnight_Right_1x20_128_8: -1148060743585634156
+      CyberKnight_Right_1x20_128_9: 5331209771391781781
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

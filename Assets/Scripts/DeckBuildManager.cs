@@ -23,6 +23,7 @@ public sealed class DeckBuildManager : MonoBehaviour
     private Text messageText;
     private Button saveButton;
     private Button battleButton;
+    private Button timelineBattleButton;
     private Button restoreButton;
 
     private void Awake()
@@ -163,13 +164,16 @@ public sealed class DeckBuildManager : MonoBehaviour
         validationText = CreateText("Validation Text", canvasObject.transform, new Vector2(0.045f, 0.098f), new Vector2(0.485f, 0.135f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleLeft, new Color(1f, 0.9f, 0.55f));
         messageText = CreateText("Message Text", canvasObject.transform, new Vector2(0.515f, 0.098f), new Vector2(0.955f, 0.135f), Vector2.zero, Vector2.zero, string.Empty, 20, TextAnchor.MiddleRight, new Color(0.92f, 1f, 1f));
 
-        saveButton = CreateButton("Save Deck Button", canvasObject.transform, new Vector2(0.28f, 0.025f), new Vector2(0.43f, 0.08f), Vector2.zero, Vector2.zero, "デッキ保存", 22, new Color(0.08f, 0.34f, 0.18f));
+        saveButton = CreateButton("Save Deck Button", canvasObject.transform, new Vector2(0.20f, 0.025f), new Vector2(0.34f, 0.08f), Vector2.zero, Vector2.zero, "デッキ保存", 20, new Color(0.08f, 0.34f, 0.18f));
         saveButton.onClick.AddListener(SaveDeck);
 
-        battleButton = CreateButton("Go Battle Button", canvasObject.transform, new Vector2(0.45f, 0.025f), new Vector2(0.61f, 0.08f), Vector2.zero, Vector2.zero, "バトルへ進む", 22, new Color(0.5f, 0.27f, 0.05f));
+        battleButton = CreateButton("Go Battle Button", canvasObject.transform, new Vector2(0.36f, 0.025f), new Vector2(0.50f, 0.08f), Vector2.zero, Vector2.zero, "既存バトルへ", 20, new Color(0.5f, 0.27f, 0.05f));
         battleButton.onClick.AddListener(GoToBattleScene);
 
-        restoreButton = CreateButton("Restore Deck Button", canvasObject.transform, new Vector2(0.63f, 0.025f), new Vector2(0.78f, 0.08f), Vector2.zero, Vector2.zero, "元に戻す", 22, new Color(0.22f, 0.24f, 0.32f));
+        timelineBattleButton = CreateButton("Go Timeline Battle Button", canvasObject.transform, new Vector2(0.52f, 0.025f), new Vector2(0.66f, 0.08f), Vector2.zero, Vector2.zero, "新バトルへ", 20, new Color(0.08f, 0.32f, 0.42f));
+        timelineBattleButton.onClick.AddListener(GoToTimelineBattleScene);
+
+        restoreButton = CreateButton("Restore Deck Button", canvasObject.transform, new Vector2(0.68f, 0.025f), new Vector2(0.82f, 0.08f), Vector2.zero, Vector2.zero, "元に戻す", 20, new Color(0.22f, 0.24f, 0.32f));
         restoreButton.onClick.AddListener(RestoreEntryDeck);
     }
 
@@ -187,6 +191,7 @@ public sealed class DeckBuildManager : MonoBehaviour
         messageText.text = message;
         saveButton.interactable = true;
         battleButton.interactable = result.IsValid;
+        timelineBattleButton.interactable = result.IsValid;
         restoreButton.interactable = true;
 
         RebuildCollectionList();
@@ -370,6 +375,19 @@ public sealed class DeckBuildManager : MonoBehaviour
     }
 
     private void GoToBattleScene()
+    {
+        DeckValidationResult result = DeckValidator.Validate(editingDeck);
+        if (!result.IsValid)
+        {
+            RefreshUi("デッキが無効なためBattleSceneへ進めません");
+            return;
+        }
+
+        DeckStorage.SaveDeck(editingDeck);
+        SceneManager.LoadScene("BattleScene");
+    }
+
+    private void GoToTimelineBattleScene()
     {
         DeckValidationResult result = DeckValidator.Validate(editingDeck);
         if (!result.IsValid)

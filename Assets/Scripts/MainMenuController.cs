@@ -9,13 +9,14 @@ using UnityEngine.UI;
 public sealed class MainMenuController : MonoBehaviour
 {
     private const int MenuBattle = 0;
-    private const int MenuDeckBuild = 1;
-    private const int MenuRpg = 2;
+    private const int MenuTimelineBattle = 1;
+    private const int MenuDeckBuild = 2;
+    private const int MenuRpg = 3;
 
-    private readonly string[] menuTexts = { "バトルへ", "デッキ編集へ", "RPGへ" };
-    private readonly Button[] menuButtons = new Button[3];
-    private readonly Text[] menuLabels = new Text[3];
-    private readonly Image[] menuBackgrounds = new Image[3];
+    private readonly string[] menuTexts = { "バトルへ", "新バトルへ", "デッキ編集へ", "RPGへ" };
+    private readonly Button[] menuButtons = new Button[4];
+    private readonly Text[] menuLabels = new Text[4];
+    private readonly Image[] menuBackgrounds = new Image[4];
 
     private Font uiFont;
     private Text messageText;
@@ -251,11 +252,11 @@ public sealed class MainMenuController : MonoBehaviour
 
     private void BuildMenuButtons(Transform parent)
     {
-        CreateImage("Menu Readability Panel", parent, new Vector2(0.32f, 0.27f), new Vector2(0.68f, 0.53f), Vector2.zero, Vector2.zero, new Color(0.005f, 0.02f, 0.028f, 0.72f)).raycastTarget = false;
+        CreateImage("Menu Readability Panel", parent, new Vector2(0.32f, 0.18f), new Vector2(0.68f, 0.53f), Vector2.zero, Vector2.zero, new Color(0.005f, 0.02f, 0.028f, 0.72f)).raycastTarget = false;
         for (int i = 0; i < menuTexts.Length; i++)
         {
-            float top = 0.5f - i * 0.092f;
-            float bottom = top - 0.075f;
+            float top = 0.505f - i * 0.078f;
+            float bottom = top - 0.064f;
             Button button = CreateButton("Menu Button " + i, parent, new Vector2(0.34f, bottom), new Vector2(0.66f, top), Vector2.zero, Vector2.zero, menuTexts[i], 38, new Color(0.02f, 0.08f, 0.1f, 0.98f));
             int capturedIndex = i;
             button.onClick.AddListener(() => ActivateMenu(capturedIndex));
@@ -324,6 +325,9 @@ public sealed class MainMenuController : MonoBehaviour
         switch (index)
         {
             case MenuBattle:
+                SceneManager.LoadScene("BattleScene");
+                break;
+            case MenuTimelineBattle:
                 SceneManager.LoadScene("BattleScene");
                 break;
             case MenuDeckBuild:

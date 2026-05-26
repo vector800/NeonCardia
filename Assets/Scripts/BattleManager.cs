@@ -9,6 +9,55 @@ using UnityEngine.UI;
 
 public sealed class BattleManager : MonoBehaviour
 {
+    [SerializeField] private bool showDebugLabels;
+
+    private EnemyType debugEnemyType = EnemyType.NormalEnemy;
+
+    private void Awake()
+    {
+        BattleSceneTimelineController controller = GetComponent<BattleSceneTimelineController>();
+        if (controller == null)
+        {
+            controller = gameObject.AddComponent<BattleSceneTimelineController>();
+        }
+
+        controller.SetInitialDebugLabels(showDebugLabels);
+    }
+
+    public void DebugSetPanelType(BattleGridPosition position, PanelType panelType)
+    {
+        Debug.Log("BattleScene timeline mode does not edit legacy panels. Requested " + panelType + " at " + position + ".");
+    }
+
+    public void DebugApplyPanelPreset(PanelDebugPreset preset)
+    {
+        Debug.Log("BattleScene timeline mode keeps the enemy grid separate from legacy panel presets. Requested preset: " + preset + ".");
+    }
+
+    public void DebugResetBattleToInitialState()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public EnemyType DebugGetEnemyType()
+    {
+        return debugEnemyType;
+    }
+
+    public void DebugChangeEnemyType(EnemyType enemyType)
+    {
+        debugEnemyType = enemyType;
+        Debug.Log("BattleScene timeline mode currently uses its fixed 1-3 enemy grid. Debug enemy type set for legacy tooling only: " + enemyType + ".");
+    }
+
+    public string DebugGetEnemySummary(EnemyType enemyType)
+    {
+        return EnemyAI.GetDebugSummary(enemyType);
+    }
+}
+
+internal sealed class LegacyBattleManager : MonoBehaviour
+{
     private const int MaxHandSize = 5;
     private const int MaxPlayerActions = 3;
     private const int MaxAccelGauge = 100;
@@ -2549,7 +2598,7 @@ public sealed class BattleManager : MonoBehaviour
         GameObject debugObject = new GameObject("BattleDebugPanelController");
         debugObject.transform.SetParent(parent, false);
         debugPanelController = debugObject.AddComponent<BattleDebugPanelController>();
-        debugPanelController.Build(this, parent, uiFont, ShouldShowDebugPanelTools());
+        debugPanelController.Build(null, parent, uiFont, false);
     }
 
     private bool ShouldShowDebugPanelTools()

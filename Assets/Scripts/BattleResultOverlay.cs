@@ -22,6 +22,7 @@ public sealed class BattleResultOverlay : MonoBehaviour
     private Font uiFont;
     private Action retryAction;
     private Action menuAction;
+    private Action deckAction;
     private CanvasGroup rootGroup;
     private CanvasGroup huntingLevelGroup;
     private CanvasGroup huntingRankGroup;
@@ -31,11 +32,12 @@ public sealed class BattleResultOverlay : MonoBehaviour
     private Text huntingRankText;
     private Coroutine sequenceCoroutine;
 
-    public void Build(Transform parent, Font font, Action retry, Action menu)
+    public void Build(Transform parent, Font font, Action retry, Action menu, Action deck = null)
     {
         uiFont = font;
         retryAction = retry;
         menuAction = menu;
+        deckAction = deck;
 
         RectTransform rootRect = GetOrAddRectTransform(gameObject);
         rootRect.SetParent(parent, false);
@@ -82,11 +84,23 @@ public sealed class BattleResultOverlay : MonoBehaviour
         rewardIcon.preserveAspect = true;
         rewardIcon.raycastTarget = false;
 
-        buttonGroup = CreateGroup("ResultButtonArea", panelRoot, new Vector2(0.24f, 0.02f), new Vector2(0.76f, 0.1f));
-        Button retryButton = CreateButton("Retry Battle Button", buttonGroup.transform, Vector2.zero, new Vector2(0.46f, 1f), Vector2.zero, Vector2.zero, "もう一度戦う", 20, new Color(0.02f, 0.17f, 0.28f));
-        retryButton.onClick.AddListener(InvokeRetry);
-        Button menuButton = CreateButton("Return Menu Button", buttonGroup.transform, new Vector2(0.54f, 0f), Vector2.one, Vector2.zero, Vector2.zero, "メニューへ戻る", 20, new Color(0.05f, 0.04f, 0.17f));
-        menuButton.onClick.AddListener(InvokeMenu);
+        buttonGroup = CreateGroup("ResultButtonArea", panelRoot, deckAction != null ? new Vector2(0.16f, 0.02f) : new Vector2(0.24f, 0.02f), deckAction != null ? new Vector2(0.84f, 0.1f) : new Vector2(0.76f, 0.1f));
+        if (deckAction != null)
+        {
+            Button retryButton = CreateButton("Retry Battle Button", buttonGroup.transform, Vector2.zero, new Vector2(0.30f, 1f), Vector2.zero, Vector2.zero, "もう一度戦う", 18, new Color(0.02f, 0.17f, 0.28f));
+            retryButton.onClick.AddListener(InvokeRetry);
+            Button menuButton = CreateButton("Return Menu Button", buttonGroup.transform, new Vector2(0.35f, 0f), new Vector2(0.65f, 1f), Vector2.zero, Vector2.zero, "メニューへ戻る", 18, new Color(0.05f, 0.04f, 0.17f));
+            menuButton.onClick.AddListener(InvokeMenu);
+            Button deckButton = CreateButton("Return Deck Button", buttonGroup.transform, new Vector2(0.70f, 0f), Vector2.one, Vector2.zero, Vector2.zero, "デッキ編集へ", 18, new Color(0.12f, 0.10f, 0.24f));
+            deckButton.onClick.AddListener(InvokeDeck);
+        }
+        else
+        {
+            Button retryButton = CreateButton("Retry Battle Button", buttonGroup.transform, Vector2.zero, new Vector2(0.46f, 1f), Vector2.zero, Vector2.zero, "もう一度戦う", 20, new Color(0.02f, 0.17f, 0.28f));
+            retryButton.onClick.AddListener(InvokeRetry);
+            Button menuButton = CreateButton("Return Menu Button", buttonGroup.transform, new Vector2(0.54f, 0f), Vector2.one, Vector2.zero, Vector2.zero, "メニューへ戻る", 20, new Color(0.05f, 0.04f, 0.17f));
+            menuButton.onClick.AddListener(InvokeMenu);
+        }
 
         transform.SetAsLastSibling();
         HideImmediate();
@@ -236,6 +250,14 @@ public sealed class BattleResultOverlay : MonoBehaviour
         if (menuAction != null)
         {
             menuAction();
+        }
+    }
+
+    private void InvokeDeck()
+    {
+        if (deckAction != null)
+        {
+            deckAction();
         }
     }
 

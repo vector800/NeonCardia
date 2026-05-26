@@ -1,6 +1,580 @@
 # NeonCardia Battle MVP
 
+## 2026-05-20 BattleScene Action Bar Timeline
+
+Implemented the card-style loop Action Bar in `Assets/Scenes/BattleScene.unity`.
+The existing `BattleScene` is kept as the target scene; `BattleTimelinePrototypeScene`
+remains only as a reference scene.
+
+This system takes structural inspiration from card-based Action Bar RPGs, including
+the Manakhemia-style idea of reading future turns from a top bar. The UI, names,
+colors, and assets are original NeonCardia temporary UI. No reference image asset,
+production sprite sheet, or copied game material is used.
+
+Action Bar model:
+
+- Each timeline item has a `BattleTimelineEntry` with `EntryType`, `NextActTick`,
+  `Delay`, alive/active flags, display name, display color, owner, and action data.
+- The battle keeps `currentTick`.
+- The next action is the alive entry with the smallest `NextActTick`.
+- After an ally or enemy acts, that unit returns with
+  `NextActTick = currentTick + resolvedDelay`.
+- The top bar sorts by next tick and simulates future loops so the next order
+  is always visible.
+- Defeated enemies and defeated allies are removed from the live Action Bar order.
+- One-shot skill entries are inserted into the same Action Bar and are removed
+  after they resolve.
+
+Delay values:
+
+| Action | Delay |
+| --- | ---: |
+| Weapon | 80 |
+| Normal N card | 100 |
+| CLEAR card | 60 |
+| HC card | 130 |
+| G card | 180 |
+| Heal card | 90 |
+| Front/Middle or Middle/Back swap | 70 |
+| Wait / Confirm with no queued action | 50 |
+| Enemy normal attack | 100 |
+| Boss action | 130 |
+
+Skill-card extension:
+
+- `BattleTimelinePrototypeController` now owns a `skillTimelineActions` list.
+- `AddSkillEntry(...)` inserts one-shot Action Bar entries with their own
+  `NextReadyTick`.
+- `Echo Shot` is the MVP test card. It deals 20 damage, then inserts an `Echo`
+  skill card after 45 ticks.
+- When `Echo` reaches the active slot, it automatically deals 10 damage to a
+  valid enemy target and then disappears.
+- Any future card adapter can set up an Echo-like entry without changing the
+  base ally/enemy timeline loop.
+
+BattleScene behavior:
+
+- Ally A/B/C and Enemy1/Enemy2/Enemy3 appear as Action Bar cards.
+- Action Bar display uses short labels such as `A`, `B`, `C`, `E1`, `E2`, `E3`,
+  and `Echo`.
+- The BattleScene Action Bar is intentionally larger than the first MVP pass:
+  it uses an `ACTION BAR` panel, visible loop rail, card outlines, big center
+  labels, type labels, and `T+` timing text.
+- The current card is highlighted at the leftmost active slot.
+- Ally cards, enemy cards, and skill cards use separate colors.
+- Player turns support card use, Weapon, Front/Middle swap, Middle/Back swap,
+  wait, and Confirm.
+- Enemy turns perform the MVP attack: target Front first, then Middle, then Back,
+  for 20 base damage, then return with Delay 100.
+- Victory uses the existing `BattleResultOverlay`.
+
+Not implemented in this pass:
+
+- Enemy next-action forecast.
+- Production Action Bar card art.
+- Sprite-sheet slicing.
+- Copied reference-image UI or assets.
+- Smooth card movement animation.
+- Circular or semicircular loop UI.
+- Support attack/defense cards.
+- Timeline bonuses and Burst/Accel integration.
+
+Verification steps:
+
+1. Open `Assets/Scenes/BattleScene.unity`.
+2. Enter Play Mode and confirm there are no compile errors, Missing Sprite errors,
+   or Missing Reference errors.
+3. Confirm the top Action Bar shows ally, enemy, and any inserted skill cards.
+4. Use a normal card, CLEAR card, HC/G card if present, heal card, Weapon, swap,
+   and wait; confirm each action returns with the expected Delay.
+5. Use `Echo Shot`; confirm `Echo` appears in the Action Bar, later acts for
+   10 damage, and disappears.
+6. Defeat enemies and confirm their Action Bar cards are removed.
+7. Defeat all enemies and confirm the result overlay appears.
+8. Enter BattleScene through `MenuScene` and `DeckBuildScene` to confirm existing
+   routes still work.
+
+Changed files for this pass:
+
+- `Assets/Scripts/BattleTimelineEntry.cs`
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `README.md`
+
+### BattleScene HUD Cleanup
+
+For a cleaner temporary BattleScene layout, the following generated UI is now
+suppressed in `mainBattleSceneMode`:
+
+- Top HUD strip with `CUSTOM`, `NEON CARDIA BATTLE`, HP box, and turn text.
+- Bottom status strip with queue/deck/status text.
+- Bottom command button strip with Weapon, Swap F/M, Swap M/B, Reset, Confirm,
+  and DEBUG buttons.
+
+The card select panel is still built so card testing can continue while the
+screen is being cleaned up.
+
+### BattleScene Ally Sprite Sheets
+
+BattleScene now binds the Ally Party slots to character sprite definitions while
+keeping the existing Action Bar, Front/Middle/Back slots, enemy 3x3 grid, card
+actions, Weapon, swaps, and result overlay flow intact.
+
+Ally assignment:
+
+- Ally A = Protagonist.
+- Ally B = Cyber Wolf.
+- Ally C = Cyber Fairy.
+
+Preferred runtime sprite-sheet folders:
+
+- `Assets/Art/Runtime/Characters/Allies/AllyA_Protagonist/AllyA_Protagonist_IdleSheet.png`
+- `Assets/Art/Runtime/Characters/Allies/AllyB_CyberWolf/AllyB_CyberWolf_IdleSheet.png`
+- `Assets/Art/Runtime/Characters/Allies/AllyC_CyberFairy/AllyC_CyberFairy_IdleSheet.png`
+
+Transparent variants are also supported and are loaded first when present:
+
+- `AllyA_Protagonist_IdleSheet_Transparent.png`
+- `AllyB_CyberWolf_IdleSheet_Transparent.png`
+- `AllyC_CyberFairy_IdleSheet_Transparent.png`
+
+The runtime loader expects 2 columns x 2 rows / 4 idle frames for those preferred
+sheets. If they are not present yet, BattleScene falls back to the existing
+project art:
+
+- `Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_00.png` through `_03.png`
+- `Assets/Art/Enemies/CyberWolf/Frames/CyberWolf_idle_00.png` through `_03.png`
+- `Assets/Art/Characters/DigitalFairy/Frames/DigitalFairy_idle_00.png` through `_03.png`
+
+If no sprite can be loaded, BattleScene uses safe color fallback icons:
+
+- Ally A: blue.
+- Ally B: green.
+- Ally C: cyan.
+
+Magenta background handling:
+
+- Runtime-loaded PNGs apply a simple `#FF00FF`-range transparency mask before
+  creating UI sprites.
+- For production import, transparent PNGs are still recommended. Save them as
+  the `_Transparent.png` variants above when possible.
+
+Recommended Unity import settings for final sheets:
+
+- Texture Type: Sprite (2D and UI)
+- Sprite Mode: Multiple
+- Pixels Per Unit: 100
+- Filter Mode: Point
+- Compression: None
+- Mesh Type: Full Rect
+- Alpha Is Transparency: enabled
+
+Manual Sprite Editor slice steps when using imported Multiple sprites:
+
+1. Select the target PNG.
+2. Set Sprite Mode to Multiple.
+3. Open Sprite Editor.
+4. Choose Grid By Cell Count.
+5. Set Column 2 / Row 2.
+6. Slice and Apply.
+
+BattleScene behavior:
+
+- Ally sprites render inside the existing Front/Middle/Back slots without
+  replacing HP bars, names, selection, or active highlights.
+- Front/Middle and Middle/Back swaps move the correct Ally A/B/C sprite because
+  sprites are bound to the ally unit, not the slot.
+- A simple 4-frame idle loop advances every 0.20 seconds.
+- Action Bar ally cards try to use the same idle sprite as their icon; if
+  unavailable, the existing A/B/C label presentation remains usable.
+
+Changed files for this pass:
+
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `Assets/Art/Runtime/Characters/Allies/AllyA_Protagonist/.gitkeep`
+- `Assets/Art/Runtime/Characters/Allies/AllyB_CyberWolf/.gitkeep`
+- `Assets/Art/Runtime/Characters/Allies/AllyC_CyberFairy/.gitkeep`
+- Unity `.meta` files for the new `Assets/Art/Runtime/Characters/Allies`
+  folder tree.
+- `README.md`
+
+Verification steps:
+
+1. Open `Assets/Scenes/BattleScene.unity`.
+2. Enter Play Mode.
+3. Confirm Ally A, Ally B, and Ally C show protagonist, cyber wolf, and cyber
+   fairy sprites or the documented fallback icons.
+4. Confirm the idle frames loop.
+5. Confirm Front/Middle and Middle/Back swaps move the correct character.
+6. Confirm HP bars, names, Action Bar, enemy 3x3 grid, card use, Weapon, and
+   victory result overlay still work.
+
+Not implemented in this pass:
+
+- Attack animation.
+- Damage animation.
+- Movement animation.
+- Enemy sprite replacement.
+- Full Animator Controller setup.
+- BattleScene rebuild or Action Bar redesign.
+
+### BattleScene 3x3 Panel Sprite Assets
+
+Added a new NeonCardia battle panel asset set for the existing BattleScene 3x3
+panel layout. The image-generation pass was used as a design reference, then
+the final Unity-facing assets were rebuilt as deterministic transparent PNGs so
+they slice cleanly and stay easy to replace.
+
+Design intent:
+
+- Player-side panels use restrained red/orange neon glass.
+- Enemy-side panels use restrained blue/cyan neon glass.
+- Borders have a small glow, with dark readable interiors for characters,
+  damage numbers, and UI text.
+- Circuit details are subtle and should not compete with sprites.
+- The style is original NeonCardia UI material and does not copy source game
+  assets.
+
+Folder layout:
+
+- `Assets/Art/References/Panels/`
+  - `PanelConceptSheet_ImageGen.png`: generated concept/reference sheet.
+- `Assets/Art/Generated/Panels/`
+  - `PanelSpritesheet_Main_Source.png`: generated source sheet copy.
+  - Individual generated panel PNG copies.
+- `Assets/Art/Runtime/Panels/`
+  - Final runtime PNGs used by BattleScene.
+- `Assets/ScriptableObjects/Visual/`
+  - `BattlePanelVisualSet.asset`: sprite assignment asset.
+- `Assets/Prefabs/Battle/`
+  - `PanelCell.prefab`: one-cell UI prefab with BaseImage, overlays, and
+    UnitAnchor for future prefab-based placement.
+
+Runtime panel files:
+
+- `PanelSpritesheet_Main.png`: 5 columns x 2 rows, 256 px cells, Sprite Mode
+  Multiple.
+- `Panel_Player_Normal.png`: player-side base panel.
+- `Panel_Player_Selected.png`: player-side selected panel.
+- `Panel_Enemy_Normal.png`: enemy-side base panel.
+- `Panel_Enemy_Selected.png`: enemy-side selected panel.
+- `Panel_Targetable_Overlay.png`: targetable overlay.
+- `Panel_Danger_Overlay.png`: danger/active warning overlay.
+- `Panel_Hover.png`: hover/soft focus overlay.
+- `Panel_Disabled.png`: disabled overlay.
+- `Panel_BreakHint.png`: break/crack hint overlay.
+- `Panel_HealHint.png`: heal hint overlay.
+
+Import settings:
+
+- Runtime individual PNGs are configured as Sprite (2D and UI), Single, Full
+  Rect, alpha transparency on, mipmaps off, bilinear filtering, and
+  uncompressed/quality-priority import.
+- `PanelSpritesheet_Main.png` is configured as Sprite Mode Multiple and sliced
+  into 10 named 256x256 sprites:
+  `Panel_Player_Normal`, `Panel_Enemy_Normal`, `Panel_Player_Selected`,
+  `Panel_Enemy_Selected`, `Panel_Targetable_Overlay`,
+  `Panel_Danger_Overlay`, `Panel_Hover`, `Panel_Disabled`,
+  `Panel_BreakHint`, and `Panel_HealHint`.
+
+ScriptableObject replacement:
+
+- `BattlePanelVisualSet` lives at
+  `Assets/Scripts/Battle/BattlePanelVisualSet.cs`.
+- To swap the look, edit
+  `Assets/ScriptableObjects/Visual/BattlePanelVisualSet.asset` and
+  assign replacement sprites to:
+  `playerNormal`, `playerSelected`, `enemyNormal`, `enemySelected`,
+  `targetableOverlay`, `dangerOverlay`, `hoverOverlay`, `disabledOverlay`,
+  `breakHintOverlay`, and `healHintOverlay`.
+- BattleScene auto-loads the default visual set in the Unity Editor. If the set
+  or any sprite is missing, it attempts to load the runtime PNGs directly. If
+  those are missing too, it falls back to the previous solid-color panels.
+
+BattleScene application:
+
+- Player-side 3x3 cells use `playerNormal`.
+- Enemy-side 3x3 cells use `enemyNormal`.
+- Selected player/enemy cells use selected panel visuals.
+- Targetable and danger states are separate UI Image overlays, so future panel
+  states can be layered without changing battle logic.
+- Null sprites are safe and do not throw Missing Sprite/Missing Reference errors.
+
+PanelCell prefab:
+
+- `Assets/Prefabs/Battle/PanelCell.prefab` contains `BaseImage`,
+  `SelectedOverlay`, `TargetableOverlay`, `DangerOverlay`, `HoverOverlay`,
+  `DisabledOverlay`, and `UnitAnchor`.
+- Overlay GameObjects start inactive and are intended to be toggled by battle
+  view code when a prefab-based grid is introduced.
+- The current BattleScene still uses generated UI Images directly, so runtime
+  behavior remains unchanged except for panel sprite assignment.
+
+Verification steps:
+
+1. Open `Assets/Scenes/BattleScene.unity`.
+2. Enter Play Mode.
+3. Confirm player-side 3x3 panels show the red/orange panel art.
+4. Confirm enemy-side 3x3 panels show the blue/cyan panel art.
+5. Select ally/enemy cells and confirm selected visuals update.
+6. Confirm targetable and danger overlays can display without hiding sprites.
+7. Confirm card use, Weapon, swaps, Action Bar, and victory result still work.
+
+Changed files for this pass:
+
+- `Assets/Art/References/Panels/PanelConceptSheet_ImageGen.png`
+- `Assets/Art/Generated/Panels/*`
+- `Assets/Art/Runtime/Panels/*`
+- `Assets/ScriptableObjects/Visual/BattlePanelVisualSet.asset`
+- `Assets/Scripts/Battle/BattlePanelVisualSet.cs`
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `Assets/Prefabs/Battle/PanelCell.prefab`
+- Unity `.meta` files for the new folders and assets.
+- `README.md`
+
+## BattleScene Loop Action Timeline MVP
+
+`BattleScene`にループ式の行動順タイムラインを実装しました。`BattleTimelinePrototypeScene`は参考/検証用として残し、実際のメニュー導線とBattleScene起動時の戦闘は`BattleManager`から`BattleSceneTimelineController`を起動します。
+
+### 行動権カード
+
+- タイムライン上部に、味方3人と生存している敵1-3体の行動権カードを表示します。
+- 味方は`Ally A` / `Ally B` / `Ally C`、敵は`Enemy 1` / `Enemy 2` / `Enemy 3`として表示します。
+- 左端が現在行動中のユニットです。
+- 味方カードはシアン/青系、敵カードは赤/紫系で色分けします。
+- HPが0以下のユニットはタイムライン候補から除外されます。
+- 本番画像素材とスプライトシートには依存せず、BattleSceneではUnity標準UIの単色仮表示を使います。
+
+### nextActTickとDelay
+
+- 各ユニットは内部的に`NextReadyTick`を持ち、表示用の`BattleTimelineEntry.NextActTick`へ反映されます。
+- 現在tick以上で`nextActTick`が最も小さいユニットが行動します。
+- 行動後は`nextActTick = currentTick + actionDelay`として行動権カードをタイムライン後方へ戻します。
+- タイムライン表示は先の数件をシミュレーションして、横長UI上でループしている順番が見えるようにしています。
+- 敵の次行動予告や攻撃内容表示は今回実装していません。敵も行動権カードのみ表示します。
+
+### Delay値
+
+| 行動 | Delay |
+| --- | ---: |
+| ウエポン | 80 |
+| 通常Nカード | 100 |
+| CLEARカード | 60 |
+| HCカード | 130 |
+| Gカード | 180 |
+| 回復カード | 90 |
+| 隊列入れ替え Front/Middle, Middle/Back | 70 |
+| 何もしない/待機 | 50 |
+| 敵通常攻撃 | 100 |
+| ボス行動 | 130 |
+
+Delay解決は`BattleActionDelayResolver`に集約しています。カードは`TimelineCardActionAdapter`が既存`CardData`をタイムライン用アクションへ変換し、`ActionDelay`を付与します。
+
+### BattleScene動作
+
+- カード使用、ウエポン、隊列入れ替えは現在行動中の味方が実行し、解決後にDelay分だけ後方へ戻ります。
+- ウエポンは威力10、無属性、敵1体対象、Delay 80です。
+- 隊列入れ替えは行動として扱い、Delay 70で行動権を消費します。
+- 敵の番が来た場合は自動で簡易攻撃を解決します。
+- 敵攻撃はFrontの味方を優先し、Frontが戦闘不能ならMiddle、Middleも戦闘不能ならBackを攻撃します。
+- 敵通常攻撃の仮ダメージは20で、行動後はDelay 100で後方へ戻ります。
+- 全敵撃破後は既存の`BattleResultOverlay`を表示します。
+
+### 今回使っていないもの
+
+- 本番UI画像素材
+- スプライトシートSlice
+- image-2素材生成
+- 敵の次行動予告UI
+- タイムライン上の敵攻撃内容表示
+- 円形/半円形の複雑なアニメーション
+
+### 動作確認手順
+
+1. Unityで`Assets/Scenes/BattleScene.unity`を開きます。
+2. Play Modeに入り、コンパイルエラー、Missing Sprite、Missing Referenceが出ないことを確認します。
+3. 画面上部にタイムラインが表示され、味方3人と生存敵が行動権カードとして並ぶことを確認します。
+4. 左端または強調カードが現在行動中であることを確認します。
+5. カード、ウエポン、Front/Middle入れ替え、Middle/Back入れ替えを使い、それぞれDelayに応じて行動権カードが後方へ戻ることを確認します。
+6. 待機としてConfirmのみを押した場合、Delay 50で後方へ戻ることを確認します。
+7. 敵の番でFront優先の簡易攻撃が実行され、敵カードがDelay 100で後方へ戻ることを確認します。
+8. 敵を倒すとタイムラインから除外されることを確認します。
+9. 全敵撃破後、勝利リザルトOverlayが表示されることを確認します。
+10. `MenuScene`、`DeckBuildScene`、Resultの戻り/再戦導線が壊れていないことを確認します。
+
+### 変更ファイル一覧
+
+- `Assets/Scripts/BattleActionDelayResolver.cs`
+- `Assets/Scripts/BattleTimelineEntry.cs`
+- `Assets/Scripts/BattleSceneTimelineController.cs`
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `Assets/Scripts/TimelineCardActionAdapter.cs`
+- `README.md`
+
+### 未実装項目
+
+- タイムラインの円形/半円形表示
+- 行動権カードの滑らかな移動アニメーション
+- カードごとの個別ScriptableObject Delay調整
+- 敵行動予告と敵攻撃内容の表示
+- タイムライン上のボーナス枠
+- 本番UI素材への差し替え
+
+## BattleScene New Timeline Battle Rework
+
+`BattleScene` is now the main playable scene for the new timeline battle format. `BattleTimelinePrototypeScene` remains in the project as a reference scene, but the player-facing `MenuScene` and `DeckBuildScene` battle routes now enter `BattleScene`.
+
+### BattleScene Temporary Stable UI
+
+The current `BattleScene` UI intentionally does not use generated image assets or sprite sheets. This pass removes the BattleScene runtime dependency on the following art while the layout is stabilized:
+
+- `Assets/Art/Backgrounds/Battle/CyberBattleBackground.png`
+- `Assets/Art/UI/Battle/BattleUIFrame.png`
+- `Assets/Art/Cards/Frames/CardFrame_Base.png`
+- `Assets/Art/UI/Timeline/TimelineIconsSheet.png`
+- `Assets/Art/UI/Party/AllyPortraitFramesSheet.png`
+- `Assets/Art/UI/Grid/EnemyGridPanelsSheet.png`
+- `Assets/Art/Enemies/Prototype/EnemySpritesSheet.png`
+
+BattleScene now renders with Unity standard UI only:
+
+- Flat color background and subtle grid tint.
+- Rectangular timeline slots for ally/enemy order and active unit state.
+- Flat ally panels for Front / Middle / Back, with ally name and HP bar.
+- Flat 3x3 enemy grid cells with a colored enemy block and HP bar.
+- Flat hand cards with text for card name, deck type, attribute, and value.
+- Flat Weapon / Swap / Reset / Confirm buttons.
+
+This means sprite-sheet slicing, generated frame placement, and direct production art integration are deferred to a later UI-art pass. If the art assets exist in the project, `BattleScene` still ignores them for now. Missing sprites or missing sprite references should not affect the temporary BattleScene UI.
+
+`showDebugLabels` controls internal labels:
+
+- Off by default for normal play.
+- Hides `EMPTY`, grid coordinates, speed/tick explanations, prototype/internal notes, and unsupported-card debug labels.
+- The in-battle `DEBUG` button toggles the extra labels at runtime.
+
+Temporary stable UI verification:
+
+1. Open `Assets/Scenes/BattleScene.unity`.
+2. Enter Play Mode and confirm there are no Missing Sprite / Missing Reference console errors.
+3. Confirm `NEON CARDIA BATTLE`, `PLAYER TURN`, the top timeline, ally party, enemy 3x3 grid, common hand, and command buttons are visible.
+4. Confirm the UI remains readable in a 16:9 Game view.
+5. Use a card, Weapon, Front/Middle swap, and Middle/Back swap.
+6. Defeat all enemies and confirm the existing result overlay appears.
+7. Enter from `MenuScene` and `DeckBuildScene` to confirm both still route to `BattleScene`.
+
+Temporary stable UI changed files:
+
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `README.md`
+
+Implementation note:
+
+- `Assets/Scenes/BattleScene.unity` still uses the existing `BattleManager` script connection.
+- The previous large panel-battle `BattleManager` implementation is preserved in code as `LegacyBattleManager` for reference.
+- The active `BattleManager` now boots the timeline-style battle controller for `BattleScene`.
+- `BattleTimelinePrototypeScene` is still available for direct prototype checks or rollback reference.
+
+New BattleScene layout:
+
+- Top: action-order timeline for 3 allies and 1-3 enemies. The leftmost unit is active.
+- Center left: AllyFront / AllyMiddle / AllyBack shown as Front / Middle / Back slots with HP, selected state, and active state.
+- Center right: 3x3 enemy grid with Enemy1 in the center and additional MVP enemies in open cells. Enemy HP and selection state are shown.
+- Bottom: common 5-card hand, Weapon, Front/Middle swap, Middle/Back swap, Reset, and Confirm.
+
+Ally position rules:
+
+- Front: outgoing damage x1.2, incoming damage x1.2.
+- Middle: no modifier.
+- Back: incoming damage x0.8, healing received x1.2.
+- Front <-> Middle and Middle <-> Back swaps consume one normal action and refresh the party UI.
+
+Enemy grid rules:
+
+- Enemies store name, HP, max HP, attribute, weakness, speed, grid row/column, boss flag, and status text.
+- The MVP starts with three enemies, but the runtime logic works when only one enemy remains.
+- Push effects move the selected enemy one cell to the right, clamp to the grid, and fail if the destination is occupied.
+
+Timeline rules:
+
+- Unit order is based on each unit's `NextReadyTick`, speed, and sequence.
+- Acting units are returned to the back of the timeline using a simple recovery calculation.
+- Delay cards add ticks to the target enemy so the structure can later grow into a fuller CTB timeline.
+- Enemy telegraphs are intentionally not implemented in this pass.
+
+Enemy action rules:
+
+- No enemy next-action preview UI is shown.
+- No enemy forecast icons or `Front Attack` / `Line Attack` / `Charge Attack` / `Heal` / `Delay Attack` labels are shown.
+- When an enemy acts, it performs a simple 20-damage attack.
+- Target priority is Front ally, then Middle ally, then Back ally.
+
+Card adapter:
+
+- Saved decks are loaded through `DeckStorage.TryLoadDeck` and validated with `DeckValidator`.
+- If no valid saved deck exists, `CardData.CreateStarterDeck()` is used as the fallback 30-card deck.
+- Existing `CardData` entries are converted through `TimelineCardActionAdapter`.
+- Supported MVP effects: single-target damage, row damage, push/move, delay, heal, and Weapon damage.
+- Weapon is a 10-power neutral attack by the current acting ally.
+
+Unsupported or partial cards in the new BattleScene MVP:
+
+- `Guard` / `BoostGuard`: logged as unsupported and resolve as no-op.
+- `Charge`: logged as unsupported and resolve as no-op.
+- `FreezeStage` / `SougenStage` / `KazanStage`: logged as unsupported and resolve as no-op.
+- Legacy BattleScene-only stage and special-panel side effects are not wired into the timeline grid yet.
+- `Freeze` is temporarily mapped to delay.
+- `Move` cards are mapped to a one-cell enemy push.
+
+Result connection:
+
+- Victory uses the existing `BattleResultOverlay`.
+- Result data is shared through `BattleResultData` and `HuntingLevelEvaluator`.
+- The overlay shows RESULT, HUNTING LEVEL, reward card name, retry, menu return, and deck edit return.
+
+Sprites and UI assets used when present:
+
+- `Assets/Art/Backgrounds/Battle/CyberBattleBackground.png`
+- `Assets/Art/UI/Battle/BattleUIFrame.png`
+- `Assets/Art/Cards/Frames/CardFrame_Base.png`
+- `Assets/Art/UI/Timeline/TimelineIconsSheet.png`
+- `Assets/Art/UI/Party/AllyPortraitFramesSheet.png`
+- `Assets/Art/UI/Grid/EnemyGridPanelsSheet.png`
+- `Assets/Art/Enemies/Prototype/EnemySpritesSheet.png`
+
+Missing sprite assets fall back to solid-color UI and log warnings instead of throwing null-reference errors.
+
+`showDebugLabels`:
+
+- Runtime details are hidden by default.
+- Use the in-battle `DEBUG` button to toggle detailed timeline ticks, grid coordinates, HP details, speed, status, deck source, and selected target text.
+
+How to verify:
+
+1. Open `Assets/Scenes/BattleScene.unity`.
+2. Enter Play Mode and confirm the background, top timeline, ally slots, enemy 3x3 grid, and 5-card hand appear.
+3. Select an enemy grid cell and use a damage card or Weapon.
+4. Use Front/Middle and Middle/Back swap buttons and confirm ally positions update.
+5. Press Confirm on enemy turns and confirm the simple enemy attack targets Front, then Middle, then Back.
+6. Defeat all enemies and confirm the existing result overlay appears.
+7. Use retry, menu return, and deck edit return buttons.
+8. From `MenuScene`, choose either battle route and confirm `BattleScene` opens.
+9. From `DeckBuildScene`, save a valid deck and confirm both battle buttons enter `BattleScene` with the saved deck.
+
+Changed files:
+
+- `BATTLE_SCENE_REWORK_PLAN.md`
+- `Assets/Scripts/BattleManager.cs`
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `Assets/Scripts/TimelineCardActionAdapter.cs`
+- `Assets/Scripts/BattleResultOverlay.cs`
+- `Assets/Scripts/MainMenuController.cs`
+- `Assets/Scripts/DeckBuildManager.cs`
+- `README.md`
+
 ## BattleTimelinePrototypeScene MVP
+
+This section is retained as historical/reference documentation for the prototype scene. The current player-facing battle route is now the reworked `BattleScene` described above.
 
 `BattleTimelinePrototypeScene` was added as a separate prototype scene for a new turn-based card RPG battle flow. This scene does not replace or modify the existing `BattleScene`; the current `BattleScene`, `DeckBuildScene`, `MenuScene`, existing card processing, and existing battle result processing remain separate.
 
@@ -33,21 +607,209 @@
 - Repair cards heal the selected ally.
 - Unsupported card effects fall back to a simple placeholder effect or status update.
 - Weapon deals placeholder single-target damage.
-- Front/Middle/Back swaps are available through `Swap F/M`, `Swap M/B`, and `Swap F/B`.
+- Front/Middle/Back swaps are available through the MVP buttons `Swap F/M` and `Swap M/B`.
 - Enemy turns can be resolved with Confirm and currently apply placeholder damage to the front ally.
-- The prototype loads existing cards from `Assets/Resources/Cards` when available.
+- Saved decks are converted through the Timeline adapter; if no valid saved deck exists, prototype-local cards are used as a standalone 30-card test deck.
+
+### Enemy Grid Card MVP
+
+`BattleTimelinePrototypeScene` can use saved `CardData` decks through `TimelineCardActionAdapter`. When no valid saved deck exists, the prototype uses local test cards so the enemy 3x3 grid can be validated without changing existing card assets or `BattleScene` card resolution.
+
+Prototype hand cards:
+
+- `アクアショット`: single enemy target, 40 Water damage.
+- `ワイドスラッシュ`: horizontal row attack, 35 Slash damage to every living enemy in the selected enemy's row.
+- `プッシュショット`: single enemy target, 20 Shot damage, then pushes the target one cell backward on the enemy grid.
+- `ディレイバレット`: single enemy target, 20 Electric damage, then delays the target by 24 timeline ticks.
+- `リペア`: ally target, 50 healing. Back position healing modifier applies.
+
+Targeting MVP:
+
+- Enemy-target cards use the currently selected enemy cell.
+- Ally-target cards use the currently selected ally position.
+- Click an enemy cell before selecting an enemy card to choose the target.
+- Click an ally row before selecting `リペア` to choose the heal target.
+- If the selected enemy is defeated, the prototype falls back to the first living enemy.
+
+Grid behavior:
+
+- Horizontal row attack checks enemy grid row `0`, `1`, or `2` and hits all enemies in that row.
+- Push moves an enemy one column backward, clamped inside the 3x3 grid.
+- Push fails if the destination is outside the grid or already occupied.
+- Delay adds ticks to the enemy's `NextReadyTick`, so the top timeline preview moves that enemy later in the order.
+
+### Front/Middle/Back Swap MVP
+
+- The ally party always has exactly one unit in each position: `Front`, `Middle`, and `Back`.
+- `Swap F/M` queues a Front and Middle swap.
+- `Swap M/B` queues a Middle and Back swap.
+- Swap is treated as one normal action and is executed by the currently active ally when Confirm is pressed.
+- The swap resolver exchanges the two units' `Position` values, then validates that no position has duplicate allies.
+- The ally UI displays the current position next to the ally name, such as `Front: AllyFront`.
+
+Temporary position modifiers:
+
+- `Front`: outgoing damage `+20%`, incoming damage `+20%`.
+- `Middle`: no modifier.
+- `Back`: incoming damage `-20%`, healing received `+20%`.
+- These values are centralized in `BattleTimelinePrototypeController` constants for later tuning.
+- Damage cards and Weapon use the acting ally's current position for outgoing damage.
+- Enemy attacks use the target ally's current position for incoming damage.
+- Repair cards use the healed ally's current position for healing received.
+
+### BattleTimelinePrototypeScene Connection MVP
+
+`BattleTimelinePrototypeScene` is now connected to the existing project flow without replacing `BattleScene`.
+
+Scene flow:
+
+- `MenuScene` -> `DeckBuildScene` -> `BattleTimelinePrototypeScene` -> Timeline result -> `MenuScene` / `DeckBuildScene` / retry.
+- `MenuScene` keeps the existing `バトルへ` route for `BattleScene`.
+- `MenuScene` adds `新バトルへ` for `BattleTimelinePrototypeScene`.
+- `DeckBuildScene` keeps an existing-battle route and adds `新バトルへ`.
+
+Deck loading:
+
+- `BattleTimelinePrototypeScene` loads the saved deck from `DeckStorage.TryLoadDeck`.
+- The saved deck is validated with `DeckValidator`, preserving the 30-card rule, `N` / `HC` / `G` counts, and Clear Card flags.
+- Saved cards are drawn into the shared hand, used cards go to discard, and discard reshuffles back into the draw pile when the deck runs out.
+- If there is no saved deck, or the saved deck is invalid, the scene starts with a 30-card test deck so standalone Play Mode still works.
+
+Timeline card adapter:
+
+- `TimelineCardActionAdapter` converts existing `CardData` into Timeline MVP actions.
+- Supported mappings are single damage, horizontal row damage, push damage, delay damage, repair/heal, Clear Cards, and Weapon.
+- `Freeze` is temporarily mapped to timeline delay.
+- Existing BattleScene-only panel/stage/guard/charge behavior is not wired into Timeline yet.
+- Unsupported cards log `Debug.Log("Unsupported timeline card: ...")` and resolve as no-op MVP actions unless a direct Timeline mapping exists.
+
+Unsupported saved-deck cards in the Timeline MVP:
+
+- `Guard`
+- `BoostGuard`
+- `Charge`
+- `FreezeStage`
+- `SougenStage`
+- `KazanStage`
+- Existing BattleScene-only panel movement or stage conversion side effects on damage cards.
+
+Timeline result:
+
+- `TimelineBattleResultOverlay` is separate from the existing `BattleResultOverlay`, so the current BattleScene result UI is not modified.
+- Victory displays `RESULT`, `HUNTING LEVEL`, rank `S` / `A` / `B`, victory turn, damage taken count, max simultaneous KO count, and a reward card name.
+- Reward text fades in and uses best-fit text so longer reward names stay inside the reward box.
+- Buttons: `もう一度戦う` reloads `BattleTimelinePrototypeScene`, `メニューへ` loads `MenuScene`, and `デッキ編集へ` loads `DeckBuildScene`.
+
+Hunting level:
+
+- Timeline victory uses shared `BattleResultData` and `HuntingLevelEvaluator`.
+- Normal battle rules are the same requested MVP rules: S for turn 1 victory or turn 2 with 2+ simultaneous KOs, A for turn 2 or 1 damage taken, B for turn 3+ or 2+ damage taken.
+- Boss rule support is available through the shared evaluator, though the current Timeline MVP enemies are treated as a normal battle.
+
+Scene registration:
+
+- Build Settings include `MenuScene`, `DeckBuildScene`, `BattleScene`, and `BattleTimelinePrototypeScene`.
+- Existing scenes were not removed.
+
+### BattleTimelinePrototypeScene Sprite UI MVP
+
+`BattleTimelinePrototypeScene` now uses sprite-sheet based UI for the timeline, ally party, enemy grid, and prototype enemy display. This is a visual-layer update for the Timeline prototype; the existing `BattleScene`, `MenuScene`, and `DeckBuildScene` were not changed for this sprite UI pass.
+
+Used image files:
+
+- `Assets/Art/UI/Timeline/TimelineIconsSheet.png`
+- `Assets/Art/UI/Party/AllyPortraitFramesSheet.png`
+- `Assets/Art/UI/Grid/EnemyGridPanelsSheet.png`
+- `Assets/Art/Enemies/Prototype/EnemySpritesSheet.png`
+
+Sprite usage:
+
+- `TimelineIconsSheet.png`: timeline slot frame, ally/enemy normal states, selected states, active states, dim/done state, target highlight, status badge, and cursor.
+- `AllyPortraitFramesSheet.png`: Front/Middle/Back ally frames, selected frame, active frame, HP bar back, HP bar fill, and small portrait/icon frame.
+- `EnemyGridPanelsSheet.png`: Normal, Empty, Selected, Targetable, Danger, Cracked, Hole, Ice, Grass, Magma, Poison, and HighlightOverlay panel sprites.
+- `EnemySpritesSheet.png`: NormalEnemy, FireEnemy, and IceEnemy sprites. The current MVP maps enemy sprite choice from enemy attribute.
+
+Display changes:
+
+- The top timeline now renders sprite slots and unit icons instead of long text cards.
+- The active timeline unit shows the cursor/active sprite, and selected units use selected sprites when available.
+- Ally Front/Middle/Back rows now use portrait frame sprites and HP bars.
+- Enemy 3x3 cells now use panel sprites, highlight overlays, enemy sprites, and enemy HP bars.
+- Empty-cell coordinate text and detailed speed/modifier text are hidden in normal mode.
+- The `DEBUG` button toggles `showDebugLabels` at runtime. The same flag is also exposed in the Inspector.
+
+Sprite import notes:
+
+- The four sprite sheets are configured as `Sprite (2D and UI)`, `Multiple`, `Alpha Is Transparency`, `Full Rect`, and uncompressed/low-compression UI textures.
+- If Unity loses Slice data, open Sprite Editor and recreate the named slices listed above.
+- The controller can still fall back to whole-sheet or solid-color UI if a named sprite is missing.
+- Missing sprite assets do not stop the scene; `BattleTimelinePrototypeController` falls back to simple `Image` colors and logs a warning.
 
 ### Not Implemented Yet
 
 - Full compatibility with all existing card targeting patterns.
-- Real multi-target card resolution.
+- Full multi-target card resolution beyond the current horizontal-row MVP.
 - Production enemy AI.
 - Status ailment rules beyond placeholder text and a simple freeze delay.
 - Character-specific decks, equipment, skills, and passives.
 - Targeting UI for every future card type.
-- Battle result overlay, rewards, and progression for this prototype.
+- Full BattleScene parity for guard, charge, stage change, and panel-specific card behavior in the Timeline prototype.
+- Timeline defeat result presentation.
+- Permanent reward ownership/progression after the Timeline result.
+- Production ally character portraits; the current ally slots use frame/icon placeholders.
 - Animation, sound effects, and production presentation.
 - Automated tests.
+
+## BattleScene Reference-Style UI Pass
+
+BattleScene now has a reference-style battle layout built with Unity standard UI only. The intent is to move the play screen closer to the attached battle references without depending on copied reference artwork or the generated sprite sheets.
+
+Current BattleScene layout:
+
+- Top HUD: HP number box, `CUSTOM` gauge, `NEON CARDIA BATTLE`, current turn text, and compact timeline.
+- Field: connected 3x3 red ally panels on the left and 3x3 blue enemy panels on the right.
+- Ally side: Front / Middle / Back allies are placed on the red field as clickable tokens with HP bars.
+- Enemy side: enemies remain on the blue 3x3 grid with simple colored unit blocks and HP bars.
+- Bottom strip: status, queue, deck/discard count, Weapon, Swap F/M, Swap M/B, Reset, and OK buttons.
+- Chip select: clicking an ally during player turn opens the card selection panel over the left side, while the enemy field remains visible on the right.
+- Cards: hand cards are shown as dark chip-style panels with large name text, generated color artwork, rank box, attribute color block, and power value.
+
+Asset policy for this pass:
+
+- BattleScene still does not directly use `CyberBattleBackground.png`, `BattleUIFrame.png`, `CardFrame_Base.png`, `TimelineIconsSheet.png`, `AllyPortraitFramesSheet.png`, `EnemyGridPanelsSheet.png`, or `EnemySpritesSheet.png`.
+- Sprite-sheet slicing and production asset hookup are still deferred.
+- Missing sprites are avoided by forcing BattleScene main mode to use null sprites and generated Image colors.
+- BattleTimelinePrototypeScene can still use the preview sprite loading path as a reference scene.
+
+Interaction notes:
+
+- Click an ally token to open chip select.
+- Click a chip card to queue it.
+- Press OK/Confirm to resolve queued actions.
+- Weapon and formation swaps still use the bottom command buttons.
+- `showDebugLabels` shows internal labels such as cell coordinates, speed hints, and detailed card effect text; normal display keeps those hidden.
+
+Verification:
+
+- Ran a Unity Roslyn C# compile with the existing `Assembly-CSharp` response files and it completed with exit code 0.
+- Full Unity batch scene-open validation was not rerun in this pass because a Unity Editor instance was already open for the project.
+
+Manual test focus:
+
+1. Open `Assets/Scenes/BattleScene.unity`.
+2. Enter Play Mode.
+3. Confirm the top HUD, compact timeline, red ally 3x3 field, and blue enemy 3x3 field are visible.
+4. Confirm ally tokens and enemy blocks do not hide the panel colors.
+5. Click an ally and confirm the chip select panel opens.
+6. Confirm five hand cards are visible as dark chip-style cards.
+7. Queue a card, use Weapon, use Swap F/M, use Swap M/B, Reset, and OK.
+8. Defeat enemies and confirm the existing BattleResult overlay still appears.
+9. Confirm MenuScene and DeckBuildScene still route into BattleScene.
+
+Changed files for this UI pass:
+
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `README.md`
 
 ### Verification Steps
 
@@ -69,12 +831,98 @@
 16. When an enemy is active on the timeline, press Confirm and confirm the enemy action resolves.
 17. Reopen `Assets/Scenes/BattleScene.unity` and confirm the existing battle can still be opened independently.
 
+### Sprite UI Verification Steps
+
+1. Open `Assets/Scenes/BattleTimelinePrototypeScene.unity`.
+2. Enter Play Mode and confirm there are no compile errors.
+3. Confirm the top timeline uses sprite slot/icon frames and the current unit is visually active.
+4. Confirm ally Front/Middle/Back slots use portrait frames and HP bars.
+5. Confirm selecting an ally shows a selected frame and the active ally shows an active frame.
+6. Confirm the enemy 3x3 grid uses panel sprites instead of `EMPTY [0,0]` text in normal mode.
+7. Confirm enemies render as sprites in their grid cells and show HP bars.
+8. Confirm selecting an enemy cell highlights that cell and keeps card targeting functional.
+9. Confirm card use, Weapon, Confirm, and Front/Middle/Back swaps still resolve.
+10. Press `DEBUG` and confirm coordinates, SPD, modifiers, and extra timeline details appear.
+11. Press `DEBUG` again and confirm those detailed labels are hidden.
+12. Reopen `Assets/Scenes/BattleScene.unity` and confirm the existing battle still opens independently.
+
+### Connection Verification Steps
+
+MenuScene:
+
+1. Open `Assets/Scenes/MenuScene.unity`.
+2. Enter Play Mode and confirm `バトルへ`, `新バトルへ`, and `デッキ編集へ` are visible.
+3. Confirm `バトルへ` loads the existing `BattleScene`.
+4. Return to `MenuScene` and confirm `新バトルへ` loads `BattleTimelinePrototypeScene`.
+5. Return to `MenuScene` and confirm `デッキ編集へ` loads `DeckBuildScene`.
+
+DeckBuildScene:
+
+1. Open `Assets/Scenes/DeckBuildScene.unity`.
+2. Build a valid 30-card deck and save it.
+3. Confirm `既存バトルへ` still saves the deck and loads `BattleScene`.
+4. Return to `DeckBuildScene`, press `新バトルへ`, and confirm `BattleTimelinePrototypeScene` starts with the saved deck.
+5. Confirm the Timeline hand shows saved deck cards, with `N` / `HC` / `G` and Clear Card tags preserved.
+
+BattleTimelinePrototypeScene:
+
+1. Open `Assets/Scenes/BattleTimelinePrototypeScene.unity` directly and enter Play Mode.
+2. Confirm a saved deck is loaded if one exists; otherwise confirm the 30-card test deck is used.
+3. Confirm hand draw, card use, discard, and discard reshuffle continue to work.
+4. Defeat all enemies and confirm the Timeline result overlay appears.
+5. Confirm `HUNTING LEVEL`, rank, victory turn, damage taken, reward card name, and reward fade-in are visible.
+6. Confirm `もう一度戦う` reloads `BattleTimelinePrototypeScene`.
+7. Confirm `メニューへ` loads `MenuScene`.
+8. Confirm `デッキ編集へ` loads `DeckBuildScene`.
+9. Reopen the existing `BattleScene` and confirm its battle and result overlay still open independently.
+
+### Enemy Grid Card Verification Steps
+
+1. Open `Assets/Scenes/BattleTimelinePrototypeScene.unity`.
+2. Enter Play Mode with no valid saved deck, then confirm the test deck can draw `アクアショット`, `ワイドスラッシュ`, `プッシュショット`, `ディレイバレット`, and `リペア`.
+3. Click `Enemy1`, click `アクアショット`, then Confirm; confirm only that enemy takes damage.
+4. Click an enemy in a row with multiple enemies if available, click `ワイドスラッシュ`, then Confirm; confirm all living enemies in that horizontal row take damage.
+5. Click `Enemy1` in the center cell, click `プッシュショット`, then Confirm; confirm the target moves one cell backward if the destination is empty.
+6. Place or select a target whose backward cell is occupied or outside the grid, use `プッシュショット`, and confirm movement fails without leaving the grid.
+7. Click an enemy, click `ディレイバレット`, then Confirm; confirm the target's timeline entry moves later.
+8. Damage an ally, click that ally row, click `リペア`, then Confirm; confirm the ally heals.
+9. Confirm the top timeline still advances after single attack, row attack, push, delay, repair, Weapon, swap, and enemy actions.
+
+### Swap Verification Steps
+
+1. Open `Assets/Scenes/BattleTimelinePrototypeScene.unity`.
+2. Enter Play Mode.
+3. Confirm the ally UI shows `Front: AllyFront`, `Middle: AllyMiddle`, and `Back: AllyBack` initially.
+4. On an ally turn, press `Swap F/M`, then Confirm.
+5. Confirm Front and Middle exchange allies and no duplicate position appears.
+6. On a later ally turn, press `Swap M/B`, then Confirm.
+7. Confirm Middle and Back exchange allies and no duplicate position appears.
+8. Put an ally in Front, use a damage card or Weapon, and confirm the damage is increased by the Front modifier.
+9. Let an enemy attack the Front ally and confirm incoming damage is increased by the Front modifier.
+10. Put an ally in Back, let an enemy attack that ally when Front is unavailable or by temporary test adjustment, and confirm incoming damage is reduced by the Back modifier.
+11. Put a damaged ally in Back, use a Repair card on that ally, and confirm healing is increased by the Back modifier.
+12. Confirm timeline order still advances after swap, card, Weapon, and enemy actions.
+
 ### Changed Files
 
 - `Assets/Scenes/BattleTimelinePrototypeScene.unity`
 - `Assets/Scenes/BattleTimelinePrototypeScene.unity.meta`
 - `Assets/Scripts/BattleTimelinePrototypeController.cs`
 - `Assets/Scripts/BattleTimelinePrototypeController.cs.meta`
+- `Assets/Scripts/TimelineCardActionAdapter.cs`
+- `Assets/Scripts/TimelineCardActionAdapter.cs.meta`
+- `Assets/Scripts/TimelineBattleResultOverlay.cs`
+- `Assets/Scripts/TimelineBattleResultOverlay.cs.meta`
+- `Assets/Art/UI/Timeline/TimelineIconsSheet.png`
+- `Assets/Art/UI/Timeline/TimelineIconsSheet.png.meta`
+- `Assets/Art/UI/Party/AllyPortraitFramesSheet.png`
+- `Assets/Art/UI/Party/AllyPortraitFramesSheet.png.meta`
+- `Assets/Art/UI/Grid/EnemyGridPanelsSheet.png`
+- `Assets/Art/UI/Grid/EnemyGridPanelsSheet.png.meta`
+- `Assets/Art/Enemies/Prototype/EnemySpritesSheet.png`
+- `Assets/Art/Enemies/Prototype/EnemySpritesSheet.png.meta`
+- `Assets/Scripts/MainMenuController.cs`
+- `Assets/Scripts/DeckBuildManager.cs`
 - `ProjectSettings/EditorBuildSettings.asset`
 - `README.md`
 
@@ -156,6 +1004,69 @@ Changed files and assets:
 - `Assets/Resources/UI/AttributeIcons/*.png`
 - `Assets/Resources/Cards/Placeholders/*.png`
 - `README.md`
+
+## Battle Background Art
+
+- `CyberBattleBackground.png`: cyber-space battle screen background for `BattleScene` and `BattleTimelinePrototypeScene`.
+- Asset path: `Assets/Art/Backgrounds/Battle/CyberBattleBackground.png`.
+- Final saved size is 1920x1080 PNG, 16:9.
+- The lower area is kept broad and readable for character sprites, enemies, skill effects, and UI overlays, while elevated structures and distant city detail sit in the upper background.
+
+## Battle UI Frame Art
+
+- `BattleUIFrame.png`: transparent battle UI frame overlay for `BattleScene` and `BattleTimelinePrototypeScene`.
+- Asset path: `Assets/Art/UI/Battle/BattleUIFrame.png`.
+- Final saved size is 1920x1080 PNG, 16:9, with alpha transparency.
+- Layout includes an upper action-order timeline frame, lower-left HP/status frames, five lower-center card slots, and lower-right confirm/auxiliary button frames.
+- The asset contains no text, numbers, icons, characters, or background art so Unity can place labels, values, icons, and card content separately.
+
+## Card Frame Art
+
+- `CardFrame_Base.png`: transparent base card frame template for Unity card rendering.
+- Asset path: `Assets/Art/Cards/Frames/CardFrame_Base.png`.
+- Final saved size is 1024x1536 PNG, 2:3, with alpha transparency.
+- Layout includes a top card-name field, upper-left cost field, large central illustration slot, lower effect-description field, and lower-right value/stat field.
+- The asset contains no text, numbers, card art, icons, characters, or background scene so Unity can place all card content separately.
+
+## BattleTimelinePrototypeScene Art Preview
+
+`BattleTimelinePrototypeScene` now has a temporary visual-art pass for checking the new battle screen look without changing the existing `BattleScene`, `MenuScene`, or `DeckBuildScene`.
+
+Temporary preview assets:
+
+- `CyberBattleBackground.png`: full-screen battle background.
+- `BattleUIFrame.png`: full-screen transparent UI frame overlay.
+- `CardFrame_Base.png`: five temporary card frames placed in the lower hand area.
+
+Asset paths:
+
+- `Assets/Art/Backgrounds/Battle/CyberBattleBackground.png`
+- `Assets/Art/UI/Battle/BattleUIFrame.png`
+- `Assets/Art/Cards/Frames/CardFrame_Base.png`
+
+Implementation notes:
+
+- The prototype controller creates `BattleTimelinePrototypeRoot`, `BackgroundRoot`, `VisualFrameRoot`, and `CardPreviewRoot` at runtime.
+- The background is drawn behind the prototype UI and stretched to the 16:9 Canvas area.
+- The UI frame is drawn above the background but below the interactive timeline, ally, enemy, hand, and command UI so it does not block clicks or hide core test controls.
+- `CardPreviewRoot` creates `CardSlot1` through `CardSlot5`; each hand button keeps the existing click behavior while displaying `CardFrame_Base.png` as a temporary frame.
+- This is only a look-check integration pass. The art is not yet a full production UI skin or final `CardView` integration.
+
+Changed files for this pass:
+
+- `Assets/Scripts/BattleTimelinePrototypeController.cs`
+- `README.md`
+
+Verification steps:
+
+1. Open `Assets/Scenes/BattleTimelinePrototypeScene.unity`.
+2. Enter Play Mode and confirm there are no compile errors.
+3. Confirm `CyberBattleBackground.png` fills the battle background.
+4. Confirm `BattleUIFrame.png` appears as a transparent full-screen frame.
+5. Confirm five `CardFrame_Base.png` frames are visible in the lower hand area.
+6. Confirm the top timeline, enemy 3x3 grid, ally Front/Middle/Back display, and Confirm button are still visible.
+7. Click a hand card and Confirm to make sure the temporary card frames did not break the existing hand-button flow.
+8. Open `BattleScene`, `MenuScene`, and `DeckBuildScene` separately to confirm they still open independently.
 
 ## Battle Effect Presentation
 

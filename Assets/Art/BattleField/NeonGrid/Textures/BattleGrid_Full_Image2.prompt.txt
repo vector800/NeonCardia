@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: Unity 2D battle field texture for a futuristic sci-fi card battle game.
+Primary request: Create a near-3D looking neon 3x6 battle grid, exactly 18 square panels arranged as two 3x3 grids side by side. Left half has red to orange glowing panels, right half has cyan to blue glowing panels. No text, no labels, no UI, no characters.
+Scene/backdrop: dark black and deep navy cyber floor with subtle circuit traces, red circuitry on the left side and blue circuitry on the right side. A close central boundary between the two halves, with very narrow gap.
+Subject: a long horizontal battle field board viewed from a slightly elevated front angle, like a 2D sprite that looks almost 3D. Each panel should look like a thick, beveled, glossy platform with chamfered corners, strong neon outer frame, inner thin angular circuit lines, subtle shadows, reflections, and bloom-like glow. Panels are evenly spaced with narrow gaps.
+Composition: wide 16:9-ish horizontal asset, board centered and occupying most of the image, enough dark cyber floor visible around the board for depth. The camera is low-front and slightly above, with perspective depth like a tactical battle arena. Keep the top and bottom edges fully visible.
+Style: high quality stylized 3D render, clean game asset, sharp readable shapes, vivid neon but not overexposed, black cyberpunk atmosphere, premium sci-fi UI material feel.
+Technical constraints: exactly 3 rows and 6 columns; left 3 columns red/orange, right 3 columns cyan/blue; no typography, no logos, no watermark, no people, no extra panels, no diagonal camera rotation that breaks grid readability.
+
+Revision note: Edited the generated grid to remove the surrounding cyber-floor background, then converted the flat #ff00ff chroma-key background to alpha transparency so stage backgrounds can be swapped separately.

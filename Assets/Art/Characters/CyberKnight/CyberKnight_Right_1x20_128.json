@@ -1,0 +1,254 @@
+{
+  "name": "CyberKnight_Right_1x20_128",
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "columns": 20,
+  "rows": 1,
+  "motions": [
+    {
+      "name": "idle",
+      "startIndex": 0,
+      "frameCount": 4
+    },
+    {
+      "name": "walk",
+      "startIndex": 4,
+      "frameCount": 4
+    },
+    {
+      "name": "attack_buster_shot",
+      "startIndex": 8,
+      "frameCount": 4
+    },
+    {
+      "name": "attack_sword",
+      "startIndex": 12,
+      "frameCount": 4
+    },
+    {
+      "name": "damage",
+      "startIndex": 16,
+      "frameCount": 4
+    }
+  ],
+  "frames": [
+    {
+      "index": 0,
+      "motion": "idle",
+      "motionFrame": 0,
+      "x": 0,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_00.png"
+    },
+    {
+      "index": 1,
+      "motion": "idle",
+      "motionFrame": 1,
+      "x": 128,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_01.png"
+    },
+    {
+      "index": 2,
+      "motion": "idle",
+      "motionFrame": 2,
+      "x": 256,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_02.png"
+    },
+    {
+      "index": 3,
+      "motion": "idle",
+      "motionFrame": 3,
+      "x": 384,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_idle_03.png"
+    },
+    {
+      "index": 4,
+      "motion": "walk",
+      "motionFrame": 0,
+      "x": 512,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_walk_00.png"
+    },
+    {
+      "index": 5,
+      "motion": "walk",
+      "motionFrame": 1,
+      "x": 640,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_walk_01.png"
+    },
+    {
+      "index": 6,
+      "motion": "walk",
+      "motionFrame": 2,
+      "x": 768,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_walk_02.png"
+    },
+    {
+      "index": 7,
+      "motion": "walk",
+      "motionFrame": 3,
+      "x": 896,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_walk_03.png"
+    },
+    {
+      "index": 8,
+      "motion": "attack_buster_shot",
+      "motionFrame": 0,
+      "x": 1024,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_buster_shot_00.png"
+    },
+    {
+      "index": 9,
+      "motion": "attack_buster_shot",
+      "motionFrame": 1,
+      "x": 1152,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_buster_shot_01.png"
+    },
+    {
+      "index": 10,
+      "motion": "attack_buster_shot",
+      "motionFrame": 2,
+      "x": 1280,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_buster_shot_02.png"
+    },
+    {
+      "index": 11,
+      "motion": "attack_buster_shot",
+      "motionFrame": 3,
+      "x": 1408,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_buster_shot_03.png"
+    },
+    {
+      "index": 12,
+      "motion": "attack_sword",
+      "motionFrame": 0,
+      "x": 1536,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_sword_00.png"
+    },
+    {
+      "index": 13,
+      "motion": "attack_sword",
+      "motionFrame": 1,
+      "x": 1664,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_sword_01.png"
+    },
+    {
+      "index": 14,
+      "motion": "attack_sword",
+      "motionFrame": 2,
+      "x": 1792,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_sword_02.png"
+    },
+    {
+      "index": 15,
+      "motion": "attack_sword",
+      "motionFrame": 3,
+      "x": 1920,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_attack_sword_03.png"
+    },
+    {
+      "index": 16,
+      "motion": "damage",
+      "motionFrame": 0,
+      "x": 2048,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_damage_00.png"
+    },
+    {
+      "index": 17,
+      "motion": "damage",
+      "motionFrame": 1,
+      "x": 2176,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_damage_01.png"
+    },
+    {
+      "index": 18,
+      "motion": "damage",
+      "motionFrame": 2,
+      "x": 2304,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_damage_02.png"
+    },
+    {
+      "index": 19,
+      "motion": "damage",
+      "motionFrame": 3,
+      "x": 2432,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "file": "Assets/Art/Characters/CyberKnight/Frames/CyberKnight_damage_03.png"
+    }
+  ],
+  "unitySlice": {
+    "type": "Grid By Cell Size",
+    "cellSize": [
+      128,
+      128
+    ],
+    "offset": [
+      0,
+      0
+    ],
+    "padding": [
+      0,
+      0
+    ]
+  },
+  "notes": {
+    "attack_sword": "Selected after iterative generation: same foreground arm remains the integrated blade arm through a one-handed horizontal swing-through."
+  }
+}
