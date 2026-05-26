@@ -346,8 +346,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         public Image TopCut;
         public Image BottomCut;
         public Image Accent;
+        public Image ProgressSegment;
         public Image UnitIcon;
         public Image Cursor;
+        public Text ProgressDot;
+        public Text CurrentMarker;
         public Text NameText;
         public Text DetailText;
     }
@@ -1468,9 +1471,15 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             panelGlow.effectColor = new Color(0.04f, 0.60f, 1f, 0.58f);
             panelGlow.effectDistance = new Vector2(0f, -5f);
 
+            CreateImage("Action Order Outer Top Line", panel, new Vector2(0.008f, 0.965f), new Vector2(0.992f, 0.976f), Vector2.zero, Vector2.zero, new Color(0.14f, 0.94f, 1f, 0.48f)).raycastTarget = false;
+            CreateImage("Action Order Outer Bottom Line", panel, new Vector2(0.012f, 0.021f), new Vector2(0.988f, 0.032f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.70f, 1f, 0.38f)).raycastTarget = false;
+            CreateImage("Action Order Outer Left Line", panel, new Vector2(0.008f, 0.060f), new Vector2(0.016f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
+            CreateImage("Action Order Outer Right Line", panel, new Vector2(0.984f, 0.060f), new Vector2(0.992f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
             CreateImage("Action Order Top Neon", panel, new Vector2(0.014f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
             CreateImage("Action Order Bottom Neon", panel, new Vector2(0.018f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
             CreateImage("Action Order Card Rail", panel, new Vector2(0.225f, 0.455f), new Vector2(0.958f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
+            CreateImage("Action Order Progress Line Glow", panel, new Vector2(0.242f, 0.041f), new Vector2(0.948f, 0.064f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.72f, 1f, 0.18f)).raycastTarget = false;
+            CreateImage("Action Order Progress Line Core", panel, new Vector2(0.246f, 0.050f), new Vector2(0.944f, 0.056f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.92f, 1f, 0.72f)).raycastTarget = false;
             CreateImage("Action Order Left Brace", panel, new Vector2(0.010f, 0.16f), new Vector2(0.026f, 0.88f), Vector2.zero, Vector2.zero, new Color(0.95f, 0.38f, 0.10f, 0.72f)).raycastTarget = false;
             CreateImage("Action Order Right Brace", panel, new Vector2(0.975f, 0.18f), new Vector2(0.990f, 0.86f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.66f)).raycastTarget = false;
 
@@ -1480,6 +1489,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             infoOutline.effectDistance = new Vector2(2f, -2f);
             CreateImage("Action Order Info Hot Edge", infoPanel, new Vector2(0f, 0f), new Vector2(0.020f, 1f), Vector2.zero, Vector2.zero, new Color(1f, 0.58f, 0.14f, 0.84f)).raycastTarget = false;
             CreateImage("Action Order Info Top Edge", infoPanel, new Vector2(0.060f, 0.850f), new Vector2(0.940f, 0.895f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.56f)).raycastTarget = false;
+            CreateImage("Action Order Info Circuit Trace A", infoPanel, new Vector2(0.685f, 0.742f), new Vector2(0.905f, 0.760f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.36f)).raycastTarget = false;
+            CreateImage("Action Order Info Circuit Trace B", infoPanel, new Vector2(0.890f, 0.650f), new Vector2(0.907f, 0.760f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.30f)).raycastTarget = false;
+            CreateImage("Action Order Info Bottom Trace", infoPanel, new Vector2(0.145f, 0.046f), new Vector2(0.530f, 0.061f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.28f)).raycastTarget = false;
 
             timelineLabelText = CreateText("Timeline Label", infoPanel, new Vector2(0.075f, 0.620f), new Vector2(0.930f, 0.850f), Vector2.zero, Vector2.zero, "ACTION ORDER", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, 0.98f));
             Text currentHpLabel = CreateText("Current HP Label", infoPanel, new Vector2(0.075f, 0.445f), new Vector2(0.930f, 0.600f), Vector2.zero, Vector2.zero, "CURRENT HP", 12, TextAnchor.MiddleLeft, new Color(0.54f, 0.92f, 1f, 0.96f));
@@ -1502,6 +1514,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             hpValueOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
             timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.225f, 0.865f), new Vector2(0.958f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+            Text directionText = CreateText("Action Order Direction", panel, new Vector2(0.941f, 0.024f), new Vector2(0.980f, 0.100f), Vector2.zero, Vector2.zero, ">>>", 13, TextAnchor.MiddleRight, new Color(0.46f, 0.96f, 1f, 0.92f));
+            directionText.resizeTextMinSize = 9;
+            directionText.resizeTextMaxSize = 13;
+            directionText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            directionText.raycastTarget = false;
         }
         else
         {
@@ -1551,6 +1568,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             Image rightEdge = null;
             Image topCut = null;
             Image bottomCut = null;
+            Image progressSegment = null;
+            Text progressDot = null;
+            Text currentMarker = null;
             if (mainBattleSceneMode)
             {
                 glow = CreateImage("Timeline Slot Glow " + i, slot, new Vector2(-0.145f, -0.120f), new Vector2(1.145f, 1.120f), Vector2.zero, Vector2.zero, Color.clear);
@@ -1630,6 +1650,24 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 detail.resizeTextMaxSize = currentSlot ? 13 : 10;
             }
 
+            if (mainBattleSceneMode)
+            {
+                float dotCenterX = (minX + maxX) * 0.5f;
+                progressSegment = CreateImage("Timeline Slot Progress Segment " + i, panel, new Vector2(minX + 0.012f, 0.050f), new Vector2(maxX - 0.012f, 0.058f), Vector2.zero, Vector2.zero, Color.clear);
+                progressSegment.raycastTarget = false;
+
+                progressDot = CreateText("Timeline Slot Progress Dot " + i, panel, new Vector2(dotCenterX - 0.014f, 0.012f), new Vector2(dotCenterX + 0.014f, 0.078f), Vector2.zero, Vector2.zero, "●", currentSlot ? 14 : 11, TextAnchor.MiddleCenter, Color.clear);
+                progressDot.resizeTextMinSize = currentSlot ? 11 : 9;
+                progressDot.resizeTextMaxSize = currentSlot ? 16 : 12;
+                progressDot.raycastTarget = false;
+
+                currentMarker = CreateText("Timeline Current Marker " + i, panel, new Vector2(dotCenterX - 0.022f, 0.070f), new Vector2(dotCenterX + 0.022f, 0.134f), Vector2.zero, Vector2.zero, "▲", 18, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.20f, 0.96f));
+                currentMarker.resizeTextMinSize = 14;
+                currentMarker.resizeTextMaxSize = 18;
+                currentMarker.raycastTarget = false;
+                currentMarker.gameObject.SetActive(false);
+            }
+
             timelineViews.Add(new TimelineSlotView
             {
                 Panel = slotPanel,
@@ -1644,8 +1682,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 TopCut = topCut,
                 BottomCut = bottomCut,
                 Accent = accent,
+                ProgressSegment = progressSegment,
                 UnitIcon = unitIcon,
                 Cursor = cursor,
+                ProgressDot = progressDot,
+                CurrentMarker = currentMarker,
                 NameText = name,
                 DetailText = detail
             });
@@ -3123,6 +3164,13 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             if (i >= previews.Count)
             {
                 view.Panel.gameObject.SetActive(false);
+                if (view.ProgressSegment != null)
+                {
+                    view.ProgressSegment.gameObject.SetActive(false);
+                }
+
+                SetActiveIfPresent(view.ProgressDot, false);
+                SetActiveIfPresent(view.CurrentMarker, false);
                 continue;
             }
 
@@ -3140,6 +3188,36 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 ? ally ? new Color(0.12f, 0.88f, 1f, 1f) : new Color(1f, 0.34f, 0.14f, 1f)
                 : GetTimelineEntryColor(preview.Unit);
             Color frameColor = active ? new Color(1f, 0.86f, 0.18f, 1f) : entryColor;
+            if (mainBattleSceneMode)
+            {
+                Color progressColor = active
+                    ? new Color(1f, 0.82f, 0.12f, 0.72f)
+                    : new Color(entryColor.r, entryColor.g, entryColor.b, skill ? 0.46f : ally ? 0.54f : 0.64f);
+                Color dotColor = active
+                    ? new Color(1f, 0.88f, 0.18f, 1f)
+                    : skill ? new Color(0.34f, 1f, 0.62f, 0.90f)
+                        : ally ? new Color(0.36f, 0.96f, 1f, 0.94f) : new Color(1f, 0.46f, 0.16f, 0.94f);
+
+                if (view.ProgressSegment != null)
+                {
+                    view.ProgressSegment.gameObject.SetActive(true);
+                    view.ProgressSegment.color = progressColor;
+                }
+
+                if (view.ProgressDot != null)
+                {
+                    view.ProgressDot.gameObject.SetActive(true);
+                    view.ProgressDot.fontSize = active ? 16 : 12;
+                    view.ProgressDot.color = dotColor;
+                }
+
+                if (view.CurrentMarker != null)
+                {
+                    view.CurrentMarker.gameObject.SetActive(active);
+                    view.CurrentMarker.color = new Color(1f, 0.86f, 0.20f, 0.98f);
+                }
+            }
+
             view.Panel.color = view.Panel.sprite != null
                 ? Color.white
                 : mainBattleSceneMode
