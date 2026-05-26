@@ -28,6 +28,15 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const string BattleUiFrameAssetPath = "Assets/Art/UI/Battle/BattleUIFrame.png";
     private const string CardFrameAssetPath = "Assets/Art/Cards/Frames/CardFrame_Base.png";
     private const string TimelineIconsAssetPath = "Assets/Art/UI/Timeline/TimelineIconsSheet.png";
+    private static readonly string[] TimelineFaceIconAssetPaths =
+    {
+        "Assets/Art/UI/Battle/Timeline/FaceIcons/AllyFaceIcon_01.png",
+        "Assets/Art/UI/Battle/Timeline/FaceIcons/AllyFaceIcon_02.png",
+        "Assets/Art/UI/Battle/Timeline/FaceIcons/AllyFaceIcon_03.png",
+        "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_01.png",
+        "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_02.png",
+        "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_03.png"
+    };
     private const string AllyPortraitFramesAssetPath = "Assets/Art/UI/Party/AllyPortraitFramesSheet.png";
     private const string EnemyGridPanelsAssetPath = "Assets/Art/UI/Grid/EnemyGridPanelsSheet.png";
     private const string EnemySpritesAssetPath = "Assets/Art/Enemies/Prototype/EnemySpritesSheet.png";
@@ -149,6 +158,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Sprite battleUiFrameSprite;
     private Sprite cardFrameSprite;
     private TimelineSpriteSet timelineSprites;
+    private Sprite[] timelineFaceIconSprites = new Sprite[0];
     private AllyUiSpriteSet allySprites;
     private EnemyGridSpriteSet enemyGridSprites;
     private EnemySpriteSet enemySprites;
@@ -324,6 +334,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private sealed class TimelineSlotView
     {
         public Image Panel;
+        public Image Glow;
         public Image Accent;
         public Image UnitIcon;
         public Image Cursor;
@@ -513,6 +524,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             LoadPreviewArtSprites();
         }
 
+        LoadTimelineFaceIconSprites();
         LoadAllyCharacterSprites();
         LoadEnemyCharacterSprites();
         LoadSceneBattleGridUnitAnimations();
@@ -948,6 +960,15 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         allySprites = null;
         enemyGridSprites = null;
         enemySprites = null;
+    }
+
+    private void LoadTimelineFaceIconSprites()
+    {
+        timelineFaceIconSprites = new Sprite[TimelineFaceIconAssetPaths.Length];
+        for (int i = 0; i < TimelineFaceIconAssetPaths.Length; i++)
+        {
+            timelineFaceIconSprites[i] = LoadOptionalSprite(TimelineFaceIconAssetPaths[i]);
+        }
     }
 
     private void LoadAllyCharacterSprites()
@@ -1420,40 +1441,123 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private void BuildTimeline(Transform parent)
     {
-        RectTransform panel = CreatePanel("Action Bar Panel", parent, mainBattleSceneMode ? new Vector2(0.06f, 0.705f) : new Vector2(0.035f, 0.70f), mainBattleSceneMode ? new Vector2(0.94f, 0.855f) : new Vector2(0.965f, 0.85f), new Color(0.018f, 0.035f, 0.045f, mainBattleSceneMode ? 0.92f : 0.94f));
-        CreateImage("Action Bar Rail", panel, new Vector2(0.06f, 0.47f), new Vector2(0.96f, 0.53f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, mainBattleSceneMode ? 0.42f : 0.22f)).raycastTarget = false;
-        CreateImage("Action Bar Return Arrow", panel, new Vector2(0.955f, 0.43f), new Vector2(0.985f, 0.57f), Vector2.zero, Vector2.zero, new Color(0.95f, 1f, 0.42f, 0.75f)).raycastTarget = false;
-        timelineLabelText = CreateText("Timeline Label", panel, new Vector2(0.018f, 0.76f), new Vector2(0.24f, 0.98f), Vector2.zero, Vector2.zero, mainBattleSceneMode ? "ACTION BAR" : "TIMELINE", mainBattleSceneMode ? 14 : 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, mainBattleSceneMode ? 0.55f : 1f));
-        timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.24f, 0.77f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero, mainBattleSceneMode ? "Left card acts now. Cards loop back by Delay." : "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", mainBattleSceneMode ? 13 : 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+        RectTransform panel = CreatePanel(
+            "Action Bar Panel",
+            parent,
+            mainBattleSceneMode ? new Vector2(0.035f, 0.795f) : new Vector2(0.035f, 0.70f),
+            mainBattleSceneMode ? new Vector2(0.965f, 0.985f) : new Vector2(0.965f, 0.85f),
+            new Color(0.006f, 0.014f, 0.026f, mainBattleSceneMode ? 0.92f : 0.94f));
 
+        if (mainBattleSceneMode)
+        {
+            Outline panelOutline = panel.gameObject.AddComponent<Outline>();
+            panelOutline.effectColor = new Color(0.12f, 0.92f, 1f, 0.74f);
+            panelOutline.effectDistance = new Vector2(2f, -2f);
+            Shadow panelGlow = panel.gameObject.AddComponent<Shadow>();
+            panelGlow.effectColor = new Color(0.04f, 0.60f, 1f, 0.58f);
+            panelGlow.effectDistance = new Vector2(0f, -5f);
+
+            CreateImage("Action Order Top Neon", panel, new Vector2(0.014f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
+            CreateImage("Action Order Bottom Neon", panel, new Vector2(0.018f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
+            CreateImage("Action Order Card Rail", panel, new Vector2(0.225f, 0.455f), new Vector2(0.958f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
+            CreateImage("Action Order Left Brace", panel, new Vector2(0.010f, 0.16f), new Vector2(0.026f, 0.88f), Vector2.zero, Vector2.zero, new Color(0.95f, 0.38f, 0.10f, 0.72f)).raycastTarget = false;
+            CreateImage("Action Order Right Brace", panel, new Vector2(0.975f, 0.18f), new Vector2(0.990f, 0.86f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.66f)).raycastTarget = false;
+
+            RectTransform infoPanel = CreatePanel("Action Order Info Panel", panel, new Vector2(0.024f, 0.13f), new Vector2(0.208f, 0.875f), new Color(0.012f, 0.032f, 0.048f, 0.96f));
+            Outline infoOutline = infoPanel.gameObject.AddComponent<Outline>();
+            infoOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.62f);
+            infoOutline.effectDistance = new Vector2(2f, -2f);
+            CreateImage("Action Order Info Hot Edge", infoPanel, new Vector2(0f, 0f), new Vector2(0.020f, 1f), Vector2.zero, Vector2.zero, new Color(1f, 0.58f, 0.14f, 0.84f)).raycastTarget = false;
+            CreateImage("Action Order Info Top Edge", infoPanel, new Vector2(0.060f, 0.850f), new Vector2(0.940f, 0.895f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.56f)).raycastTarget = false;
+
+            timelineLabelText = CreateText("Timeline Label", infoPanel, new Vector2(0.075f, 0.520f), new Vector2(0.930f, 0.850f), Vector2.zero, Vector2.zero, "ACTION ORDER", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, 0.98f));
+            Text sequenceText = CreateText("Action Order Sequence Label", infoPanel, new Vector2(0.075f, 0.405f), new Vector2(0.930f, 0.540f), Vector2.zero, Vector2.zero, "SEQUENCE", 10, TextAnchor.MiddleLeft, new Color(0.55f, 0.88f, 1f, 0.82f));
+            sequenceText.resizeTextMinSize = 7;
+            sequenceText.resizeTextMaxSize = 10;
+
+            RectTransform hpReserve = CreatePanel("Current HP Reserved Area", infoPanel, new Vector2(0.070f, 0.100f), new Vector2(0.930f, 0.340f), new Color(0.004f, 0.012f, 0.020f, 0.84f));
+            Outline hpOutline = hpReserve.gameObject.AddComponent<Outline>();
+            hpOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.32f);
+            hpOutline.effectDistance = new Vector2(1f, -1f);
+            CreateText("Current HP Reserved Label", hpReserve, new Vector2(0.055f, 0.18f), new Vector2(0.650f, 0.82f), Vector2.zero, Vector2.zero, "CURRENT HP", 10, TextAnchor.MiddleLeft, new Color(0.70f, 0.92f, 1f, 0.72f));
+            CreateImage("Current HP Empty Rail", hpReserve, new Vector2(0.680f, 0.42f), new Vector2(0.935f, 0.58f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.18f)).raycastTarget = false;
+
+            timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.225f, 0.865f), new Vector2(0.958f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+        }
+        else
+        {
+            CreateImage("Action Bar Rail", panel, new Vector2(0.06f, 0.47f), new Vector2(0.96f, 0.53f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.22f)).raycastTarget = false;
+            CreateImage("Action Bar Return Arrow", panel, new Vector2(0.955f, 0.43f), new Vector2(0.985f, 0.57f), Vector2.zero, Vector2.zero, new Color(0.95f, 1f, 0.42f, 0.75f)).raycastTarget = false;
+            timelineLabelText = CreateText("Timeline Label", panel, new Vector2(0.018f, 0.76f), new Vector2(0.24f, 0.98f), Vector2.zero, Vector2.zero, "TIMELINE", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, 1f));
+            timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.24f, 0.77f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero, "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+        }
+
+        float cardCursorX = mainBattleSceneMode ? 0.235f : 0f;
         for (int i = 0; i < TimelinePreviewCount; i++)
         {
-            float slotStart = mainBattleSceneMode ? 0.055f : 0.025f;
-            float slotStep = mainBattleSceneMode ? 0.112f : 0.12f;
-            float slotWidth = mainBattleSceneMode ? 0.096f : 0.102f;
-            float minX = slotStart + i * slotStep;
-            float maxX = minX + slotWidth;
-            RectTransform slot = CreateRect("Timeline Slot " + i, panel, new Vector2(minX, mainBattleSceneMode ? 0.11f : 0.10f), new Vector2(maxX, mainBattleSceneMode ? 0.76f : 0.60f), Vector2.zero, Vector2.zero);
+            bool currentSlot = mainBattleSceneMode && i == 0;
+            float minX;
+            float maxX;
+            float minY;
+            float maxY;
+            if (mainBattleSceneMode)
+            {
+                float slotWidth = currentSlot ? 0.114f : 0.078f;
+                minX = cardCursorX;
+                maxX = minX + slotWidth;
+                minY = currentSlot ? 0.070f : 0.160f;
+                maxY = currentSlot ? 0.900f : 0.815f;
+                cardCursorX = maxX + 0.009f;
+            }
+            else
+            {
+                float slotStart = 0.025f;
+                float slotStep = 0.12f;
+                float slotWidth = 0.102f;
+                minX = slotStart + i * slotStep;
+                maxX = minX + slotWidth;
+                minY = 0.10f;
+                maxY = 0.60f;
+            }
+
+            RectTransform slot = CreateRect("Timeline Slot " + i, panel, new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.zero, Vector2.zero);
+            Image glow = null;
+            if (mainBattleSceneMode)
+            {
+                glow = CreateImage("Timeline Slot Glow " + i, slot, new Vector2(-0.12f, -0.10f), new Vector2(1.12f, 1.10f), Vector2.zero, Vector2.zero, Color.clear);
+                glow.raycastTarget = false;
+            }
+
             Image slotPanel = slot.gameObject.AddComponent<Image>();
             slotPanel.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(timelineSprites, s => s.SlotBase);
             slotPanel.color = slotPanel.sprite != null ? Color.white : new Color(0.035f, 0.07f, 0.09f, 0.96f);
+            slotPanel.raycastTarget = false;
             if (mainBattleSceneMode)
             {
                 Outline slotOutline = slot.gameObject.AddComponent<Outline>();
-                slotOutline.effectColor = new Color(0.62f, 0.95f, 1f, 0.55f);
-                slotOutline.effectDistance = new Vector2(2f, -2f);
+                slotOutline.effectColor = currentSlot ? new Color(1f, 0.88f, 0.22f, 0.95f) : new Color(0.62f, 0.95f, 1f, 0.55f);
+                slotOutline.effectDistance = currentSlot ? new Vector2(3f, -3f) : new Vector2(2f, -2f);
+                Shadow slotGlow = slot.gameObject.AddComponent<Shadow>();
+                slotGlow.effectColor = currentSlot ? new Color(1f, 0.82f, 0.16f, 0.62f) : new Color(0.05f, 0.76f, 1f, 0.24f);
+                slotGlow.effectDistance = currentSlot ? new Vector2(0f, -5f) : new Vector2(0f, -3f);
             }
 
-            Image accent = CreateImage("Timeline Slot Accent " + i, slot, mainBattleSceneMode ? new Vector2(0f, 0.84f) : new Vector2(0f, 0.82f), Vector2.one, Vector2.zero, Vector2.zero, Color.white);
+            Vector2 accentMin = mainBattleSceneMode ? new Vector2(0f, currentSlot ? 0.805f : 0.800f) : new Vector2(0f, 0.82f);
+            Image accent = CreateImage("Timeline Slot Accent " + i, slot, accentMin, Vector2.one, Vector2.zero, Vector2.zero, Color.white);
             accent.raycastTarget = false;
-            Image unitIcon = CreateImage("Timeline Unit Icon " + i, slot, mainBattleSceneMode ? new Vector2(0.16f, 0.38f) : new Vector2(0.19f, 0.24f), mainBattleSceneMode ? new Vector2(0.84f, 0.80f) : new Vector2(0.81f, 0.84f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.22f, 0.28f, 0.92f));
+
+            Vector2 iconMin = mainBattleSceneMode ? new Vector2(currentSlot ? 0.065f : 0.085f, currentSlot ? 0.250f : 0.275f) : new Vector2(0.19f, 0.24f);
+            Vector2 iconMax = mainBattleSceneMode ? new Vector2(currentSlot ? 0.935f : 0.915f, currentSlot ? 0.800f : 0.785f) : new Vector2(0.81f, 0.84f);
+            Image unitIcon = CreateImage("Timeline Unit Icon " + i, slot, iconMin, iconMax, Vector2.zero, Vector2.zero, new Color(0.12f, 0.22f, 0.28f, 0.92f));
             unitIcon.raycastTarget = false;
-            Image cursor = CreateImage("Timeline Cursor " + i, slot, mainBattleSceneMode ? new Vector2(0.18f, -0.09f) : new Vector2(0.28f, 0.02f), mainBattleSceneMode ? new Vector2(0.82f, 0.12f) : new Vector2(0.72f, 0.22f), Vector2.zero, Vector2.zero, new Color(1f, 0.9f, 0.2f, 0.95f));
+
+            Image cursor = CreateImage("Timeline Cursor " + i, slot, mainBattleSceneMode ? new Vector2(0.28f, -0.095f) : new Vector2(0.28f, 0.02f), mainBattleSceneMode ? new Vector2(0.72f, 0.085f) : new Vector2(0.72f, 0.22f), Vector2.zero, Vector2.zero, new Color(1f, 0.9f, 0.2f, 0.95f));
             cursor.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(timelineSprites, s => s.Cursor);
             cursor.raycastTarget = false;
-            Text name = CreateText("Timeline Slot Name " + i, slot, mainBattleSceneMode ? new Vector2(0.04f, 0.44f) : new Vector2(0.06f, 0.05f), mainBattleSceneMode ? new Vector2(0.96f, 0.79f) : new Vector2(0.94f, 0.30f), Vector2.zero, Vector2.zero, string.Empty, mainBattleSceneMode ? 28 : 13, TextAnchor.MiddleCenter, Color.white);
-            Text detail = CreateText("Timeline Slot Detail " + i, slot, mainBattleSceneMode ? new Vector2(0.04f, 0.09f) : new Vector2(0.06f, 0.30f), mainBattleSceneMode ? new Vector2(0.96f, 0.39f) : new Vector2(0.94f, 0.54f), Vector2.zero, Vector2.zero, string.Empty, mainBattleSceneMode ? 11 : 10, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
-            timelineViews.Add(new TimelineSlotView { Panel = slotPanel, Accent = accent, UnitIcon = unitIcon, Cursor = cursor, NameText = name, DetailText = detail });
+
+            Text name = CreateText("Timeline Slot Name " + i, slot, mainBattleSceneMode ? new Vector2(0.04f, 0.070f) : new Vector2(0.06f, 0.05f), mainBattleSceneMode ? new Vector2(0.96f, 0.270f) : new Vector2(0.94f, 0.30f), Vector2.zero, Vector2.zero, string.Empty, currentSlot ? 16 : 13, TextAnchor.MiddleCenter, Color.white);
+            Text detail = CreateText("Timeline Slot Detail " + i, slot, mainBattleSceneMode ? new Vector2(0.030f, 0.800f) : new Vector2(0.06f, 0.30f), mainBattleSceneMode ? new Vector2(0.970f, 0.980f) : new Vector2(0.94f, 0.54f), Vector2.zero, Vector2.zero, string.Empty, currentSlot ? 12 : 9, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
+            timelineViews.Add(new TimelineSlotView { Panel = slotPanel, Glow = glow, Accent = accent, UnitIcon = unitIcon, Cursor = cursor, NameText = name, DetailText = detail });
         }
     }
 
@@ -2905,7 +3009,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private void RefreshDebugVisibility()
     {
         bool showGameDebug = !mainBattleSceneMode || showDebugLabels;
-        SetActiveIfPresent(timelineLabelText, showGameDebug);
+        SetActiveIfPresent(timelineLabelText, mainBattleSceneMode || showGameDebug);
         SetActiveIfPresent(allyLabelText, showGameDebug);
         SetActiveIfPresent(enemyLabelText, showGameDebug);
         SetActiveIfPresent(handLabelText, showGameDebug);
@@ -2941,10 +3045,22 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 : selectedEnemy != null && preview.Unit.Enemy == selectedEnemy;
             Sprite frameSprite = mainBattleSceneMode || skill ? null : GetTimelineFrameSprite(ally, active, selected, i > 0);
             view.Panel.sprite = mainBattleSceneMode ? null : (frameSprite != null ? frameSprite : GetSpriteOrNull(timelineSprites, s => s.SlotBase));
+            Color entryColor = mainBattleSceneMode && !skill
+                ? ally ? new Color(0.12f, 0.88f, 1f, 1f) : new Color(1f, 0.34f, 0.14f, 1f)
+                : GetTimelineEntryColor(preview.Unit);
             view.Panel.color = view.Panel.sprite != null
                 ? Color.white
-                : active ? new Color(0.14f, 0.16f, 0.09f, 0.98f) : skill ? new Color(0.055f, 0.12f, 0.075f, 0.96f) : new Color(0.03f, 0.055f, 0.075f, 0.96f);
-            Color entryColor = GetTimelineEntryColor(preview.Unit);
+                : mainBattleSceneMode
+                    ? active
+                        ? new Color(0.19f, 0.145f, 0.035f, 0.98f)
+                        : skill ? new Color(0.045f, 0.11f, 0.065f, 0.94f)
+                            : ally ? new Color(0.012f, 0.054f, 0.078f, 0.95f) : new Color(0.09f, 0.028f, 0.018f, 0.95f)
+                    : active ? new Color(0.14f, 0.16f, 0.09f, 0.98f) : skill ? new Color(0.055f, 0.12f, 0.075f, 0.96f) : new Color(0.03f, 0.055f, 0.075f, 0.96f);
+            if (view.Glow != null)
+            {
+                view.Glow.color = active ? new Color(1f, 0.84f, 0.10f, 0.28f) : Color.clear;
+            }
+
             Outline outline = mainBattleSceneMode ? view.Panel.GetComponent<Outline>() : null;
             if (outline != null)
             {
@@ -2952,23 +3068,42 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 outline.effectDistance = active ? new Vector2(3f, -3f) : new Vector2(2f, -2f);
             }
 
-            view.Accent.color = entryColor;
+            if (mainBattleSceneMode)
+            {
+                Shadow[] shadows = view.Panel.GetComponents<Shadow>();
+                for (int shadowIndex = 0; shadowIndex < shadows.Length; shadowIndex++)
+                {
+                    Shadow shadow = shadows[shadowIndex];
+                    if (shadow == null || shadow.GetType() != typeof(Shadow))
+                    {
+                        continue;
+                    }
+
+                    shadow.effectColor = active ? new Color(1f, 0.82f, 0.16f, 0.72f) : new Color(entryColor.r, entryColor.g, entryColor.b, 0.26f);
+                    shadow.effectDistance = active ? new Vector2(0f, -5f) : new Vector2(0f, -3f);
+                    break;
+                }
+            }
+
+            view.Accent.color = active ? new Color(1f, 0.88f, 0.22f, 0.96f) : entryColor;
             view.UnitIcon.sprite = GetTimelineUnitIconSprite(preview.Unit, ally, active, selected);
             view.UnitIcon.preserveAspect = true;
             view.UnitIcon.color = view.UnitIcon.sprite != null ? Color.white : active ? Color.Lerp(entryColor, Color.white, 0.18f) : entryColor;
+            view.UnitIcon.rectTransform.localScale = GetTimelineUnitIconScale(preview.Unit);
             view.Cursor.gameObject.SetActive(active);
-            view.NameText.text = GetTimelineDisplayName(preview.Unit);
+            view.NameText.text = mainBattleSceneMode ? (i + 1).ToString("00") : GetTimelineDisplayName(preview.Unit);
             view.NameText.color = active ? new Color(1f, 0.96f, 0.58f, 1f) : Color.white;
-            bool showTimelineDetail = !mainBattleSceneMode || showDebugLabels;
+            bool showTimelineDetail = mainBattleSceneMode || showDebugLabels;
             view.DetailText.gameObject.SetActive(showTimelineDetail);
             BattleTimelineEntry entry = preview.Unit.Entry;
             int nextActTick = entry != null ? entry.NextActTick : preview.Unit.ReadyTick;
             if (showTimelineDetail)
             {
                 view.DetailText.text = mainBattleSceneMode
-                    ? GetTimelineCardTypeLabel(preview.Unit) + "  T+" + preview.DeltaTick
+                    ? active ? "CURRENT" : i == 1 ? "NEXT" : GetTimelineCardTypeLabel(preview.Unit)
                     : GetTimelineDebugLine(preview.Unit)
                         + "\nT+" + preview.DeltaTick + " next " + nextActTick + " delay " + GetPreviewLoopDelay(preview.Unit);
+                view.DetailText.color = active ? new Color(0.05f, 0.035f, 0.01f, 1f) : entryColor;
             }
             else
             {
@@ -5058,11 +5193,45 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             : selected && timelineSprites.EnemySelected != null ? timelineSprites.EnemySelected : timelineSprites.EnemyNormal;
     }
 
+    private Sprite GetTimelineFaceIconSprite(TimelineUnit unit)
+    {
+        if (unit == null || unit.IsSkill)
+        {
+            return null;
+        }
+
+        if (unit.IsAlly)
+        {
+            return GetTimelineFaceIconSprite(true, allies.IndexOf(unit.Ally));
+        }
+
+        return GetTimelineFaceIconSprite(false, enemies.IndexOf(unit.Enemy));
+    }
+
+    private Sprite GetTimelineFaceIconSprite(bool isAlly, int unitIndex)
+    {
+        int spriteIndex = isAlly ? unitIndex : unitIndex + 3;
+        if (timelineFaceIconSprites == null || spriteIndex < 0 || spriteIndex >= timelineFaceIconSprites.Length)
+        {
+            return null;
+        }
+
+        return timelineFaceIconSprites[spriteIndex];
+    }
+
     private Sprite GetTimelineUnitIconSprite(TimelineUnit unit, bool ally, bool active, bool selected)
     {
-        if (mainBattleSceneMode && unit != null && unit.IsAlly)
+        if (mainBattleSceneMode && unit != null && !unit.IsSkill)
         {
-            Sprite sprite = GetAllyIdleSprite(GetAllySpriteDefinition(unit.Ally));
+            Sprite sprite = GetTimelineFaceIconSprite(unit);
+            if (sprite != null)
+            {
+                return sprite;
+            }
+
+            sprite = unit.IsAlly
+                ? GetAllyIdleSprite(GetAllySpriteDefinition(unit.Ally))
+                : GetEnemyIdleSprite(GetEnemySpriteDefinition(unit.Enemy));
             if (sprite != null)
             {
                 return sprite;
@@ -5070,6 +5239,22 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         return unit != null && unit.IsSkill ? null : GetTimelineUnitIconSprite(ally, active, selected);
+    }
+
+    private Vector3 GetTimelineUnitIconScale(TimelineUnit unit)
+    {
+        if (GetTimelineFaceIconSprite(unit) != null)
+        {
+            return Vector3.one;
+        }
+
+        if (!mainBattleSceneMode || unit == null || unit.IsSkill || unit.IsAlly)
+        {
+            return Vector3.one;
+        }
+
+        EnemySpriteDefinition definition = GetEnemySpriteDefinition(unit.Enemy);
+        return definition != null && definition.FlipX ? new Vector3(-1f, 1f, 1f) : Vector3.one;
     }
 
     private Sprite GetAllyFrameSprite(PartyPosition position)
