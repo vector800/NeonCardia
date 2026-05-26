@@ -336,6 +336,15 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     {
         public Image Panel;
         public Image Glow;
+        public Image InnerPanel;
+        public Image IconPlate;
+        public Image NumberPlate;
+        public Image TopEdge;
+        public Image BottomEdge;
+        public Image LeftEdge;
+        public Image RightEdge;
+        public Image TopCut;
+        public Image BottomCut;
         public Image Accent;
         public Image UnitIcon;
         public Image Cursor;
@@ -1502,7 +1511,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.24f, 0.77f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero, "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
         }
 
-        float cardCursorX = mainBattleSceneMode ? 0.235f : 0f;
+        float cardCursorX = mainBattleSceneMode ? 0.230f : 0f;
+        float battleSceneCardGap = 0.007f;
         for (int i = 0; i < TimelinePreviewCount; i++)
         {
             bool currentSlot = mainBattleSceneMode && i == 0;
@@ -1512,12 +1522,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             float maxY;
             if (mainBattleSceneMode)
             {
-                float slotWidth = currentSlot ? 0.114f : 0.078f;
+                float slotWidth = currentSlot ? 0.118f : 0.080f;
                 minX = cardCursorX;
                 maxX = minX + slotWidth;
-                minY = currentSlot ? 0.070f : 0.160f;
-                maxY = currentSlot ? 0.900f : 0.815f;
-                cardCursorX = maxX + 0.009f;
+                minY = currentSlot ? 0.065f : 0.135f;
+                maxY = currentSlot ? 0.905f : 0.835f;
+                cardCursorX = maxX + battleSceneCardGap;
             }
             else
             {
@@ -1532,9 +1542,18 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
             RectTransform slot = CreateRect("Timeline Slot " + i, panel, new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.zero, Vector2.zero);
             Image glow = null;
+            Image innerPanel = null;
+            Image iconPlate = null;
+            Image numberPlate = null;
+            Image topEdge = null;
+            Image bottomEdge = null;
+            Image leftEdge = null;
+            Image rightEdge = null;
+            Image topCut = null;
+            Image bottomCut = null;
             if (mainBattleSceneMode)
             {
-                glow = CreateImage("Timeline Slot Glow " + i, slot, new Vector2(-0.12f, -0.10f), new Vector2(1.12f, 1.10f), Vector2.zero, Vector2.zero, Color.clear);
+                glow = CreateImage("Timeline Slot Glow " + i, slot, new Vector2(-0.145f, -0.120f), new Vector2(1.145f, 1.120f), Vector2.zero, Vector2.zero, Color.clear);
                 glow.raycastTarget = false;
             }
 
@@ -1552,12 +1571,48 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 slotGlow.effectDistance = currentSlot ? new Vector2(0f, -5f) : new Vector2(0f, -3f);
             }
 
-            Vector2 accentMin = mainBattleSceneMode ? new Vector2(0f, currentSlot ? 0.805f : 0.800f) : new Vector2(0f, 0.82f);
+            if (mainBattleSceneMode)
+            {
+                innerPanel = CreateImage("Timeline Slot Inner Core " + i, slot, new Vector2(0.055f, 0.095f), new Vector2(0.945f, 0.890f), Vector2.zero, Vector2.zero, new Color(0.002f, 0.010f, 0.018f, 0.74f));
+                innerPanel.raycastTarget = false;
+
+                iconPlate = CreateImage("Timeline Slot Icon Plate " + i, slot, new Vector2(currentSlot ? 0.085f : 0.100f, currentSlot ? 0.280f : 0.305f), new Vector2(currentSlot ? 0.915f : 0.900f, currentSlot ? 0.770f : 0.760f), Vector2.zero, Vector2.zero, new Color(0f, 0.018f, 0.030f, 0.88f));
+                iconPlate.raycastTarget = false;
+
+                topEdge = CreateImage("Timeline Slot Top Edge " + i, slot, new Vector2(0.085f, 0.905f), new Vector2(0.915f, 0.936f), Vector2.zero, Vector2.zero, Color.clear);
+                bottomEdge = CreateImage("Timeline Slot Bottom Edge " + i, slot, new Vector2(0.085f, 0.050f), new Vector2(0.915f, 0.078f), Vector2.zero, Vector2.zero, Color.clear);
+                leftEdge = CreateImage("Timeline Slot Left Edge " + i, slot, new Vector2(0.042f, 0.165f), new Vector2(0.066f, 0.840f), Vector2.zero, Vector2.zero, Color.clear);
+                rightEdge = CreateImage("Timeline Slot Right Edge " + i, slot, new Vector2(0.934f, 0.165f), new Vector2(0.958f, 0.840f), Vector2.zero, Vector2.zero, Color.clear);
+                topCut = CreateImage("Timeline Slot Top Cut " + i, slot, new Vector2(-0.020f, 0.745f), new Vector2(0.205f, 0.790f), Vector2.zero, Vector2.zero, Color.clear);
+                bottomCut = CreateImage("Timeline Slot Bottom Cut " + i, slot, new Vector2(0.795f, 0.200f), new Vector2(1.020f, 0.245f), Vector2.zero, Vector2.zero, Color.clear);
+                topCut.rectTransform.localEulerAngles = new Vector3(0f, 0f, -24f);
+                bottomCut.rectTransform.localEulerAngles = new Vector3(0f, 0f, -24f);
+
+                topEdge.raycastTarget = false;
+                bottomEdge.raycastTarget = false;
+                leftEdge.raycastTarget = false;
+                rightEdge.raycastTarget = false;
+                topCut.raycastTarget = false;
+                bottomCut.raycastTarget = false;
+            }
+
+            Vector2 accentMin = mainBattleSceneMode ? new Vector2(0.050f, currentSlot ? 0.785f : 0.780f) : new Vector2(0f, 0.82f);
+            Vector2 accentMax = mainBattleSceneMode ? new Vector2(0.950f, 0.875f) : Vector2.one;
             Image accent = CreateImage("Timeline Slot Accent " + i, slot, accentMin, Vector2.one, Vector2.zero, Vector2.zero, Color.white);
+            if (mainBattleSceneMode)
+            {
+                accent.rectTransform.anchorMax = accentMax;
+            }
             accent.raycastTarget = false;
 
-            Vector2 iconMin = mainBattleSceneMode ? new Vector2(currentSlot ? 0.065f : 0.085f, currentSlot ? 0.250f : 0.275f) : new Vector2(0.19f, 0.24f);
-            Vector2 iconMax = mainBattleSceneMode ? new Vector2(currentSlot ? 0.935f : 0.915f, currentSlot ? 0.800f : 0.785f) : new Vector2(0.81f, 0.84f);
+            if (mainBattleSceneMode)
+            {
+                numberPlate = CreateImage("Timeline Slot Number Plate " + i, slot, new Vector2(currentSlot ? 0.085f : 0.080f, 0.085f), new Vector2(currentSlot ? 0.915f : 0.920f, currentSlot ? 0.255f : 0.275f), Vector2.zero, Vector2.zero, new Color(0f, 0.018f, 0.030f, 0.86f));
+                numberPlate.raycastTarget = false;
+            }
+
+            Vector2 iconMin = mainBattleSceneMode ? new Vector2(currentSlot ? 0.115f : 0.135f, currentSlot ? 0.300f : 0.325f) : new Vector2(0.19f, 0.24f);
+            Vector2 iconMax = mainBattleSceneMode ? new Vector2(currentSlot ? 0.885f : 0.865f, currentSlot ? 0.765f : 0.745f) : new Vector2(0.81f, 0.84f);
             Image unitIcon = CreateImage("Timeline Unit Icon " + i, slot, iconMin, iconMax, Vector2.zero, Vector2.zero, new Color(0.12f, 0.22f, 0.28f, 0.92f));
             unitIcon.raycastTarget = false;
 
@@ -1565,9 +1620,35 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             cursor.sprite = mainBattleSceneMode ? null : GetSpriteOrNull(timelineSprites, s => s.Cursor);
             cursor.raycastTarget = false;
 
-            Text name = CreateText("Timeline Slot Name " + i, slot, mainBattleSceneMode ? new Vector2(0.04f, 0.070f) : new Vector2(0.06f, 0.05f), mainBattleSceneMode ? new Vector2(0.96f, 0.270f) : new Vector2(0.94f, 0.30f), Vector2.zero, Vector2.zero, string.Empty, currentSlot ? 16 : 13, TextAnchor.MiddleCenter, Color.white);
-            Text detail = CreateText("Timeline Slot Detail " + i, slot, mainBattleSceneMode ? new Vector2(0.030f, 0.800f) : new Vector2(0.06f, 0.30f), mainBattleSceneMode ? new Vector2(0.970f, 0.980f) : new Vector2(0.94f, 0.54f), Vector2.zero, Vector2.zero, string.Empty, currentSlot ? 12 : 9, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
-            timelineViews.Add(new TimelineSlotView { Panel = slotPanel, Glow = glow, Accent = accent, UnitIcon = unitIcon, Cursor = cursor, NameText = name, DetailText = detail });
+            Text name = CreateText("Timeline Slot Name " + i, slot, mainBattleSceneMode ? new Vector2(0.085f, 0.075f) : new Vector2(0.06f, 0.05f), mainBattleSceneMode ? new Vector2(0.915f, currentSlot ? 0.265f : 0.280f) : new Vector2(0.94f, 0.30f), Vector2.zero, Vector2.zero, string.Empty, currentSlot ? 22 : 16, TextAnchor.MiddleCenter, Color.white);
+            Text detail = CreateText("Timeline Slot Detail " + i, slot, mainBattleSceneMode ? new Vector2(0.060f, currentSlot ? 0.785f : 0.780f) : new Vector2(0.06f, 0.30f), mainBattleSceneMode ? new Vector2(0.940f, 0.875f) : new Vector2(0.94f, 0.54f), Vector2.zero, Vector2.zero, string.Empty, currentSlot ? 13 : 10, TextAnchor.MiddleCenter, new Color(1f, 0.88f, 0.35f));
+            if (mainBattleSceneMode)
+            {
+                name.resizeTextMinSize = currentSlot ? 16 : 12;
+                name.resizeTextMaxSize = currentSlot ? 22 : 16;
+                detail.resizeTextMinSize = currentSlot ? 9 : 8;
+                detail.resizeTextMaxSize = currentSlot ? 13 : 10;
+            }
+
+            timelineViews.Add(new TimelineSlotView
+            {
+                Panel = slotPanel,
+                Glow = glow,
+                InnerPanel = innerPanel,
+                IconPlate = iconPlate,
+                NumberPlate = numberPlate,
+                TopEdge = topEdge,
+                BottomEdge = bottomEdge,
+                LeftEdge = leftEdge,
+                RightEdge = rightEdge,
+                TopCut = topCut,
+                BottomCut = bottomCut,
+                Accent = accent,
+                UnitIcon = unitIcon,
+                Cursor = cursor,
+                NameText = name,
+                DetailText = detail
+            });
         }
     }
 
@@ -3058,23 +3139,49 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             Color entryColor = mainBattleSceneMode && !skill
                 ? ally ? new Color(0.12f, 0.88f, 1f, 1f) : new Color(1f, 0.34f, 0.14f, 1f)
                 : GetTimelineEntryColor(preview.Unit);
+            Color frameColor = active ? new Color(1f, 0.86f, 0.18f, 1f) : entryColor;
             view.Panel.color = view.Panel.sprite != null
                 ? Color.white
                 : mainBattleSceneMode
                     ? active
-                        ? new Color(0.19f, 0.145f, 0.035f, 0.98f)
-                        : skill ? new Color(0.045f, 0.11f, 0.065f, 0.94f)
-                            : ally ? new Color(0.012f, 0.054f, 0.078f, 0.95f) : new Color(0.09f, 0.028f, 0.018f, 0.95f)
+                        ? new Color(0.080f, 0.052f, 0.010f, 0.99f)
+                        : skill ? new Color(0.025f, 0.075f, 0.040f, 0.96f)
+                            : ally ? new Color(0.003f, 0.022f, 0.042f, 0.97f) : new Color(0.060f, 0.014f, 0.008f, 0.97f)
                     : active ? new Color(0.14f, 0.16f, 0.09f, 0.98f) : skill ? new Color(0.055f, 0.12f, 0.075f, 0.96f) : new Color(0.03f, 0.055f, 0.075f, 0.96f);
             if (view.Glow != null)
             {
-                view.Glow.color = active ? new Color(1f, 0.84f, 0.10f, 0.28f) : Color.clear;
+                view.Glow.color = active ? new Color(1f, 0.82f, 0.10f, 0.34f) : new Color(entryColor.r, entryColor.g, entryColor.b, 0.10f);
+            }
+
+            if (mainBattleSceneMode)
+            {
+                Color innerColor = active
+                    ? new Color(0.030f, 0.022f, 0.006f, 0.88f)
+                    : skill ? new Color(0.004f, 0.030f, 0.020f, 0.82f)
+                        : ally ? new Color(0f, 0.018f, 0.038f, 0.84f) : new Color(0.036f, 0.006f, 0.004f, 0.84f);
+                Color plateColor = active
+                    ? new Color(0.050f, 0.036f, 0.004f, 0.90f)
+                    : skill ? new Color(0.002f, 0.035f, 0.020f, 0.84f)
+                        : ally ? new Color(0f, 0.025f, 0.046f, 0.88f) : new Color(0.046f, 0.006f, 0.004f, 0.88f);
+                Color strongLine = new Color(frameColor.r, frameColor.g, frameColor.b, active ? 0.96f : 0.76f);
+                Color softLine = new Color(frameColor.r, frameColor.g, frameColor.b, active ? 0.66f : 0.42f);
+                Color slashLine = new Color(frameColor.r, frameColor.g, frameColor.b, active ? 0.88f : 0.60f);
+
+                SetImageColorIfPresent(view.InnerPanel, innerColor);
+                SetImageColorIfPresent(view.IconPlate, plateColor);
+                SetImageColorIfPresent(view.NumberPlate, active ? new Color(0.018f, 0.013f, 0.002f, 0.92f) : plateColor);
+                SetImageColorIfPresent(view.TopEdge, strongLine);
+                SetImageColorIfPresent(view.BottomEdge, softLine);
+                SetImageColorIfPresent(view.LeftEdge, softLine);
+                SetImageColorIfPresent(view.RightEdge, softLine);
+                SetImageColorIfPresent(view.TopCut, slashLine);
+                SetImageColorIfPresent(view.BottomCut, slashLine);
             }
 
             Outline outline = mainBattleSceneMode ? view.Panel.GetComponent<Outline>() : null;
             if (outline != null)
             {
-                outline.effectColor = active ? new Color(1f, 0.88f, 0.22f, 0.95f) : Color.Lerp(entryColor, Color.white, 0.12f);
+                outline.effectColor = active ? new Color(1f, 0.88f, 0.22f, 0.98f) : Color.Lerp(entryColor, Color.white, 0.12f);
                 outline.effectDistance = active ? new Vector2(3f, -3f) : new Vector2(2f, -2f);
             }
 
@@ -3113,7 +3220,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                     ? active ? "CURRENT" : i == 1 ? "NEXT" : GetTimelineCardTypeLabel(preview.Unit)
                     : GetTimelineDebugLine(preview.Unit)
                         + "\nT+" + preview.DeltaTick + " next " + nextActTick + " delay " + GetPreviewLoopDelay(preview.Unit);
-                view.DetailText.color = active ? new Color(0.05f, 0.035f, 0.01f, 1f) : entryColor;
+                view.DetailText.color = mainBattleSceneMode
+                    ? active ? new Color(0.052f, 0.035f, 0.004f, 1f) : Color.white
+                    : active ? new Color(0.05f, 0.035f, 0.01f, 1f) : entryColor;
             }
             else
             {
@@ -3144,7 +3253,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     {
         hp = 0;
         maxHp = 0;
-        TimelineUnit unit = activeUnit != null ? activeUnit : GetCurrentActiveUnit();
+        TimelineUnit unit = GetCurrentHpDisplayUnit();
         if (unit == null)
         {
             return false;
@@ -3178,6 +3287,20 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         return false;
+    }
+
+    private TimelineUnit GetCurrentHpDisplayUnit()
+    {
+        if (mainBattleSceneMode)
+        {
+            List<TimelinePreview> previews = BuildTimelinePreview();
+            if (previews.Count > 0 && previews[0].Unit != null)
+            {
+                return previews[0].Unit;
+            }
+        }
+
+        return activeUnit != null ? activeUnit : GetCurrentActiveUnit();
     }
 
     private List<TimelinePreview> BuildTimelinePreview()
@@ -5566,6 +5689,14 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         if (text != null)
         {
             text.gameObject.SetActive(active);
+        }
+    }
+
+    private static void SetImageColorIfPresent(Image image, Color color)
+    {
+        if (image != null)
+        {
+            image.color = color;
         }
     }
 
