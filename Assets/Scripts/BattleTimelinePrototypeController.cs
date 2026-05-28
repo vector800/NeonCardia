@@ -75,6 +75,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const float BattleGridTileSize = 216f;
     private const float BattleGridCenterYOffset = -132f;
     private const float BattleFieldTiltDegrees = 62f;
+    private const float BattleSceneHudMinX = 0.012f;
+    private const float BattleSceneHudMaxX = 0.865f;
     private const float BattleSceneHudMinY = 0.728f;
     private const float BattleSceneHudMaxY = 0.982f;
     private const float BattleSpriteScaleRowDelta = 0.13f;
@@ -1565,8 +1567,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RectTransform hudRect = battleTimelineHudView.transform as RectTransform;
         if (hudRect != null)
         {
-            hudRect.anchorMin = new Vector2(0.012f, BattleSceneHudMinY);
-            hudRect.anchorMax = new Vector2(0.988f, BattleSceneHudMaxY);
+            hudRect.anchorMin = new Vector2(BattleSceneHudMinX, BattleSceneHudMinY);
+            hudRect.anchorMax = new Vector2(BattleSceneHudMaxX, BattleSceneHudMaxY);
             hudRect.offsetMin = Vector2.zero;
             hudRect.offsetMax = Vector2.zero;
             hudRect.localScale = Vector3.one;
@@ -1576,12 +1578,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         ApplyPrefabTimelineHudLayout(battleTimelineHudView);
         if (battleTimelineHudView.ActionOrderText != null)
         {
-            battleTimelineHudView.ActionOrderText.text = "ACTION ORDER";
+            HideText(battleTimelineHudView.ActionOrderText);
         }
 
         if (battleTimelineHudView.CurrentHpLabel != null)
         {
-            battleTimelineHudView.CurrentHpLabel.text = "CURRENT HP";
+            HideText(battleTimelineHudView.CurrentHpLabel);
         }
 
         return true;
@@ -1595,31 +1597,30 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         RectTransform hudRect = hudView.transform as RectTransform;
-        SetAnchors(hudRect, 0.012f, BattleSceneHudMinY, 0.988f, BattleSceneHudMaxY);
+        SetAnchors(hudRect, BattleSceneHudMinX, BattleSceneHudMinY, BattleSceneHudMaxX, BattleSceneHudMaxY);
         SetImageType(hudRect, Image.Type.Sliced);
 
-        SetAnchors(hudView.LeftPanel, 0.018f, 0.100f, 0.272f, 0.925f);
+        SetAnchors(hudView.LeftPanel, 0.018f, 0.155f, 0.180f, 0.860f);
         SetImageType(hudView.LeftPanel, Image.Type.Sliced);
         if (hudView.ActionOrderText != null)
         {
-            SetAnchors(hudView.ActionOrderText.rectTransform, 0.115f, 0.700f, 0.900f, 0.915f);
+            HideText(hudView.ActionOrderText);
         }
 
         if (hudView.CurrentHpLabel != null)
         {
-            SetAnchors(hudView.CurrentHpLabel.rectTransform, 0.120f, 0.485f, 0.620f, 0.620f);
+            HideText(hudView.CurrentHpLabel);
         }
 
         if (hudView.CurrentHpValue != null)
         {
-            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.120f, 0.205f, 0.910f, 0.405f);
+            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.075f, 0.225f, 0.925f, 0.775f);
         }
 
-        SetTextStyle(hudView.ActionOrderText, 24, TextAnchor.MiddleLeft, new Color(0.90f, 1f, 1f, 1f));
-        SetTextStyle(hudView.CurrentHpLabel, 14, TextAnchor.MiddleLeft, new Color(0.42f, 0.96f, 1f, 0.98f));
-        SetTextStyle(hudView.CurrentHpValue, 32, TextAnchor.MiddleLeft, Color.white);
+        SetTextStyle(hudView.CurrentHpValue, 30, TextAnchor.MiddleCenter, Color.white);
+        SetChildActiveIfPresent(hudView.LeftPanel, "CurrentHpGaugeBack", false);
 
-        SetAnchors(hudView.SlotsRoot, 0.285f, 0.105f, 0.947f, 0.925f);
+        SetAnchors(hudView.SlotsRoot, 0.165f, 0.105f, 0.930f, 0.925f);
 
         BattleTimelineSlotView[] slots = hudView.Slots;
         if (slots != null)
@@ -1665,17 +1666,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             }
         }
 
-        SetAnchors(hudView.ConnectorLine, 0.332f, 0.070f, 0.915f, 0.105f);
+        SetAnchors(hudView.ConnectorLine, 0.215f, 0.070f, 0.905f, 0.105f);
         SetImageType(hudView.ConnectorLine, Image.Type.Sliced);
 
-        SetAnchors(hudView.CurrentMarker, 0.308f, 0.000f, 0.355f, 0.080f);
+        SetAnchors(hudView.CurrentMarker, 0.178f, 0.000f, 0.225f, 0.080f);
         SetImageType(hudView.CurrentMarker, Image.Type.Simple);
         if (hudView.CurrentMarker != null)
         {
             hudView.CurrentMarker.gameObject.SetActive(false);
         }
 
-        SetAnchors(hudView.RightArrow, 0.947f, 0.390f, 0.985f, 0.610f);
+        SetAnchors(hudView.RightArrow, 0.940f, 0.390f, 0.985f, 0.610f);
         SetImageType(hudView.RightArrow, Image.Type.Simple);
     }
 
@@ -1737,6 +1738,31 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         text.color = color;
     }
 
+    private static void HideText(Text text)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        text.text = string.Empty;
+        text.gameObject.SetActive(false);
+    }
+
+    private static void SetChildActiveIfPresent(Transform parent, string childName, bool active)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+
+        Transform child = parent.Find(childName);
+        if (child != null)
+        {
+            child.gameObject.SetActive(active);
+        }
+    }
+
     private void BuildTimeline(Transform parent)
     {
         if (BuildPrefabTimeline(parent))
@@ -1748,7 +1774,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             "Action Bar Panel",
             parent,
             mainBattleSceneMode ? new Vector2(0.035f, 0.795f) : new Vector2(0.035f, 0.70f),
-            mainBattleSceneMode ? new Vector2(0.965f, 0.985f) : new Vector2(0.965f, 0.85f),
+            mainBattleSceneMode ? new Vector2(BattleSceneHudMaxX, 0.985f) : new Vector2(0.965f, 0.85f),
             new Color(0.006f, 0.014f, 0.026f, mainBattleSceneMode ? 0.92f : 0.94f));
 
         if (mainBattleSceneMode)
@@ -1766,44 +1792,36 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             CreateImage("Action Order Outer Right Line", panel, new Vector2(0.984f, 0.060f), new Vector2(0.992f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
             CreateImage("Action Order Top Neon", panel, new Vector2(0.014f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
             CreateImage("Action Order Bottom Neon", panel, new Vector2(0.018f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
-            CreateImage("Action Order Card Rail", panel, new Vector2(0.225f, 0.455f), new Vector2(0.958f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
-            CreateImage("Action Order Progress Line Glow", panel, new Vector2(0.242f, 0.041f), new Vector2(0.948f, 0.064f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.72f, 1f, 0.18f)).raycastTarget = false;
-            CreateImage("Action Order Progress Line Core", panel, new Vector2(0.246f, 0.050f), new Vector2(0.944f, 0.056f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.92f, 1f, 0.72f)).raycastTarget = false;
+            CreateImage("Action Order Card Rail", panel, new Vector2(0.165f, 0.455f), new Vector2(0.935f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
+            CreateImage("Action Order Progress Line Glow", panel, new Vector2(0.212f, 0.041f), new Vector2(0.908f, 0.064f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.72f, 1f, 0.18f)).raycastTarget = false;
+            CreateImage("Action Order Progress Line Core", panel, new Vector2(0.216f, 0.050f), new Vector2(0.904f, 0.056f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.92f, 1f, 0.72f)).raycastTarget = false;
             CreateImage("Action Order Left Brace", panel, new Vector2(0.010f, 0.16f), new Vector2(0.026f, 0.88f), Vector2.zero, Vector2.zero, new Color(0.95f, 0.38f, 0.10f, 0.72f)).raycastTarget = false;
             CreateImage("Action Order Right Brace", panel, new Vector2(0.975f, 0.18f), new Vector2(0.990f, 0.86f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.66f)).raycastTarget = false;
 
-            RectTransform infoPanel = CreatePanel("Action Order Info Panel", panel, new Vector2(0.024f, 0.13f), new Vector2(0.208f, 0.875f), new Color(0.012f, 0.032f, 0.048f, 0.96f));
+            RectTransform infoPanel = CreatePanel("Action Order Info Panel", panel, new Vector2(0.024f, 0.22f), new Vector2(0.176f, 0.800f), new Color(0.012f, 0.032f, 0.048f, 0.96f));
             Outline infoOutline = infoPanel.gameObject.AddComponent<Outline>();
             infoOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.62f);
             infoOutline.effectDistance = new Vector2(2f, -2f);
             CreateImage("Action Order Info Hot Edge", infoPanel, new Vector2(0f, 0f), new Vector2(0.020f, 1f), Vector2.zero, Vector2.zero, new Color(1f, 0.58f, 0.14f, 0.84f)).raycastTarget = false;
-            CreateImage("Action Order Info Top Edge", infoPanel, new Vector2(0.060f, 0.850f), new Vector2(0.940f, 0.895f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.56f)).raycastTarget = false;
-            CreateImage("Action Order Info Circuit Trace A", infoPanel, new Vector2(0.685f, 0.742f), new Vector2(0.905f, 0.760f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.36f)).raycastTarget = false;
-            CreateImage("Action Order Info Circuit Trace B", infoPanel, new Vector2(0.890f, 0.650f), new Vector2(0.907f, 0.760f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.30f)).raycastTarget = false;
-            CreateImage("Action Order Info Bottom Trace", infoPanel, new Vector2(0.145f, 0.046f), new Vector2(0.530f, 0.061f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.28f)).raycastTarget = false;
+            CreateImage("Action Order Info Top Edge", infoPanel, new Vector2(0.060f, 0.805f), new Vector2(0.940f, 0.850f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.56f)).raycastTarget = false;
+            CreateImage("Action Order Info Bottom Trace", infoPanel, new Vector2(0.145f, 0.140f), new Vector2(0.820f, 0.158f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.28f)).raycastTarget = false;
 
-            timelineLabelText = CreateText("Timeline Label", infoPanel, new Vector2(0.075f, 0.620f), new Vector2(0.930f, 0.850f), Vector2.zero, Vector2.zero, "ACTION ORDER", 18, TextAnchor.MiddleLeft, new Color(0.88f, 1f, 1f, 0.98f));
-            Text currentHpLabel = CreateText("Current HP Label", infoPanel, new Vector2(0.075f, 0.445f), new Vector2(0.930f, 0.600f), Vector2.zero, Vector2.zero, "CURRENT HP", 12, TextAnchor.MiddleLeft, new Color(0.54f, 0.92f, 1f, 0.96f));
-            currentHpLabel.resizeTextMinSize = 9;
-            currentHpLabel.resizeTextMaxSize = 12;
-            CreateImage("Current HP Label Rail", infoPanel, new Vector2(0.075f, 0.425f), new Vector2(0.930f, 0.442f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.26f)).raycastTarget = false;
-
-            RectTransform hpReserve = CreatePanel("Current HP Reserved Area", infoPanel, new Vector2(0.070f, 0.075f), new Vector2(0.930f, 0.415f), new Color(0.004f, 0.012f, 0.020f, 0.84f));
+            RectTransform hpReserve = CreatePanel("Current HP Reserved Area", infoPanel, new Vector2(0.080f, 0.260f), new Vector2(0.920f, 0.740f), new Color(0.004f, 0.012f, 0.020f, 0.84f));
             Outline hpOutline = hpReserve.gameObject.AddComponent<Outline>();
             hpOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.32f);
             hpOutline.effectDistance = new Vector2(1f, -1f);
 
-            currentHpValueText = CreateText("Current HP Value", hpReserve, new Vector2(0.060f, 0.115f), new Vector2(0.945f, 0.905f), Vector2.zero, Vector2.zero, "-- / --", 25, TextAnchor.MiddleCenter, Color.white);
+            currentHpValueText = CreateText("Current HP Value", hpReserve, new Vector2(0.040f, 0.050f), new Vector2(0.960f, 0.950f), Vector2.zero, Vector2.zero, "--", 24, TextAnchor.MiddleCenter, Color.white);
             currentHpValueText.resizeTextMinSize = 16;
-            currentHpValueText.resizeTextMaxSize = 25;
+            currentHpValueText.resizeTextMaxSize = 24;
             currentHpValueText.horizontalOverflow = HorizontalWrapMode.Overflow;
             currentHpValueText.verticalOverflow = VerticalWrapMode.Overflow;
             Outline hpValueOutline = currentHpValueText.gameObject.AddComponent<Outline>();
             hpValueOutline.effectColor = new Color(0f, 0f, 0f, 0.82f);
             hpValueOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
-            timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.225f, 0.865f), new Vector2(0.958f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
-            Text directionText = CreateText("Action Order Direction", panel, new Vector2(0.941f, 0.024f), new Vector2(0.980f, 0.100f), Vector2.zero, Vector2.zero, ">>>", 13, TextAnchor.MiddleRight, new Color(0.46f, 0.96f, 1f, 0.92f));
+            timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.165f, 0.865f), new Vector2(0.935f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+            Text directionText = CreateText("Action Order Direction", panel, new Vector2(0.928f, 0.024f), new Vector2(0.980f, 0.100f), Vector2.zero, Vector2.zero, ">>>", 13, TextAnchor.MiddleRight, new Color(0.46f, 0.96f, 1f, 0.92f));
             directionText.resizeTextMinSize = 9;
             directionText.resizeTextMaxSize = 13;
             directionText.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -1817,7 +1835,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.24f, 0.77f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero, "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
         }
 
-        float cardCursorX = mainBattleSceneMode ? 0.230f : 0f;
+        float cardCursorX = mainBattleSceneMode ? 0.165f : 0f;
         float battleSceneCardGap = 0.007f;
         for (int i = 0; i < TimelinePreviewCount; i++)
         {
@@ -3668,7 +3686,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         int safeHp = hasHp ? Mathf.Clamp(hp, 0, safeMaxHp) : 0;
         if (currentHpValueText != null)
         {
-            currentHpValueText.text = hasHp ? safeHp + " / " + safeMaxHp : "-- / --";
+            currentHpValueText.text = hasHp ? safeHp.ToString() : "--";
             currentHpValueText.color = hasHp ? Color.white : new Color(0.58f, 0.72f, 0.78f, 0.86f);
         }
 

@@ -14,7 +14,7 @@ public static class BattleSceneIdealImagePolish
     private const string GridObjectName = "PF_BattleGrid_Full_3x6_Image2_Bottom";
 
     private const string HudFramePath = "Assets/Art/UI/BattleTimelineHud/Backgrounds/UI_BattleTopHudFrame_Expanded.png";
-    private const string CurrentHpPanelPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpPanel_Cyber.png";
+    private const string CurrentHpPanelPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpPanel_Cyber_CleanGenerated.png";
     private const string CurrentHpGaugeBackPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpGauge_Back.png";
     private const string CurrentHpGaugeFillPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpGauge_Fill.png";
     private const string ProgressRailPath = "Assets/Art/UI/BattleTimelineHud/Decorations/UI_TimelineProgressRail_Bright.png";
@@ -23,6 +23,8 @@ public static class BattleSceneIdealImagePolish
     private const string EnemyCardPath = "Assets/Art/UI/BattleTimelineHud/Cards/UI_TimelineCard_Enemy.png";
     private const string MarkerPath = "Assets/Art/UI/BattleTimelineHud/Decorations/UI_TimelineMarker_Current.png";
     private const string ArrowPath = "Assets/Art/UI/BattleTimelineHud/Decorations/UI_TimelineArrowRight.png";
+    private const float HudAnchorMinX = 0.012f;
+    private const float HudAnchorMaxX = 0.865f;
     private const float HudAnchorMinY = 0.728f;
     private const float HudAnchorMaxY = 0.982f;
 
@@ -34,7 +36,7 @@ public static class BattleSceneIdealImagePolish
         ApplyGridPrefabPolish();
         ApplyBattleSceneComposition();
         AssetDatabase.SaveAssets();
-        Debug.Log("Applied ideal BattleScene visual polish: compact ACTION ORDER HUD, CURRENT HP gauge, grid positioning, and HP anchors.");
+        Debug.Log("Applied ideal BattleScene visual polish: compact top HUD, HP number-only panel, right-side enemy name space, grid positioning, and HP anchors.");
     }
 
     private static void EnsureHudSprites()
@@ -45,7 +47,7 @@ public static class BattleSceneIdealImagePolish
         EnsureFolder("Assets/Art/UI/BattleTimelineHud", "Cards");
 
         WriteHudFrame(HudFramePath);
-        WriteCurrentHpPanel(CurrentHpPanelPath);
+        // This panel is an imagegen-produced asset; keep it intact so the center stays free of stray line marks.
         WriteGaugeBack(CurrentHpGaugeBackPath);
         WriteGaugeFill(CurrentHpGaugeFillPath);
         WriteProgressRail(ProgressRailPath);
@@ -112,31 +114,31 @@ public static class BattleSceneIdealImagePolish
     private static void ConfigureHudLayout(Transform root)
     {
         RectTransform hudRect = root as RectTransform;
-        SetStretch(hudRect, new Vector2(0.012f, HudAnchorMinY), new Vector2(0.988f, HudAnchorMaxY));
+        SetStretch(hudRect, new Vector2(HudAnchorMinX, HudAnchorMinY), new Vector2(HudAnchorMaxX, HudAnchorMaxY));
 
         RectTransform leftPanel = root.Find("LeftPanel") as RectTransform;
-        SetStretch(leftPanel, new Vector2(0.018f, 0.100f), new Vector2(0.272f, 0.925f));
+        SetStretch(leftPanel, new Vector2(0.018f, 0.155f), new Vector2(0.180f, 0.860f));
 
         RectTransform actionOrderText = root.Find("LeftPanel/ActionOrderText") as RectTransform;
-        SetStretch(actionOrderText, new Vector2(0.115f, 0.700f), new Vector2(0.900f, 0.915f));
+        SetStretch(actionOrderText, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
 
         RectTransform currentHpLabel = root.Find("LeftPanel/CurrentHpLabel") as RectTransform;
-        SetStretch(currentHpLabel, new Vector2(0.120f, 0.485f), new Vector2(0.620f, 0.620f));
+        SetStretch(currentHpLabel, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
 
         RectTransform currentHpValue = root.Find("LeftPanel/CurrentHpValue") as RectTransform;
-        SetStretch(currentHpValue, new Vector2(0.120f, 0.205f), new Vector2(0.910f, 0.405f));
+        SetStretch(currentHpValue, new Vector2(0.075f, 0.225f), new Vector2(0.925f, 0.775f));
 
         RectTransform slotsRoot = root.Find("SlotsRoot") as RectTransform;
-        SetStretch(slotsRoot, new Vector2(0.285f, 0.105f), new Vector2(0.947f, 0.925f));
+        SetStretch(slotsRoot, new Vector2(0.165f, 0.105f), new Vector2(0.930f, 0.925f));
 
         RectTransform connectorLine = root.Find("ConnectorLine") as RectTransform;
-        SetStretch(connectorLine, new Vector2(0.332f, 0.070f), new Vector2(0.915f, 0.105f));
+        SetStretch(connectorLine, new Vector2(0.215f, 0.070f), new Vector2(0.905f, 0.105f));
 
         RectTransform currentMarker = root.Find("CurrentMarker") as RectTransform;
-        SetStretch(currentMarker, new Vector2(0.308f, 0.000f), new Vector2(0.355f, 0.080f));
+        SetStretch(currentMarker, new Vector2(0.178f, 0.000f), new Vector2(0.225f, 0.080f));
 
         RectTransform rightArrow = root.Find("RightArrow") as RectTransform;
-        SetStretch(rightArrow, new Vector2(0.947f, 0.390f), new Vector2(0.985f, 0.610f));
+        SetStretch(rightArrow, new Vector2(0.940f, 0.390f), new Vector2(0.985f, 0.610f));
     }
 
     private static void ConfigureLeftPanelText(Transform leftPanel)
@@ -144,45 +146,42 @@ public static class BattleSceneIdealImagePolish
         Text title = FindText(leftPanel, "ActionOrderText");
         if (title != null)
         {
-            title.text = "ACTION ORDER";
-            title.fontStyle = FontStyle.Bold;
-            title.alignment = TextAnchor.MiddleLeft;
-            title.color = new Color(0.90f, 1f, 1f, 1f);
-            AddTextOutline(title, new Color(0f, 0.10f, 0.14f, 0.92f), new Vector2(2f, -2f));
+            HideText(title);
         }
 
         Text label = FindText(leftPanel, "CurrentHpLabel");
         if (label != null)
         {
-            label.text = "CURRENT HP";
-            label.fontStyle = FontStyle.Bold;
-            label.alignment = TextAnchor.MiddleLeft;
-            label.color = new Color(0.42f, 0.96f, 1f, 0.98f);
-            AddTextOutline(label, new Color(0f, 0.08f, 0.12f, 0.85f), new Vector2(1.4f, -1.4f));
+            HideText(label);
         }
 
         Text value = FindText(leftPanel, "CurrentHpValue");
         if (value != null)
         {
+            value.gameObject.SetActive(true);
+            value.fontSize = 30;
+            value.resizeTextForBestFit = true;
+            value.resizeTextMinSize = 18;
+            value.resizeTextMaxSize = 30;
             value.fontStyle = FontStyle.Bold;
             value.alignment = TextAnchor.MiddleCenter;
+            value.horizontalOverflow = HorizontalWrapMode.Overflow;
+            value.verticalOverflow = VerticalWrapMode.Overflow;
             value.color = Color.white;
             AddTextOutline(value, new Color(0f, 0.08f, 0.13f, 0.96f), new Vector2(2.4f, -2.4f));
+            EditorUtility.SetDirty(value);
         }
     }
 
     private static void ConfigureCurrentHpGauge(Transform leftPanel)
     {
-        Image gaugeBack = EnsureImage(leftPanel, "CurrentHpGaugeBack");
-        ConfigureImage(gaugeBack, CurrentHpGaugeBackPath, Image.Type.Sliced, Color.white);
-        SetStretch(gaugeBack.rectTransform, new Vector2(0.11f, 0.13f), new Vector2(0.89f, 0.235f));
+        Transform gaugeBack = leftPanel.Find("CurrentHpGaugeBack");
+        if (gaugeBack != null)
+        {
+            SetChildActiveIfPresent(gaugeBack, "CurrentHpGaugeFill", false);
+        }
 
-        Image gaugeFill = EnsureImage(gaugeBack.transform, "CurrentHpGaugeFill");
-        ConfigureImage(gaugeFill, CurrentHpGaugeFillPath, Image.Type.Filled, Color.white);
-        gaugeFill.fillMethod = Image.FillMethod.Horizontal;
-        gaugeFill.fillOrigin = 0;
-        gaugeFill.fillAmount = 1f;
-        SetStretch(gaugeFill.rectTransform, new Vector2(0.025f, 0.18f), new Vector2(0.975f, 0.82f));
+        SetChildActiveIfPresent(leftPanel, "CurrentHpGaugeBack", false);
     }
 
     private static void ConfigureSlots(Transform root)
@@ -892,6 +891,36 @@ public static class BattleSceneIdealImagePolish
     {
         Transform child = parent.Find(path);
         return child != null ? child.GetComponent<Image>() : null;
+    }
+
+    private static void HideText(Text text)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        text.text = string.Empty;
+        text.gameObject.SetActive(false);
+        EditorUtility.SetDirty(text);
+        EditorUtility.SetDirty(text.gameObject);
+    }
+
+    private static void SetChildActiveIfPresent(Transform parent, string path, bool active)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+
+        Transform child = parent.Find(path);
+        if (child == null)
+        {
+            return;
+        }
+
+        child.gameObject.SetActive(active);
+        EditorUtility.SetDirty(child.gameObject);
     }
 
     private static void AddTextOutline(Text text, Color color, Vector2 distance)

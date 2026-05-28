@@ -43,7 +43,7 @@ public sealed class BattleTimelineHudView : MonoBehaviour
 
         int safeMaxHp = Mathf.Max(0, maxHp);
         int safeCurrentHp = Mathf.Clamp(currentHp, 0, safeMaxHp);
-        currentHpValue.text = safeCurrentHp + " / " + safeMaxHp;
+        currentHpValue.text = safeCurrentHp.ToString();
         currentHpValue.color = Color.white;
     }
 
@@ -54,7 +54,7 @@ public sealed class BattleTimelineHudView : MonoBehaviour
             return;
         }
 
-        currentHpValue.text = "-- / --";
+        currentHpValue.text = "--";
         currentHpValue.color = new Color(0.58f, 0.72f, 0.78f, 0.86f);
     }
 
