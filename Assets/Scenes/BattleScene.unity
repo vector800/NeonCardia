@@ -965,6 +965,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   showDebugLabels: 0
+  usePrefabActionOrderHud: 1
+  battleTimelineHudPrefab: {fileID: 1535704344168638681, guid: 63da7e5cae13870479844de6cd8903fd, type: 3}
 --- !u!4 &912340002
 Transform:
   m_ObjectHideFlags: 0
@@ -1212,12 +1214,20 @@ PrefabInstance:
       value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 2737989196649854397, guid: 484d29ca774d789499fbfb64efeb0747, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.68
+      objectReference: {fileID: 0}
+    - target: {fileID: 2737989196649854397, guid: 484d29ca774d789499fbfb64efeb0747, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.68
+      objectReference: {fileID: 0}
+    - target: {fileID: 2737989196649854397, guid: 484d29ca774d789499fbfb64efeb0747, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2737989196649854397, guid: 484d29ca774d789499fbfb64efeb0747, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.35
+      value: -1.36
       objectReference: {fileID: 0}
     - target: {fileID: 2737989196649854397, guid: 484d29ca774d789499fbfb64efeb0747, type: 3}
       propertyPath: m_LocalPosition.z

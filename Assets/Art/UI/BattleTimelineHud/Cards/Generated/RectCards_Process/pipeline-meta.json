@@ -1,0 +1,128 @@
+{
+  "target": "asset",
+  "mode": "single",
+  "prompt": "Three neon rectangular action-order HUD card frames: ally cyan, enemy orange, current gold; magenta background; no text or icons.",
+  "role": "",
+  "input": "Assets\\Art\\UI\\BattleTimelineHud\\Cards\\Generated\\UI_TimelineCard_Rect_RawSheet.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 1,
+  "cols": 3,
+  "cell_size": 128,
+  "fit_scale": 0.85,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "center",
+  "shared_scale": false,
+  "component_mode": "all",
+  "component_padding": 10,
+  "min_component_area": 1,
+  "edge_touch_margin": 8,
+  "frame_labels": [
+    "rect_card-1",
+    "rect_card-2",
+    "rect_card-3"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        97,
+        112,
+        612,
+        723
+      ],
+      "edge_touch": false,
+      "output_size": [
+        91,
+        108
+      ],
+      "paste_position": [
+        18,
+        10
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        51,
+        112,
+        558,
+        722
+      ],
+      "edge_touch": false,
+      "output_size": [
+        90,
+        108
+      ],
+      "paste_position": [
+        19,
+        10
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        1254,
+        0,
+        1881,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 4,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        3,
+        109,
+        523,
+        727
+      ],
+      "edge_touch": true,
+      "output_size": [
+        91,
+        108
+      ],
+      "paste_position": [
+        18,
+        10
+      ]
+    }
+  ],
+  "edge_touch_frames": [
+    [
+      0,
+      2
+    ]
+  ]
+}

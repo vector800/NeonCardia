@@ -10,6 +10,8 @@ using UnityEngine.UI;
 public sealed class BattleManager : MonoBehaviour
 {
     [SerializeField] private bool showDebugLabels;
+    [SerializeField] private bool usePrefabActionOrderHud = true;
+    [SerializeField] private BattleTimelineHudView battleTimelineHudPrefab;
 
     private EnemyType debugEnemyType = EnemyType.NormalEnemy;
 
@@ -21,7 +23,7 @@ public sealed class BattleManager : MonoBehaviour
             controller = gameObject.AddComponent<BattleSceneTimelineController>();
         }
 
-        controller.SetInitialDebugLabels(showDebugLabels);
+        controller.InitializeFromBattleManager(showDebugLabels, usePrefabActionOrderHud, battleTimelineHudPrefab);
     }
 
     public void DebugSetPanelType(BattleGridPosition position, PanelType panelType)

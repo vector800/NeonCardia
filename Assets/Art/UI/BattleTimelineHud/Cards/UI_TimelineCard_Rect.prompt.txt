@@ -1,0 +1,6 @@
+Use case: game asset UI sprite sheet
+Asset type: Unity battle HUD action-order card frames
+Primary request: Generate a 3-cell horizontal sprite sheet of futuristic neon rectangular action-order HUD card frames, matching the BattleScene ACTION ORDER HUD reference. Cell 1 is ally cyan/blue, cell 2 is enemy orange/red, cell 3 is current gold/yellow. Each cell contains exactly one empty card frame, no character portrait, no icons, no text, no numbers.
+Style: clean HD 2D cyberpunk neon sci-fi UI, dark translucent glass interior, luminous rim, subtle inner panel lines, perspective-free orthographic card frame.
+Shape: more rectangular than the earlier octagonal card assets, with flat top and bottom, mostly vertical sides, clipped cyber corners, and a sturdy small-HUD silhouette.
+Background: perfectly flat solid magenta chroma-key background for local transparent PNG processing.

@@ -1,0 +1,611 @@
+fileFormatVersion: 2
+guid: 006cde3a9254af44eb87b06f5a44f1d1
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6808335767035113911
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_0
+  - first:
+      213: 8079248790679943740
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_1
+  - first:
+      213: -843126795956592418
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_2
+  - first:
+      213: 3610493355481878204
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_3
+  - first:
+      213: -2051095215932442867
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_4
+  - first:
+      213: 5905502676911303841
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_5
+  - first:
+      213: 6956195201120021846
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_6
+  - first:
+      213: -4723320325362643323
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_7
+  - first:
+      213: -3052208069601179457
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_8
+  - first:
+      213: 8507116243015305405
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_9
+  - first:
+      213: 3745299015490227619
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_10
+  - first:
+      213: 8009004882164721698
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_11
+  - first:
+      213: -2915928559682994246
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_12
+  - first:
+      213: 2272423050411217172
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_13
+  - first:
+      213: 5139799102368871823
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_14
+  - first:
+      213: -4718900592459041026
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_15
+  - first:
+      213: -7323492993374639147
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_16
+  - first:
+      213: 669584133509759202
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_17
+  - first:
+      213: -5508680279022395528
+    second: UI_TimelineCard_Rect_Sheet_Transparent_Strong_18
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_0
+      rect:
+        serializedVersion: 2
+        x: 94
+        y: 107
+        width: 524
+        height: 617
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b1f6b9de411c7e50800000000000000
+      internalID: 6808335767035113911
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_1
+      rect:
+        serializedVersion: 2
+        x: 683
+        y: 110
+        width: 488
+        height: 610
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3a7b7c28f14f1070800000000000000
+      internalID: 8079248790679943740
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_2
+      rect:
+        serializedVersion: 2
+        x: 1145
+        y: 150
+        width: 45
+        height: 559
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed0e46a65ac9c44f0800000000000000
+      internalID: -843126795956592418
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_3
+      rect:
+        serializedVersion: 2
+        x: 1263
+        y: 662
+        width: 68
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbec76dd39c0b1230800000000000000
+      internalID: 3610493355481878204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_4
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 117
+        width: 476
+        height: 596
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d07f7dda4cb0983e0800000000000000
+      internalID: -2051095215932442867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_5
+      rect:
+        serializedVersion: 2
+        x: 1289
+        y: 679
+        width: 116
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1acaa6d556f84f150800000000000000
+      internalID: 5905502676911303841
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_6
+      rect:
+        serializedVersion: 2
+        x: 1417
+        y: 701
+        width: 66
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65d290f0eae598060800000000000000
+      internalID: 6956195201120021846
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_7
+      rect:
+        serializedVersion: 2
+        x: 1633
+        y: 570
+        width: 143
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58e80667035637eb0800000000000000
+      internalID: -4723320325362643323
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_8
+      rect:
+        serializedVersion: 2
+        x: 1262
+        y: 253
+        width: 19
+        height: 338
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb847d69ee064a5d0800000000000000
+      internalID: -3052208069601179457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_9
+      rect:
+        serializedVersion: 2
+        x: 1269
+        y: 583
+        width: 9
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: db802ef76295f0670800000000000000
+      internalID: 8507116243015305405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_10
+      rect:
+        serializedVersion: 2
+        x: 1758
+        y: 263
+        width: 18
+        height: 323
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ad4ae37c99f9f330800000000000000
+      internalID: 3745299015490227619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_11
+      rect:
+        serializedVersion: 2
+        x: 1278
+        y: 572
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2282ccdb183b52f60800000000000000
+      internalID: 8009004882164721698
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_12
+      rect:
+        serializedVersion: 2
+        x: 1632
+        y: 110
+        width: 143
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: abfbda99c6a8887d0800000000000000
+      internalID: -2915928559682994246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_13
+      rect:
+        serializedVersion: 2
+        x: 1765
+        y: 253
+        width: 10
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4119b2b79b4498f10800000000000000
+      internalID: 2272423050411217172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_14
+      rect:
+        serializedVersion: 2
+        x: 1263
+        y: 110
+        width: 142
+        height: 54
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8571914d0c345740800000000000000
+      internalID: 5139799102368871823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_15
+      rect:
+        serializedVersion: 2
+        x: 1268
+        y: 155
+        width: 11
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef63918b9e8138eb0800000000000000
+      internalID: -4718900592459041026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_16
+      rect:
+        serializedVersion: 2
+        x: 1151
+        y: 126
+        width: 21
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5dba7de8ce9bd5a90800000000000000
+      internalID: -7323492993374639147
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_17
+      rect:
+        serializedVersion: 2
+        x: 1726
+        y: 115
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e04619c837da4900800000000000000
+      internalID: 669584133509759202
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_TimelineCard_Rect_Sheet_Transparent_Strong_18
+      rect:
+        serializedVersion: 2
+        x: 1407
+        y: 116
+        width: 40
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87f9ba3f87c3d83b0800000000000000
+      internalID: -5508680279022395528
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_0: 6808335767035113911
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_1: 8079248790679943740
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_10: 3745299015490227619
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_11: 8009004882164721698
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_12: -2915928559682994246
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_13: 2272423050411217172
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_14: 5139799102368871823
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_15: -4718900592459041026
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_16: -7323492993374639147
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_17: 669584133509759202
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_18: -5508680279022395528
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_2: -843126795956592418
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_3: 3610493355481878204
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_4: -2051095215932442867
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_5: 5905502676911303841
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_6: 6956195201120021846
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_7: -4723320325362643323
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_8: -3052208069601179457
+      UI_TimelineCard_Rect_Sheet_Transparent_Strong_9: 8507116243015305405
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

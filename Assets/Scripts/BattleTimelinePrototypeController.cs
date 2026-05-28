@@ -27,7 +27,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const string BattleBackgroundAssetPath = "Assets/Art/Backgrounds/Battle/CyberBattleBackground.png";
     private const string BattleUiFrameAssetPath = "Assets/Art/UI/Battle/BattleUIFrame.png";
     private const string CardFrameAssetPath = "Assets/Art/Cards/Frames/CardFrame_Base.png";
-    private const string TimelineIconsAssetPath = "Assets/Art/UI/Timeline/TimelineIconsSheet.png";
+    private const string TimelineIconsAssetPath = "Assets/Art/UI/Battle/Timeline/TimelineIconSheet.png";
     private static readonly string[] TimelineFaceIconAssetPaths =
     {
         "Assets/Art/UI/Battle/Timeline/FaceIcons/AllyFaceIcon_01.png",
@@ -75,6 +75,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const float BattleGridTileSize = 216f;
     private const float BattleGridCenterYOffset = -132f;
     private const float BattleFieldTiltDegrees = 62f;
+    private const float BattleSceneHudMinY = 0.728f;
+    private const float BattleSceneHudMaxY = 0.982f;
     private const float BattleSpriteScaleRowDelta = 0.13f;
     private const float BattleSpriteYOffsetRowDelta = -0.035f;
     private const string BattleSceneEnemyHpTextName = "HPText";
@@ -127,6 +129,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Text queueText;
     private Text deckText;
     private Text selectedText;
+    private Text selectedCommandNameText;
+    private Image selectedCommandActorIcon;
     private Text purposeText;
     private Text timelineHintText;
     private Text allyHintText;
@@ -139,6 +143,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Text currentHpValueText;
     private RectTransform battleSceneTimelineRoot;
     private RectTransform battleSceneEnemyHpOverlayRoot;
+    private RectTransform selectedCommandNameRoot;
+    private BattleTimelineHudView battleTimelineHudView;
+    private string prefabTimelineSignature = string.Empty;
     private Button weaponButton;
     private Button confirmButton;
     private Button resetButton;
@@ -168,6 +175,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Sprite battleGridFullImage2Sprite;
     [SerializeField] private bool showDebugLabels;
     [SerializeField] private bool mainBattleSceneMode;
+    [SerializeField] private bool usePrefabActionOrderHud;
+    [SerializeField] private BattleTimelineHudView battleTimelineHudPrefab;
     [SerializeField] private BattlePanelVisualSet battlePanelVisualSet;
     [SerializeField] private float allyIdleFrameSeconds = 0.20f;
     [SerializeField] private float enemyIdleFrameSeconds = 0.14f;
@@ -179,6 +188,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     [SerializeField] private Vector2 allyCOffset = new Vector2(0.00f, 0.03f);
 
     private bool useSceneBattleGridPrefabVisuals;
+    private bool initialized;
     private int currentTick;
     private int activeUnitSequence;
     private int playerActionTurnCount;
@@ -509,6 +519,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     protected virtual void Awake()
     {
+        InitializeController();
+    }
+
+    protected void InitializeController()
+    {
+        if (initialized)
+        {
+            return;
+        }
+
+        initialized = true;
         mainBattleSceneMode = mainBattleSceneMode || SceneManager.GetActiveScene().name == "BattleScene";
         useSceneBattleGridPrefabVisuals = mainBattleSceneMode && GameObject.Find(BattleGridBottomPrefabName) != null;
         random = new System.Random(17);
@@ -531,6 +552,10 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         if (mainBattleSceneMode)
         {
             ClearPreviewArtSprites();
+            if (usePrefabActionOrderHud)
+            {
+                timelineSprites = LoadTimelineSprites();
+            }
         }
         else
         {
@@ -548,6 +573,15 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         BuildUi();
         CacheSceneBattleGridUnitRenderers();
         RefreshAll("Ready.");
+    }
+
+    protected void ConfigureActionOrderHud(bool usePrefabHud, BattleTimelineHudView prefab)
+    {
+        usePrefabActionOrderHud = usePrefabHud;
+        if (prefab != null)
+        {
+            battleTimelineHudPrefab = prefab;
+        }
     }
 
     protected virtual void Update()
@@ -942,6 +976,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
         BuildHeader(root);
         BuildTimeline(root);
+        BuildSelectedCommandName(root);
         BuildImage2BattleFieldArt(root);
         RectTransform battleFieldRoot = mainBattleSceneMode ? CreateBattleFieldRoot(root) : root;
         BuildAllies(battleFieldRoot);
@@ -1453,8 +1488,262 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         selectedText = CreateText("Selected Text", parent, new Vector2(0.58f, 0.873f), new Vector2(0.945f, 0.915f), Vector2.zero, Vector2.zero, string.Empty, 15, TextAnchor.MiddleRight, new Color(0.9f, 1f, 0.92f));
     }
 
+    private void BuildSelectedCommandName(Transform parent)
+    {
+        if (!mainBattleSceneMode)
+        {
+            return;
+        }
+
+        selectedCommandNameRoot = CreateRect(
+            "Selected Command Name Row",
+            parent,
+            new Vector2(0.500f, 0.732f),
+            new Vector2(0.500f, 0.732f),
+            new Vector2(-230f, -22f),
+            new Vector2(230f, 22f));
+
+        HorizontalLayoutGroup layout = selectedCommandNameRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlHeight = true;
+        layout.childControlWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.childForceExpandWidth = false;
+        layout.spacing = 8f;
+        layout.padding = new RectOffset(0, 0, 0, 0);
+
+        selectedCommandActorIcon = CreateImage(
+            "Selected Command Actor Icon",
+            selectedCommandNameRoot,
+            Vector2.zero,
+            Vector2.one,
+            Vector2.zero,
+            Vector2.zero,
+            Color.clear);
+        selectedCommandActorIcon.preserveAspect = true;
+        selectedCommandActorIcon.raycastTarget = false;
+        LayoutElement iconLayout = selectedCommandActorIcon.gameObject.AddComponent<LayoutElement>();
+        iconLayout.minWidth = 32f;
+        iconLayout.minHeight = 32f;
+        iconLayout.preferredWidth = 32f;
+        iconLayout.preferredHeight = 32f;
+
+        selectedCommandNameText = CreateText(
+            "Selected Command Name Text",
+            selectedCommandNameRoot,
+            Vector2.zero,
+            Vector2.one,
+            Vector2.zero,
+            Vector2.zero,
+            string.Empty,
+            24,
+            TextAnchor.MiddleLeft,
+            new Color(0.88f, 0.98f, 1f, 1f));
+        selectedCommandNameText.fontStyle = FontStyle.Bold;
+        selectedCommandNameText.resizeTextForBestFit = true;
+        selectedCommandNameText.resizeTextMinSize = 16;
+        selectedCommandNameText.resizeTextMaxSize = 24;
+        selectedCommandNameText.raycastTarget = false;
+
+        Outline outline = selectedCommandNameText.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.01f, 0.06f, 0.16f, 0.98f);
+        outline.effectDistance = new Vector2(2f, -2f);
+        outline.useGraphicAlpha = true;
+
+        selectedCommandNameRoot.gameObject.SetActive(false);
+    }
+
+    private bool BuildPrefabTimeline(Transform parent)
+    {
+        if (!mainBattleSceneMode || !usePrefabActionOrderHud || battleTimelineHudPrefab == null)
+        {
+            return false;
+        }
+
+        battleTimelineHudView = Instantiate(battleTimelineHudPrefab, parent, false);
+        battleTimelineHudView.name = "BattleTimelineHud";
+        RectTransform hudRect = battleTimelineHudView.transform as RectTransform;
+        if (hudRect != null)
+        {
+            hudRect.anchorMin = new Vector2(0.012f, BattleSceneHudMinY);
+            hudRect.anchorMax = new Vector2(0.988f, BattleSceneHudMaxY);
+            hudRect.offsetMin = Vector2.zero;
+            hudRect.offsetMax = Vector2.zero;
+            hudRect.localScale = Vector3.one;
+        }
+
+        battleTimelineHudView.CacheReferences();
+        ApplyPrefabTimelineHudLayout(battleTimelineHudView);
+        if (battleTimelineHudView.ActionOrderText != null)
+        {
+            battleTimelineHudView.ActionOrderText.text = "ACTION ORDER";
+        }
+
+        if (battleTimelineHudView.CurrentHpLabel != null)
+        {
+            battleTimelineHudView.CurrentHpLabel.text = "CURRENT HP";
+        }
+
+        return true;
+    }
+
+    private static void ApplyPrefabTimelineHudLayout(BattleTimelineHudView hudView)
+    {
+        if (hudView == null)
+        {
+            return;
+        }
+
+        RectTransform hudRect = hudView.transform as RectTransform;
+        SetAnchors(hudRect, 0.012f, BattleSceneHudMinY, 0.988f, BattleSceneHudMaxY);
+        SetImageType(hudRect, Image.Type.Sliced);
+
+        SetAnchors(hudView.LeftPanel, 0.018f, 0.100f, 0.272f, 0.925f);
+        SetImageType(hudView.LeftPanel, Image.Type.Sliced);
+        if (hudView.ActionOrderText != null)
+        {
+            SetAnchors(hudView.ActionOrderText.rectTransform, 0.115f, 0.700f, 0.900f, 0.915f);
+        }
+
+        if (hudView.CurrentHpLabel != null)
+        {
+            SetAnchors(hudView.CurrentHpLabel.rectTransform, 0.120f, 0.485f, 0.620f, 0.620f);
+        }
+
+        if (hudView.CurrentHpValue != null)
+        {
+            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.120f, 0.205f, 0.910f, 0.405f);
+        }
+
+        SetTextStyle(hudView.ActionOrderText, 24, TextAnchor.MiddleLeft, new Color(0.90f, 1f, 1f, 1f));
+        SetTextStyle(hudView.CurrentHpLabel, 14, TextAnchor.MiddleLeft, new Color(0.42f, 0.96f, 1f, 0.98f));
+        SetTextStyle(hudView.CurrentHpValue, 32, TextAnchor.MiddleLeft, Color.white);
+
+        SetAnchors(hudView.SlotsRoot, 0.285f, 0.105f, 0.947f, 0.925f);
+
+        BattleTimelineSlotView[] slots = hudView.Slots;
+        if (slots != null)
+        {
+            float[] minX = { 0.000f, 0.146f, 0.268f, 0.390f, 0.512f, 0.634f, 0.756f, 0.878f };
+            float[] maxX = { 0.142f, 0.264f, 0.386f, 0.508f, 0.630f, 0.752f, 0.874f, 0.996f };
+            for (int i = 0; i < slots.Length && i < minX.Length; i++)
+            {
+                BattleTimelineSlotView slot = slots[i];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                bool current = i == 0;
+                SetAnchors(slot.Root, minX[i], current ? 0.005f : 0.100f, maxX[i], current ? 0.985f : 0.900f);
+                SetImageType(slot.Root, Image.Type.Sliced);
+                SetAnchors(
+                    slot.Icon != null ? slot.Icon.rectTransform : null,
+                    current ? 0.090f : 0.075f,
+                    current ? 0.110f : 0.095f,
+                    current ? 0.910f : 0.925f,
+                    current ? 0.900f : 0.905f);
+                SetAnchors(
+                    slot.IndexText != null ? slot.IndexText.rectTransform : null,
+                    0.500f,
+                    0.500f,
+                    0.500f,
+                    0.500f);
+                SetAnchors(
+                    slot.StateText != null ? slot.StateText.rectTransform : null,
+                    0.500f,
+                    0.500f,
+                    0.500f,
+                    0.500f);
+
+                if (slot.Background != null)
+                {
+                    slot.Background.color = Color.white;
+                }
+
+                slot.SetTimelineLabelsVisible(false);
+            }
+        }
+
+        SetAnchors(hudView.ConnectorLine, 0.332f, 0.070f, 0.915f, 0.105f);
+        SetImageType(hudView.ConnectorLine, Image.Type.Sliced);
+
+        SetAnchors(hudView.CurrentMarker, 0.308f, 0.000f, 0.355f, 0.080f);
+        SetImageType(hudView.CurrentMarker, Image.Type.Simple);
+        if (hudView.CurrentMarker != null)
+        {
+            hudView.CurrentMarker.gameObject.SetActive(false);
+        }
+
+        SetAnchors(hudView.RightArrow, 0.947f, 0.390f, 0.985f, 0.610f);
+        SetImageType(hudView.RightArrow, Image.Type.Simple);
+    }
+
+    private static void SetAnchors(RectTransform rectTransform, float minX, float minY, float maxX, float maxY)
+    {
+        if (rectTransform == null)
+        {
+            return;
+        }
+
+        rectTransform.anchorMin = new Vector2(minX, minY);
+        rectTransform.anchorMax = new Vector2(maxX, maxY);
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+        rectTransform.localScale = Vector3.one;
+    }
+
+    private static void SetImageType(RectTransform rectTransform, Image.Type imageType)
+    {
+        if (rectTransform == null)
+        {
+            return;
+        }
+
+        Image image = rectTransform.GetComponent<Image>();
+        if (image == null)
+        {
+            return;
+        }
+
+        image.color = Color.white;
+        image.type = imageType;
+        image.preserveAspect = imageType == Image.Type.Simple;
+    }
+
+    private static void SetTextFontSize(Text text, int fontSize)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        text.fontSize = fontSize;
+        text.resizeTextForBestFit = true;
+        text.resizeTextMaxSize = fontSize;
+        text.resizeTextMinSize = Mathf.Min(text.resizeTextMinSize, fontSize);
+    }
+
+    private static void SetTextStyle(Text text, int fontSize, TextAnchor alignment, Color color)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        SetTextFontSize(text, fontSize);
+        text.fontStyle = FontStyle.Bold;
+        text.alignment = alignment;
+        text.color = color;
+    }
+
     private void BuildTimeline(Transform parent)
     {
+        if (BuildPrefabTimeline(parent))
+        {
+            return;
+        }
+
         RectTransform panel = CreatePanel(
             "Action Bar Panel",
             parent,
@@ -3059,6 +3348,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         {
             cardSelectRoot.SetActive(false);
         }
+
+        RefreshSelectedCommandName();
     }
 
     private void SelectEnemyAt(int row, int column)
@@ -3155,9 +3446,66 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
     }
 
+    private void RefreshPrefabTimeline(List<TimelinePreview> previews)
+    {
+        if (battleTimelineHudView == null)
+        {
+            return;
+        }
+
+        BattleTimelineSlotView[] slots = battleTimelineHudView.Slots;
+        int slotCount = slots != null ? slots.Length : 0;
+        for (int i = 0; i < slotCount; i++)
+        {
+            BattleTimelineSlotView slot = slots[i];
+            if (slot == null)
+            {
+                continue;
+            }
+
+            if (i >= previews.Count)
+            {
+                if (slot.Root != null)
+                {
+                    slot.Root.gameObject.SetActive(false);
+                }
+
+                slot.Clear();
+                continue;
+            }
+
+            if (slot.Root != null)
+            {
+                slot.Root.gameObject.SetActive(true);
+            }
+
+            TimelinePreview preview = previews[i];
+            bool active = i == 0;
+            bool skill = preview.Unit.IsSkill;
+            bool ally = preview.Unit.IsAlly;
+            bool selected = skill ? false : ally
+                ? selectedAlly != null && preview.Unit.Ally == selectedAlly
+                : selectedEnemy != null && preview.Unit.Enemy == selectedEnemy;
+            Color entryColor = !skill
+                ? ally ? new Color(0.12f, 0.88f, 1f, 1f) : new Color(1f, 0.34f, 0.14f, 1f)
+                : GetTimelineEntryColor(preview.Unit);
+
+            slot.SetTimelineLabelsVisible(false);
+            slot.SetIcon(GetTimelineUnitIconSprite(preview.Unit, ally, active, selected), active ? Color.Lerp(entryColor, Color.white, 0.18f) : entryColor);
+            slot.SetActiveVisual(active, ally, entryColor);
+        }
+
+        if (battleTimelineHudView.CurrentMarker != null)
+        {
+            battleTimelineHudView.CurrentMarker.gameObject.SetActive(false);
+        }
+
+    }
+
     private void RefreshTimeline()
     {
         List<TimelinePreview> previews = BuildTimelinePreview();
+        RefreshPrefabTimeline(previews);
         for (int i = 0; i < timelineViews.Count; i++)
         {
             TimelineSlotView view = timelineViews[i];
@@ -3313,18 +3661,28 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private void RefreshCurrentHpPanel()
     {
-        if (currentHpValueText == null)
-        {
-            return;
-        }
-
         int hp;
         int maxHp;
         bool hasHp = TryGetCurrentUnitHp(out hp, out maxHp);
         int safeMaxHp = Mathf.Max(0, maxHp);
         int safeHp = hasHp ? Mathf.Clamp(hp, 0, safeMaxHp) : 0;
-        currentHpValueText.text = hasHp ? safeHp + " / " + safeMaxHp : "-- / --";
-        currentHpValueText.color = hasHp ? Color.white : new Color(0.58f, 0.72f, 0.78f, 0.86f);
+        if (currentHpValueText != null)
+        {
+            currentHpValueText.text = hasHp ? safeHp + " / " + safeMaxHp : "-- / --";
+            currentHpValueText.color = hasHp ? Color.white : new Color(0.58f, 0.72f, 0.78f, 0.86f);
+        }
+
+        if (battleTimelineHudView != null)
+        {
+            if (hasHp)
+            {
+                battleTimelineHudView.SetCurrentHp(safeHp, safeMaxHp);
+            }
+            else
+            {
+                battleTimelineHudView.SetCurrentHpUnavailable();
+            }
+        }
     }
 
     private bool TryGetCurrentUnitHp(out int hp, out int maxHp)
@@ -4591,6 +4949,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             cardSelectRoot.SetActive(mainBattleSceneMode && cardSelectOpen && canAct);
         }
 
+        RefreshSelectedCommandName();
         RefreshChipQueueSlots();
         RefreshChipDetail();
     }
@@ -4702,6 +5061,57 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         {
             chipDetailPowerText.text = card == null ? string.Empty : GetChipPowerText(card);
         }
+    }
+
+    private void RefreshSelectedCommandName()
+    {
+        if (selectedCommandNameRoot == null && selectedCommandNameText == null)
+        {
+            return;
+        }
+
+        string commandName = string.Empty;
+        if (mainBattleSceneMode && cardSelectOpen && IsPlayerTurn())
+        {
+            PrototypeCard card = GetSelectedChipCard();
+            commandName = card != null ? GetCardDisplayName(card) : string.Empty;
+        }
+
+        bool visible = !string.IsNullOrEmpty(commandName);
+        if (selectedCommandNameText != null)
+        {
+            selectedCommandNameText.text = commandName;
+            selectedCommandNameText.gameObject.SetActive(visible);
+        }
+
+        if (selectedCommandActorIcon != null)
+        {
+            Sprite actorIcon = visible ? GetSelectedCommandActorIconSprite() : null;
+            selectedCommandActorIcon.sprite = actorIcon;
+            selectedCommandActorIcon.color = actorIcon != null ? Color.white : Color.clear;
+            selectedCommandActorIcon.gameObject.SetActive(visible && actorIcon != null);
+        }
+
+        if (selectedCommandNameRoot != null)
+        {
+            selectedCommandNameRoot.gameObject.SetActive(visible);
+        }
+    }
+
+    private Sprite GetSelectedCommandActorIconSprite()
+    {
+        if (activeUnit == null || !activeUnit.IsAlly || activeUnit.Ally == null)
+        {
+            return null;
+        }
+
+        Sprite faceIcon = GetTimelineFaceIconSprite(true, allies.IndexOf(activeUnit.Ally));
+        if (faceIcon != null)
+        {
+            return faceIcon;
+        }
+
+        return GetAllyIdleSprite(GetAllySpriteDefinition(activeUnit.Ally));
     }
 
     private void RefreshChipQueueSlots()
