@@ -13,8 +13,8 @@ public static class BattleSceneIdealImagePolish
     private const string GridPrefabPath = "Assets/Art/BattleField/NeonGrid/Prefabs/PF_BattleGrid_Full_3x6_Image2_Bottom.prefab";
     private const string GridObjectName = "PF_BattleGrid_Full_3x6_Image2_Bottom";
 
-    private const string HudFramePath = "Assets/Art/UI/BattleTimelineHud/Backgrounds/UI_BattleTopHudFrame_Expanded.png";
-    private const string CurrentHpPanelPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpPanel_Cyber_CleanGenerated.png";
+    private const string HudFramePath = "Assets/Art/UI/BattleTimelineHud/Backgrounds/UI_BattleTopHudFrame_CyberCleanGenerated_Filled.png";
+    private const string CurrentHpPanelSquarePath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpPanel_SquareGenerated.png";
     private const string CurrentHpGaugeBackPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpGauge_Back.png";
     private const string CurrentHpGaugeFillPath = "Assets/Art/UI/BattleTimelineHud/Panels/UI_CurrentHpGauge_Fill.png";
     private const string ProgressRailPath = "Assets/Art/UI/BattleTimelineHud/Decorations/UI_TimelineProgressRail_Bright.png";
@@ -36,7 +36,7 @@ public static class BattleSceneIdealImagePolish
         ApplyGridPrefabPolish();
         ApplyBattleSceneComposition();
         AssetDatabase.SaveAssets();
-        Debug.Log("Applied ideal BattleScene visual polish: compact top HUD, HP number-only panel, right-side enemy name space, grid positioning, and HP anchors.");
+        Debug.Log("Applied ideal BattleScene visual polish: compact top HUD, square HP panel, right-side enemy name space, grid positioning, and HP anchors.");
     }
 
     private static void EnsureHudSprites()
@@ -46,16 +46,12 @@ public static class BattleSceneIdealImagePolish
         EnsureFolder("Assets/Art/UI/BattleTimelineHud", "Decorations");
         EnsureFolder("Assets/Art/UI/BattleTimelineHud", "Cards");
 
-        WriteHudFrame(HudFramePath);
-        // This panel is an imagegen-produced asset; keep it intact so the center stays free of stray line marks.
+        // These frame assets are imagegen-produced; keep them intact so Apply does not flatten the metallic shells.
         WriteGaugeBack(CurrentHpGaugeBackPath);
         WriteGaugeFill(CurrentHpGaugeFillPath);
         WriteProgressRail(ProgressRailPath);
-        WriteTimelineCard(CurrentCardPath, new Color(1f, 0.78f, 0.10f, 1f), new Color(0.08f, 0.055f, 0.005f, 0.86f), true);
-        WriteTimelineCard(AllyCardPath, new Color(0.10f, 0.92f, 1f, 1f), new Color(0.000f, 0.030f, 0.045f, 0.86f), false);
-        WriteTimelineCard(EnemyCardPath, new Color(1f, 0.30f, 0.12f, 1f), new Color(0.055f, 0.010f, 0.006f, 0.86f), false);
-        ConfigureSprite(HudFramePath, new Vector4(72f, 42f, 72f, 42f));
-        ConfigureSprite(CurrentHpPanelPath, new Vector4(42f, 34f, 42f, 34f));
+        ConfigureSprite(HudFramePath, new Vector4(330f, 42f, 120f, 42f));
+        ConfigureSprite(CurrentHpPanelSquarePath, Vector4.zero);
         ConfigureSprite(CurrentHpGaugeBackPath, new Vector4(18f, 12f, 18f, 12f));
         ConfigureSprite(CurrentHpGaugeFillPath, Vector4.zero);
         ConfigureSprite(ProgressRailPath, new Vector4(18f, 8f, 18f, 8f));
@@ -76,11 +72,13 @@ public static class BattleSceneIdealImagePolish
 
             ConfigureImage(root.GetComponent<Image>(), HudFramePath, Image.Type.Sliced, Color.white);
             ConfigureHudLayout(root.transform);
+            HideHpTimelineGapMask(root.transform);
 
             Transform leftPanel = root.transform.Find("LeftPanel");
             if (leftPanel != null)
             {
-                ConfigureImage(leftPanel.GetComponent<Image>(), CurrentHpPanelPath, Image.Type.Sliced, Color.white);
+                ClearImage(leftPanel.GetComponent<Image>());
+                ConfigureCurrentHpPanelImage(leftPanel);
                 ConfigureLeftPanelText(leftPanel);
                 ConfigureCurrentHpGauge(leftPanel);
             }
@@ -94,7 +92,7 @@ public static class BattleSceneIdealImagePolish
                 currentMarker.gameObject.SetActive(false);
                 EditorUtility.SetDirty(currentMarker.gameObject);
             }
-            ConfigureImage(FindImage(root.transform, "RightArrow"), ArrowPath, Image.Type.Simple, Color.white);
+            ClearImage(FindImage(root.transform, "RightArrow"));
 
             BattleTimelineHudView hudView = root.GetComponent<BattleTimelineHudView>();
             if (hudView != null)
@@ -117,7 +115,7 @@ public static class BattleSceneIdealImagePolish
         SetStretch(hudRect, new Vector2(HudAnchorMinX, HudAnchorMinY), new Vector2(HudAnchorMaxX, HudAnchorMaxY));
 
         RectTransform leftPanel = root.Find("LeftPanel") as RectTransform;
-        SetStretch(leftPanel, new Vector2(0.018f, 0.155f), new Vector2(0.180f, 0.860f));
+        SetStretch(leftPanel, new Vector2(0.047f, 0.257f), new Vector2(0.194f, 0.743f));
 
         RectTransform actionOrderText = root.Find("LeftPanel/ActionOrderText") as RectTransform;
         SetStretch(actionOrderText, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
@@ -126,7 +124,7 @@ public static class BattleSceneIdealImagePolish
         SetStretch(currentHpLabel, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
 
         RectTransform currentHpValue = root.Find("LeftPanel/CurrentHpValue") as RectTransform;
-        SetStretch(currentHpValue, new Vector2(0.075f, 0.225f), new Vector2(0.925f, 0.775f));
+        SetStretch(currentHpValue, new Vector2(0.185735f, 0.280f), new Vector2(0.770735f, 0.860f));
 
         RectTransform slotsRoot = root.Find("SlotsRoot") as RectTransform;
         SetStretch(slotsRoot, new Vector2(0.165f, 0.105f), new Vector2(0.930f, 0.925f));
@@ -139,6 +137,16 @@ public static class BattleSceneIdealImagePolish
 
         RectTransform rightArrow = root.Find("RightArrow") as RectTransform;
         SetStretch(rightArrow, new Vector2(0.940f, 0.390f), new Vector2(0.985f, 0.610f));
+    }
+
+    private static void HideHpTimelineGapMask(Transform root)
+    {
+        Image mask = EnsureImage(root, "HpTimelineGapMask");
+        ClearImage(mask);
+        mask.gameObject.SetActive(false);
+        mask.transform.SetAsFirstSibling();
+        SetStretch(mask.transform as RectTransform, new Vector2(0.130f, 0.255f), new Vector2(0.164f, 0.745f));
+        EditorUtility.SetDirty(mask.gameObject);
     }
 
     private static void ConfigureLeftPanelText(Transform leftPanel)
@@ -171,6 +179,17 @@ public static class BattleSceneIdealImagePolish
             AddTextOutline(value, new Color(0f, 0.08f, 0.13f, 0.96f), new Vector2(2.4f, -2.4f));
             EditorUtility.SetDirty(value);
         }
+    }
+
+    private static void ConfigureCurrentHpPanelImage(Transform leftPanel)
+    {
+        Image panel = EnsureImage(leftPanel, "CurrentHpPanelImage");
+        panel.gameObject.SetActive(true);
+        ConfigureImage(panel, CurrentHpPanelSquarePath, Image.Type.Simple, Color.white);
+        panel.enabled = true;
+        panel.transform.SetAsFirstSibling();
+        SetStretch(panel.transform as RectTransform, new Vector2(0.130735f, 0.240f), new Vector2(0.820735f, 0.900f));
+        EditorUtility.SetDirty(panel.gameObject);
     }
 
     private static void ConfigureCurrentHpGauge(Transform leftPanel)
@@ -206,6 +225,14 @@ public static class BattleSceneIdealImagePolish
             Sprite defaultSprite = current ? currentSprite : ally ? allySprite : enemySprite;
 
             ConfigureImage(background, defaultSprite, Image.Type.Sliced, Color.white);
+            if (background != null)
+            {
+                background.enabled = true;
+                background.color = Color.white;
+                background.raycastTarget = false;
+                EditorUtility.SetDirty(background);
+            }
+
             if (slotView != null)
             {
                 slotView.SetBackgroundSprites(currentSprite, allySprite, enemySprite);
@@ -822,6 +849,20 @@ public static class BattleSceneIdealImagePolish
         image.color = color;
         image.type = imageType;
         image.preserveAspect = false;
+        image.raycastTarget = false;
+        EditorUtility.SetDirty(image);
+    }
+
+    private static void ClearImage(Image image)
+    {
+        if (image == null)
+        {
+            return;
+        }
+
+        image.sprite = null;
+        image.color = Color.clear;
+        image.enabled = false;
         image.raycastTarget = false;
         EditorUtility.SetDirty(image);
     }

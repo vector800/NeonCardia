@@ -1600,8 +1600,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         SetAnchors(hudRect, BattleSceneHudMinX, BattleSceneHudMinY, BattleSceneHudMaxX, BattleSceneHudMaxY);
         SetImageType(hudRect, Image.Type.Sliced);
 
-        SetAnchors(hudView.LeftPanel, 0.018f, 0.155f, 0.180f, 0.860f);
-        SetImageType(hudView.LeftPanel, Image.Type.Sliced);
+        SetAnchors(hudView.LeftPanel, 0.047f, 0.257f, 0.194f, 0.743f);
+        SetImageEnabled(hudView.LeftPanel, false);
         if (hudView.ActionOrderText != null)
         {
             HideText(hudView.ActionOrderText);
@@ -1614,7 +1614,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         if (hudView.CurrentHpValue != null)
         {
-            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.075f, 0.225f, 0.925f, 0.775f);
+            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.185735f, 0.280f, 0.770735f, 0.860f);
         }
 
         SetTextStyle(hudView.CurrentHpValue, 30, TextAnchor.MiddleCenter, Color.white);
@@ -1659,7 +1659,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
                 if (slot.Background != null)
                 {
+                    slot.Background.enabled = true;
                     slot.Background.color = Color.white;
+                    slot.Background.raycastTarget = false;
                 }
 
                 slot.SetTimelineLabelsVisible(false);
@@ -1677,7 +1679,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         SetAnchors(hudView.RightArrow, 0.940f, 0.390f, 0.985f, 0.610f);
-        SetImageType(hudView.RightArrow, Image.Type.Simple);
+        SetImageEnabled(hudView.RightArrow, false);
     }
 
     private static void SetAnchors(RectTransform rectTransform, float minX, float minY, float maxX, float maxY)
@@ -1710,6 +1712,27 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         image.color = Color.white;
         image.type = imageType;
         image.preserveAspect = imageType == Image.Type.Simple;
+    }
+
+    private static void SetImageEnabled(RectTransform rectTransform, bool enabled)
+    {
+        if (rectTransform == null)
+        {
+            return;
+        }
+
+        Image image = rectTransform.GetComponent<Image>();
+        if (image == null)
+        {
+            return;
+        }
+
+        image.enabled = enabled;
+        image.raycastTarget = false;
+        if (!enabled)
+        {
+            image.color = Color.clear;
+        }
     }
 
     private static void SetTextFontSize(Text text, int fontSize)
@@ -1779,19 +1802,16 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         if (mainBattleSceneMode)
         {
-            Outline panelOutline = panel.gameObject.AddComponent<Outline>();
-            panelOutline.effectColor = new Color(0.12f, 0.92f, 1f, 0.74f);
-            panelOutline.effectDistance = new Vector2(2f, -2f);
             Shadow panelGlow = panel.gameObject.AddComponent<Shadow>();
             panelGlow.effectColor = new Color(0.04f, 0.60f, 1f, 0.58f);
             panelGlow.effectDistance = new Vector2(0f, -5f);
 
-            CreateImage("Action Order Outer Top Line", panel, new Vector2(0.008f, 0.965f), new Vector2(0.992f, 0.976f), Vector2.zero, Vector2.zero, new Color(0.14f, 0.94f, 1f, 0.48f)).raycastTarget = false;
-            CreateImage("Action Order Outer Bottom Line", panel, new Vector2(0.012f, 0.021f), new Vector2(0.988f, 0.032f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.70f, 1f, 0.38f)).raycastTarget = false;
+            CreateImage("Action Order Outer Top Line", panel, new Vector2(0.205f, 0.965f), new Vector2(0.992f, 0.976f), Vector2.zero, Vector2.zero, new Color(0.14f, 0.94f, 1f, 0.48f)).raycastTarget = false;
+            CreateImage("Action Order Outer Bottom Line", panel, new Vector2(0.205f, 0.021f), new Vector2(0.988f, 0.032f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.70f, 1f, 0.38f)).raycastTarget = false;
             CreateImage("Action Order Outer Left Line", panel, new Vector2(0.008f, 0.060f), new Vector2(0.016f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
             CreateImage("Action Order Outer Right Line", panel, new Vector2(0.984f, 0.060f), new Vector2(0.992f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
-            CreateImage("Action Order Top Neon", panel, new Vector2(0.014f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
-            CreateImage("Action Order Bottom Neon", panel, new Vector2(0.018f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
+            CreateImage("Action Order Top Neon", panel, new Vector2(0.205f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
+            CreateImage("Action Order Bottom Neon", panel, new Vector2(0.205f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
             CreateImage("Action Order Card Rail", panel, new Vector2(0.165f, 0.455f), new Vector2(0.935f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
             CreateImage("Action Order Progress Line Glow", panel, new Vector2(0.212f, 0.041f), new Vector2(0.908f, 0.064f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.72f, 1f, 0.18f)).raycastTarget = false;
             CreateImage("Action Order Progress Line Core", panel, new Vector2(0.216f, 0.050f), new Vector2(0.904f, 0.056f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.92f, 1f, 0.72f)).raycastTarget = false;

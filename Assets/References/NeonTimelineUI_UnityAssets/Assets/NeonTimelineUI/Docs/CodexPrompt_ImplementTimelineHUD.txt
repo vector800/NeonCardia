@@ -1,0 +1,18 @@
+Assets/NeonTimelineUI/Textures のUI素材を使って、BattleScene上部に行動順タイムラインHUDを実装してください。
+
+使用素材:
+- UI_LeftCounterPanel_NoText.png: 左のCT/数値表示パネル
+- UI_SlotFrame_CurrentGold.png: 現在行動中の金フレーム
+- UI_SlotFrame_AllyCyan.png: 味方/通常枠
+- UI_SlotFrame_EnemyOrange.png: 敵枠
+- SampleIcons/128/*.png: 仮アイコン。後で既存キャラ顔アイコンへ差し替える
+
+実装方針:
+- Canvas配下の上部中央にTimelineRootを作る。
+- 左にカウンターパネル、右に横並びのスロット群を配置する。
+- 各スロットは IconImage を下、FrameImage を上に重ねる構造にする。
+- Currentだけ通常より少し大きくし、金フレームを使う。
+- 味方はシアン、敵はオレンジで表示する。
+- 1920x1080のGameビューで、画面上部の余白に収まり、戦闘フィールドやキャラに被りすぎないように調整する。
+- 既存のBattleSceneの挙動を壊さない。変更範囲はUI追加に必要なPrefab/Script/Scene差分に限定する。
+- 実装後、差分ファイルと確認結果を簡潔に報告する。

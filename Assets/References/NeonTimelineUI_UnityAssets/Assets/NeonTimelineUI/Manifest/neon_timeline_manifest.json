@@ -1,0 +1,308 @@
+{
+  "name": "NeonTimelineUI_UnityAssets",
+  "created_from": "uploaded reference image",
+  "source_image_size_px": [
+    2048,
+    682
+  ],
+  "notes": [
+    "PNGは背景透過済みです。",
+    "SlotFrame系は中央を透過しているため、UnityのUI Imageでアイコン画像の上に重ねて使えます。",
+    "自動抽出のため完全なベクター/9-slice素材ではありません。大きく拡大する場合はUnity側で見え方を確認してください。"
+  ],
+  "textures": [
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_LeftCounterPanel_NoText.png",
+      "size_px": [
+        300,
+        245
+      ],
+      "role": "カウンター表示用パネル。TextMeshPro等で数字を重ねる",
+      "source_bbox": [
+        35,
+        195,
+        335,
+        440
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_LeftCounterPanel_With150.png",
+      "size_px": [
+        300,
+        245
+      ],
+      "role": "カウンター表示用パネル。元画像の150入り",
+      "source_bbox": [
+        35,
+        195,
+        335,
+        440
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_SlotFrame_AllyCyan.png",
+      "size_px": [
+        206,
+        238
+      ],
+      "role": "味方/通常枠のシアンフレーム。中央は透過済み",
+      "source_bbox": [
+        586,
+        214,
+        792,
+        452
+      ],
+      "recommended_unity_usage": "Iconを下、Frameを上に重ねる"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_SlotFrame_CurrentGold.png",
+      "size_px": [
+        238,
+        286
+      ],
+      "role": "現在行動中の金フレーム。中央は透過済み",
+      "source_bbox": [
+        348,
+        176,
+        586,
+        462
+      ],
+      "recommended_unity_usage": "Iconを下、Frameを上に重ねる"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_SlotFrame_EnemyOrange.png",
+      "size_px": [
+        206,
+        238
+      ],
+      "role": "敵枠のオレンジフレーム。中央は透過済み",
+      "source_bbox": [
+        784,
+        214,
+        990,
+        452
+      ],
+      "recommended_unity_usage": "Iconを下、Frameを上に重ねる"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Slot_AllyCyan_WithSampleIcon.png",
+      "size_px": [
+        206,
+        238
+      ],
+      "role": "シアンフレーム＋元画像サンプルアイコン入り",
+      "source_bbox": [
+        586,
+        214,
+        792,
+        452
+      ],
+      "recommended_unity_usage": "モック確認用"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Slot_CurrentGold_WithSampleIcon.png",
+      "size_px": [
+        238,
+        286
+      ],
+      "role": "金フレーム＋元画像サンプルアイコン入り",
+      "source_bbox": [
+        348,
+        176,
+        586,
+        462
+      ],
+      "recommended_unity_usage": "モック確認用"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Slot_EnemyOrange_WithSampleIcon.png",
+      "size_px": [
+        206,
+        238
+      ],
+      "role": "オレンジフレーム＋元画像サンプルアイコン入り",
+      "source_bbox": [
+        784,
+        214,
+        990,
+        452
+      ],
+      "recommended_unity_usage": "モック確認用"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Timeline_Full_Transparent.png",
+      "size_px": [
+        2048,
+        395
+      ],
+      "role": "完成見本/そのまま配置用の全体PNG（背景透過）",
+      "source_bbox": [
+        0,
+        140,
+        2048,
+        535
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Timeline_LeftEnd_NoText.png",
+      "size_px": [
+        365,
+        365
+      ],
+      "role": "左端カウンター込みの装飾。数字は消去済み",
+      "source_bbox": [
+        0,
+        150,
+        365,
+        515
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Timeline_LeftEnd_With150.png",
+      "size_px": [
+        365,
+        365
+      ],
+      "role": "左端カウンター込みの装飾。元画像の150入り",
+      "source_bbox": [
+        0,
+        150,
+        365,
+        515
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Timeline_RightCap_Only.png",
+      "size_px": [
+        168,
+        365
+      ],
+      "role": "右端キャップ装飾のみ",
+      "source_bbox": [
+        1880,
+        150,
+        2048,
+        515
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/Textures/UI_Timeline_RightEnd.png",
+      "size_px": [
+        338,
+        365
+      ],
+      "role": "右端付近の装飾。元画像の最後のアイコンを含む",
+      "source_bbox": [
+        1710,
+        150,
+        2048,
+        515
+      ],
+      "recommended_unity_usage": "Image / Simple"
+    }
+  ],
+  "sample_icons": [
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/SampleIcon_01_Player.png",
+      "size_px": [
+        139,
+        160
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/SampleIcon_02_Wolf.png",
+      "size_px": [
+        137,
+        155
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/SampleIcon_03_Drill.png",
+      "size_px": [
+        127,
+        151
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/SampleIcon_04_FairyGirl.png",
+      "size_px": [
+        122,
+        158
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/SampleIcon_05_CyberPod.png",
+      "size_px": [
+        119,
+        157
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/SampleIcon_06_PurpleBug.png",
+      "size_px": [
+        137,
+        157
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/128/SampleIcon_01_Player.png",
+      "size_px": [
+        128,
+        128
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/128/SampleIcon_02_Wolf.png",
+      "size_px": [
+        128,
+        128
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/128/SampleIcon_03_Drill.png",
+      "size_px": [
+        128,
+        128
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/128/SampleIcon_04_FairyGirl.png",
+      "size_px": [
+        128,
+        128
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/128/SampleIcon_05_CyberPod.png",
+      "size_px": [
+        128,
+        128
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    },
+    {
+      "file": "Assets/NeonTimelineUI/SampleIcons/128/SampleIcon_06_PurpleBug.png",
+      "size_px": [
+        128,
+        128
+      ],
+      "role": "動作確認用サンプル顔アイコン"
+    }
+  ]
+}
