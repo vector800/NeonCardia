@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -13,6 +14,13 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const int HandSize = 5;
     private const int MaxQueuedActions = 3;
     private const int TimelinePreviewCount = 8;
+    private const float PrefabTimelineMoveSeconds = 0.22f;
+    private const float PrefabTimelineFadeShift = 0.070f;
+    private const int PrefabTimelineBlankCardMinVisible = 2;
+    private const int PrefabTimelineBlankCardStepTicks = 60;
+    private const int PrefabTimelineBlankCardMaxPerGap = 2;
+    private const int BattleScenePrototypeAttackCount = 3;
+    private const int BattleScenePrototypeAttackRangeStartColumn = 0;
     private const int WeaponPower = 10;
     private const int EchoShotPower = 20;
     private const int EchoSkillPower = 10;
@@ -49,6 +57,33 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const string PanelEnemyNormalAssetPath = "Assets/Art/BattleField/NeonGrid/Sprites/Panel_CyanBlue_Base.png";
     private const string PanelEnemySelectedAssetPath = "Assets/Art/Runtime/Panels/Panel_Enemy_Selected.png";
     private const string PanelTargetableOverlayAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Targetable_Perspective_Overlay.png";
+    private const string BattleSceneAttackRangePanelAssetFolder = "Assets/Art/BattleField/NeonGrid/RangePanels";
+    private const string BattleSceneAttackRangeAlignedPanelAssetFolder = "Assets/Art/BattleField/NeonGrid/RangePanelsAligned";
+    private const string BattleSceneAttackRangeRowAssetFolder = "Assets/Art/BattleField/NeonGrid/RangeRows";
+    private const string BattleSceneUnifiedPanelAssetFolder = "Assets/Art/BattleField/NeonGrid/UnifiedPanels";
+    private const string BattleSceneUnifiedBoardFrameAssetPath = "Assets/Art/BattleField/NeonGrid/UnifiedPanels/UnifiedBoardFrame.png";
+    private const string BattleSceneUnifiedTilePanelAllyAssetPath = "Assets/Art/BattleField/NeonGrid/UnifiedPanels/TilePanel_Ally.png";
+    private const string BattleSceneUnifiedTilePanelEnemyAssetPath = "Assets/Art/BattleField/NeonGrid/UnifiedPanels/TilePanel_Enemy.png";
+    private const string BattleSceneUnifiedPanelRootName = "UnifiedPanelVisuals";
+    private const bool BattleSceneUseUnifiedPanelCells = true;
+    private const float BattleSceneUnifiedTextureWidthPixels = 1672f;
+    private const float BattleSceneUnifiedTextureHeightPixels = 941f;
+    private const float BattleSceneUnifiedPixelsPerUnit = 100f;
+    private const float BattleSceneUnifiedColliderTrim = 0.10f;
+    private const float BattleSceneVisualPanelBaseWidthPixels = 238f;
+    private const float BattleSceneVisualPanelBaseHeightPixels = 126f;
+    private const int BattleSceneUnifiedPanelSortingOrder = -1;
+    // RowSprites uses full-size transparent row masks for the highlighted row.
+    // The masks share the BattleGrid_Full_Image2 coordinate space and are
+    // clipped to each panel top surface, so side walls and board frame glow stay untouched.
+    private static readonly BattleSceneAttackRangeOverlayMode BattleSceneAttackRangeMode = BattleSceneAttackRangeOverlayMode.RowSprites;
+    private const float BattleSceneAttackRangeOverlayExpand = 0.085f;
+    private const float BattleSceneAttackRangeOverlayZ = -0.024f;
+    private const float BattleSceneAttackRangeOutlineWidth = 0.055f;
+    private const float BattleSceneAttackRangeGlowWidth = 0.18f;
+    private const int BattleSceneAttackRangeFillSortingOrder = 26;
+    private const int BattleSceneAttackRangeGlowSortingOrder = 27;
+    private const int BattleSceneAttackRangeOutlineSortingOrder = 28;
     private const string PanelDangerOverlayAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Danger_Perspective_Overlay.png";
     private const string PanelHoverAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Hover_Perspective_Overlay.png";
     private const string PanelDisabledAssetPath = "Assets/Art/Runtime/Panels/Perspective/Panel_Disabled_Perspective_Overlay.png";
@@ -77,8 +112,10 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const float BattleFieldTiltDegrees = 62f;
     private const float BattleSceneHudMinX = 0.012f;
     private const float BattleSceneHudMaxX = 0.865f;
-    private const float BattleSceneHudMinY = 0.728f;
+    private const float BattleSceneHudMinY = 0.872f;
     private const float BattleSceneHudMaxY = 0.982f;
+    private static readonly Vector2 BattleSceneCommandPanelMin = new Vector2(0.012f, 0.225f);
+    private static readonly Vector2 BattleSceneCommandPanelMax = new Vector2(0.265f, 0.695f);
     private const float BattleSpriteScaleRowDelta = 0.13f;
     private const float BattleSpriteYOffsetRowDelta = -0.035f;
     private const string BattleSceneEnemyHpTextName = "HPText";
@@ -102,6 +139,50 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         -BattleGridTileSize * BattleGridTotalCols * 0.5f,
         -BattleGridTileSize * BattleGridRows * 0.5f);
 
+    private static readonly Vector2[][] BattleSceneUnifiedPanelCornerPixels =
+    {
+        new[] { new Vector2(92.0f, 198.0f), new Vector2(330.0f, 198.0f), new Vector2(330.0f, 324.0f), new Vector2(92.0f, 324.0f) },
+        new[] { new Vector2(342.0f, 198.0f), new Vector2(580.0f, 198.0f), new Vector2(580.0f, 324.0f), new Vector2(342.0f, 324.0f) },
+        new[] { new Vector2(592.0f, 198.0f), new Vector2(830.0f, 198.0f), new Vector2(830.0f, 324.0f), new Vector2(592.0f, 324.0f) },
+        new[] { new Vector2(842.0f, 198.0f), new Vector2(1080.0f, 198.0f), new Vector2(1080.0f, 324.0f), new Vector2(842.0f, 324.0f) },
+        new[] { new Vector2(1092.0f, 198.0f), new Vector2(1330.0f, 198.0f), new Vector2(1330.0f, 324.0f), new Vector2(1092.0f, 324.0f) },
+        new[] { new Vector2(1342.0f, 198.0f), new Vector2(1580.0f, 198.0f), new Vector2(1580.0f, 324.0f), new Vector2(1342.0f, 324.0f) },
+        new[] { new Vector2(92.0f, 331.0f), new Vector2(330.0f, 331.0f), new Vector2(330.0f, 457.0f), new Vector2(92.0f, 457.0f) },
+        new[] { new Vector2(342.0f, 331.0f), new Vector2(580.0f, 331.0f), new Vector2(580.0f, 457.0f), new Vector2(342.0f, 457.0f) },
+        new[] { new Vector2(592.0f, 331.0f), new Vector2(830.0f, 331.0f), new Vector2(830.0f, 457.0f), new Vector2(592.0f, 457.0f) },
+        new[] { new Vector2(842.0f, 331.0f), new Vector2(1080.0f, 331.0f), new Vector2(1080.0f, 457.0f), new Vector2(842.0f, 457.0f) },
+        new[] { new Vector2(1092.0f, 331.0f), new Vector2(1330.0f, 331.0f), new Vector2(1330.0f, 457.0f), new Vector2(1092.0f, 457.0f) },
+        new[] { new Vector2(1342.0f, 331.0f), new Vector2(1580.0f, 331.0f), new Vector2(1580.0f, 457.0f), new Vector2(1342.0f, 457.0f) },
+        new[] { new Vector2(92.0f, 464.0f), new Vector2(330.0f, 464.0f), new Vector2(330.0f, 590.0f), new Vector2(92.0f, 590.0f) },
+        new[] { new Vector2(342.0f, 464.0f), new Vector2(580.0f, 464.0f), new Vector2(580.0f, 590.0f), new Vector2(342.0f, 590.0f) },
+        new[] { new Vector2(592.0f, 464.0f), new Vector2(830.0f, 464.0f), new Vector2(830.0f, 590.0f), new Vector2(592.0f, 590.0f) },
+        new[] { new Vector2(842.0f, 464.0f), new Vector2(1080.0f, 464.0f), new Vector2(1080.0f, 590.0f), new Vector2(842.0f, 590.0f) },
+        new[] { new Vector2(1092.0f, 464.0f), new Vector2(1330.0f, 464.0f), new Vector2(1330.0f, 590.0f), new Vector2(1092.0f, 590.0f) },
+        new[] { new Vector2(1342.0f, 464.0f), new Vector2(1580.0f, 464.0f), new Vector2(1580.0f, 590.0f), new Vector2(1342.0f, 590.0f) }
+    };
+
+    private static readonly Vector2[][] BattleSceneVisualPanelCornerPixels =
+    {
+        new[] { new Vector2(92.0f, 198.0f), new Vector2(330.0f, 198.0f), new Vector2(330.0f, 324.0f), new Vector2(92.0f, 324.0f) },
+        new[] { new Vector2(342.0f, 198.0f), new Vector2(580.0f, 198.0f), new Vector2(580.0f, 324.0f), new Vector2(342.0f, 324.0f) },
+        new[] { new Vector2(592.0f, 198.0f), new Vector2(830.0f, 198.0f), new Vector2(830.0f, 324.0f), new Vector2(592.0f, 324.0f) },
+        new[] { new Vector2(842.0f, 198.0f), new Vector2(1080.0f, 198.0f), new Vector2(1080.0f, 324.0f), new Vector2(842.0f, 324.0f) },
+        new[] { new Vector2(1092.0f, 198.0f), new Vector2(1330.0f, 198.0f), new Vector2(1330.0f, 324.0f), new Vector2(1092.0f, 324.0f) },
+        new[] { new Vector2(1342.0f, 198.0f), new Vector2(1580.0f, 198.0f), new Vector2(1580.0f, 324.0f), new Vector2(1342.0f, 324.0f) },
+        new[] { new Vector2(92.0f, 331.0f), new Vector2(330.0f, 331.0f), new Vector2(330.0f, 457.0f), new Vector2(92.0f, 457.0f) },
+        new[] { new Vector2(342.0f, 331.0f), new Vector2(580.0f, 331.0f), new Vector2(580.0f, 457.0f), new Vector2(342.0f, 457.0f) },
+        new[] { new Vector2(592.0f, 331.0f), new Vector2(830.0f, 331.0f), new Vector2(830.0f, 457.0f), new Vector2(592.0f, 457.0f) },
+        new[] { new Vector2(842.0f, 331.0f), new Vector2(1080.0f, 331.0f), new Vector2(1080.0f, 457.0f), new Vector2(842.0f, 457.0f) },
+        new[] { new Vector2(1092.0f, 331.0f), new Vector2(1330.0f, 331.0f), new Vector2(1330.0f, 457.0f), new Vector2(1092.0f, 457.0f) },
+        new[] { new Vector2(1342.0f, 331.0f), new Vector2(1580.0f, 331.0f), new Vector2(1580.0f, 457.0f), new Vector2(1342.0f, 457.0f) },
+        new[] { new Vector2(92.0f, 464.0f), new Vector2(330.0f, 464.0f), new Vector2(330.0f, 590.0f), new Vector2(92.0f, 590.0f) },
+        new[] { new Vector2(342.0f, 464.0f), new Vector2(580.0f, 464.0f), new Vector2(580.0f, 590.0f), new Vector2(342.0f, 590.0f) },
+        new[] { new Vector2(592.0f, 464.0f), new Vector2(830.0f, 464.0f), new Vector2(830.0f, 590.0f), new Vector2(592.0f, 590.0f) },
+        new[] { new Vector2(842.0f, 464.0f), new Vector2(1080.0f, 464.0f), new Vector2(1080.0f, 590.0f), new Vector2(842.0f, 590.0f) },
+        new[] { new Vector2(1092.0f, 464.0f), new Vector2(1330.0f, 464.0f), new Vector2(1330.0f, 590.0f), new Vector2(1092.0f, 590.0f) },
+        new[] { new Vector2(1342.0f, 464.0f), new Vector2(1580.0f, 464.0f), new Vector2(1580.0f, 590.0f), new Vector2(1342.0f, 590.0f) }
+    };
+
     private readonly List<AllyUnit> allies = new List<AllyUnit>();
     private readonly List<EnemyUnit> enemies = new List<EnemyUnit>();
     private readonly List<SkillTimelineAction> skillTimelineActions = new List<SkillTimelineAction>();
@@ -120,10 +201,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private readonly List<GameObject> debugGridLines = new List<GameObject>();
 
     private readonly List<TimelineSlotView> timelineViews = new List<TimelineSlotView>();
+    private readonly List<PrefabTimelineDisplayState> prefabTimelineSlotStates = new List<PrefabTimelineDisplayState>();
+    private readonly List<GameObject> prefabTimelineGhostObjects = new List<GameObject>();
     private readonly Dictionary<PartyPosition, AllyView> allyViews = new Dictionary<PartyPosition, AllyView>();
     private readonly EnemyCellView[,] enemyCellViews = new EnemyCellView[3, 3];
+    private readonly Image[,] battleSceneAttackRangeCells = new Image[BattleGridRows, BattleGridTotalCols];
+    private readonly SpriteRenderer[,] battleSceneAttackRangeSceneSpriteRenderers = new SpriteRenderer[BattleGridRows, BattleGridTotalCols];
+    private readonly SpriteRenderer[] battleSceneAttackRangeSceneRowRenderers = new SpriteRenderer[BattleGridRows];
+    private readonly GameObject[,] battleSceneAttackRangeColliderOverlayRoots = new GameObject[BattleGridRows, BattleGridTotalCols];
     private readonly List<CardButtonView> handViews = new List<CardButtonView>();
     private readonly List<Text> chipQueueSlotTexts = new List<Text>();
+    private readonly List<PrototypeAttackButtonView> prototypeAttackViews = new List<PrototypeAttackButtonView>();
 
     private Font uiFont;
     private Text turnText;
@@ -145,15 +233,26 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Text currentHpValueText;
     private RectTransform battleSceneTimelineRoot;
     private RectTransform battleSceneEnemyHpOverlayRoot;
+    private RectTransform battleSceneAttackRangeOverlayRoot;
     private RectTransform selectedCommandNameRoot;
     private BattleTimelineHudView battleTimelineHudView;
     private string prefabTimelineSignature = string.Empty;
+    private Coroutine prefabTimelineAnimationRoutine;
+    private Material battleSceneAttackRangeFillMaterial;
+    private Material battleSceneAttackRangeGlowMaterial;
+    private Material battleSceneAttackRangeOutlineMaterial;
     private Button weaponButton;
     private Button confirmButton;
     private Button resetButton;
     private Button debugButton;
     private Button swapFrontMiddleButton;
     private Button swapMiddleBackButton;
+    private GameObject battleSceneCommandRoot;
+    private Text battleSceneCommandActorText;
+    private Text battleSceneCommandTargetText;
+    private Text battleSceneCommandSelectedText;
+    private Button battleSceneCommandOkButton;
+    private Image battleSceneCommandOkImage;
     private GameObject cardSelectRoot;
     private Text chipDetailNameText;
     private Text chipDetailPowerText;
@@ -208,6 +307,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private bool battleEnded;
     private bool cardSelectOpen;
     private int selectedHandIndex;
+    private int selectedPrototypeAttackIndex = 1;
+    private int hoveredPrototypeAttackIndex = -1;
 
     private enum PartyPosition
     {
@@ -239,6 +340,18 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         Enemy,
         Ally,
         None
+    }
+
+    private enum PrototypeAttackRangePattern
+    {
+        RowToEnemyEdge
+    }
+
+    private enum BattleSceneAttackRangeOverlayMode
+    {
+        AlignedPanelSprites,
+        ColliderPolygons,
+        RowSprites
     }
 
     private sealed class PrototypeCard
@@ -342,6 +455,39 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         public PartyPosition SwapB;
         public bool ConsumesAction;
         public string Label;
+    }
+
+    private sealed class PrototypeAttackDefinition
+    {
+        public string Name;
+        public int Damage;
+        public int Delay;
+        public CardAttribute Attribute;
+        public PrototypeAttackRangePattern RangePattern;
+    }
+
+    private sealed class PrototypeAttackButtonView
+    {
+        public Button Button;
+        public Image Panel;
+        public Text Label;
+    }
+
+    private sealed class PrototypeDamageRequest
+    {
+        public AllyUnit Attacker;
+        public EnemyUnit Target;
+        public PrototypeAttackDefinition Attack;
+    }
+
+    private sealed class PrototypeDamageResult
+    {
+        public int BaseDamage;
+        public int FinalDamage;
+        public CardAttribute Attribute;
+        public float Multiplier;
+        public bool WeaknessHit;
+        public string Reason;
     }
 
     private sealed class TimelineSlotView
@@ -519,6 +665,42 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         public int DeltaTick;
     }
 
+    private struct PrefabTimelineSlotLayout
+    {
+        public Vector2 AnchorMin;
+        public Vector2 AnchorMax;
+    }
+
+    private sealed class PrefabTimelineDisplayState
+    {
+        public string Key;
+        public string TrackingKey;
+        public int LogicalIndex;
+        public int DisplayIndex;
+        public TimelinePreview Preview;
+        public BattleTimelineSlotView Slot;
+        public bool MatchedPrevious;
+        public bool IsBlank;
+        public int BlankDeltaTick;
+    }
+
+    private sealed class PrefabTimelineSlotMotion
+    {
+        public BattleTimelineSlotView Slot;
+        public PrefabTimelineSlotLayout StartLayout;
+        public PrefabTimelineSlotLayout EndLayout;
+        public float StartAlpha;
+        public float EndAlpha;
+    }
+
+    private sealed class PrefabTimelineGhostMotion
+    {
+        public RectTransform Root;
+        public CanvasGroup Group;
+        public PrefabTimelineSlotLayout StartLayout;
+        public PrefabTimelineSlotLayout EndLayout;
+    }
+
     protected virtual void Awake()
     {
         InitializeController();
@@ -533,7 +715,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         initialized = true;
         mainBattleSceneMode = mainBattleSceneMode || SceneManager.GetActiveScene().name == "BattleScene";
-        useSceneBattleGridPrefabVisuals = mainBattleSceneMode && GameObject.Find(BattleGridBottomPrefabName) != null;
+        useSceneBattleGridPrefabVisuals = mainBattleSceneMode && FindBattleSceneGridRoot() != null;
         random = new System.Random(17);
         uiFont = CreateJapaneseFont();
         if (uiFont == null)
@@ -569,6 +751,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         LoadEnemyCharacterSprites();
         LoadSceneBattleGridUnitAnimations();
         LoadBattlePanelSprites();
+        ApplyBattleSceneUnifiedPanelGrid();
         EnsureCamera();
         EnsureEventSystem();
         InitializeBattle();
@@ -607,23 +790,50 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
         else if (keyboard.digit1Key.wasPressedThisFrame)
         {
-            QueueCardFromHand(0);
+            if (mainBattleSceneMode && IsPlayerTurn())
+            {
+                SelectPrototypeAttack(0);
+            }
+            else
+            {
+                QueueCardFromHand(0);
+            }
         }
         else if (keyboard.digit2Key.wasPressedThisFrame)
         {
-            QueueCardFromHand(1);
+            if (mainBattleSceneMode && IsPlayerTurn())
+            {
+                SelectPrototypeAttack(1);
+            }
+            else
+            {
+                QueueCardFromHand(1);
+            }
         }
         else if (keyboard.digit3Key.wasPressedThisFrame)
         {
-            QueueCardFromHand(2);
+            if (mainBattleSceneMode && IsPlayerTurn())
+            {
+                SelectPrototypeAttack(2);
+            }
+            else
+            {
+                QueueCardFromHand(2);
+            }
         }
         else if (keyboard.digit4Key.wasPressedThisFrame)
         {
-            QueueCardFromHand(3);
+            if (!mainBattleSceneMode)
+            {
+                QueueCardFromHand(3);
+            }
         }
         else if (keyboard.digit5Key.wasPressedThisFrame)
         {
-            QueueCardFromHand(4);
+            if (!mainBattleSceneMode)
+            {
+                QueueCardFromHand(4);
+            }
         }
     }
 
@@ -749,6 +959,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         battleEnded = false;
         cardSelectOpen = false;
         selectedHandIndex = 0;
+        selectedPrototypeAttackIndex = 1;
+        hoveredPrototypeAttackIndex = -1;
 
         allies.Add(new AllyUnit { Name = "AllyFront", Hp = 150, MaxHp = 150, Position = PartyPosition.Front, Speed = 48, Status = "Normal", NextReadyTick = 0 });
         allies.Add(new AllyUnit { Name = "AllyMiddle", Hp = 125, MaxHp = 125, Position = PartyPosition.Middle, Speed = 58, Status = "Normal", NextReadyTick = 8 });
@@ -969,6 +1181,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RectTransform root = CreateRect(mainBattleSceneMode ? "BattleSceneTimelineRoot" : "BattleTimelinePrototypeRoot", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         battleSceneTimelineRoot = root;
         battleSceneEnemyHpOverlayRoot = null;
+        battleSceneAttackRangeOverlayRoot = null;
+        ClearBattleSceneAttackRangeCells();
 
         BuildPreviewBackground(root);
         BuildBackgroundGrid(root);
@@ -983,6 +1197,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RectTransform battleFieldRoot = mainBattleSceneMode ? CreateBattleFieldRoot(root) : root;
         BuildAllies(battleFieldRoot);
         BuildEnemyGrid(battleFieldRoot);
+        BuildBattleSceneAttackRangeOverlay(root);
         BuildHandAndCommands(root);
         if (!useSceneBattleGridPrefabVisuals)
         {
@@ -1600,8 +1815,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         SetAnchors(hudRect, BattleSceneHudMinX, BattleSceneHudMinY, BattleSceneHudMaxX, BattleSceneHudMaxY);
         SetImageType(hudRect, Image.Type.Sliced);
 
-        SetAnchors(hudView.LeftPanel, 0.047f, 0.257f, 0.194f, 0.743f);
-        SetImageEnabled(hudView.LeftPanel, false);
+        SetAnchors(hudView.LeftPanel, 0.024f, 0.245f, 0.140f, 0.755f);
+        SetImageEnabled(hudView.LeftPanel, true);
+        SetImageType(hudView.LeftPanel, Image.Type.Sliced);
         if (hudView.ActionOrderText != null)
         {
             HideText(hudView.ActionOrderText);
@@ -1614,20 +1830,19 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         if (hudView.CurrentHpValue != null)
         {
-            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.185735f, 0.280f, 0.770735f, 0.860f);
+            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.175f, 0.170f, 0.855f, 0.830f);
         }
 
-        SetTextStyle(hudView.CurrentHpValue, 30, TextAnchor.MiddleCenter, Color.white);
+        SetTextStyle(hudView.CurrentHpValue, 22, TextAnchor.MiddleCenter, Color.white);
         SetChildActiveIfPresent(hudView.LeftPanel, "CurrentHpGaugeBack", false);
 
-        SetAnchors(hudView.SlotsRoot, 0.165f, 0.105f, 0.930f, 0.925f);
+        SetAnchors(hudView.SlotsRoot, 0.150f, 0.115f, 0.934f, 0.885f);
 
         BattleTimelineSlotView[] slots = hudView.Slots;
         if (slots != null)
         {
-            float[] minX = { 0.000f, 0.146f, 0.268f, 0.390f, 0.512f, 0.634f, 0.756f, 0.878f };
-            float[] maxX = { 0.142f, 0.264f, 0.386f, 0.508f, 0.630f, 0.752f, 0.874f, 0.996f };
-            for (int i = 0; i < slots.Length && i < minX.Length; i++)
+            int slotCount = slots.Length;
+            for (int i = 0; i < slotCount; i++)
             {
                 BattleTimelineSlotView slot = slots[i];
                 if (slot == null)
@@ -1635,15 +1850,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                     continue;
                 }
 
+                PrefabTimelineSlotLayout layout = GetPrefabTimelineSlotLayout(i, slotCount);
                 bool current = i == 0;
-                SetAnchors(slot.Root, minX[i], current ? 0.005f : 0.100f, maxX[i], current ? 0.985f : 0.900f);
+                SetAnchors(slot.Root, layout.AnchorMin.x, layout.AnchorMin.y, layout.AnchorMax.x, layout.AnchorMax.y);
                 SetImageType(slot.Root, Image.Type.Sliced);
-                SetAnchors(
-                    slot.Icon != null ? slot.Icon.rectTransform : null,
-                    current ? 0.090f : 0.075f,
-                    current ? 0.110f : 0.095f,
-                    current ? 0.910f : 0.925f,
-                    current ? 0.900f : 0.905f);
+                ApplyPrefabTimelineSlotInnerLayout(slot, current);
                 SetAnchors(
                     slot.IndexText != null ? slot.IndexText.rectTransform : null,
                     0.500f,
@@ -1668,18 +1879,86 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             }
         }
 
-        SetAnchors(hudView.ConnectorLine, 0.215f, 0.070f, 0.905f, 0.105f);
-        SetImageType(hudView.ConnectorLine, Image.Type.Sliced);
+        SetImageEnabled(hudView.ConnectorLine, false);
 
-        SetAnchors(hudView.CurrentMarker, 0.178f, 0.000f, 0.225f, 0.080f);
-        SetImageType(hudView.CurrentMarker, Image.Type.Simple);
         if (hudView.CurrentMarker != null)
         {
             hudView.CurrentMarker.gameObject.SetActive(false);
         }
 
-        SetAnchors(hudView.RightArrow, 0.940f, 0.390f, 0.985f, 0.610f);
         SetImageEnabled(hudView.RightArrow, false);
+        if (hudView.RightArrow != null)
+        {
+            hudView.RightArrow.gameObject.SetActive(false);
+        }
+    }
+
+    private static PrefabTimelineSlotLayout GetPrefabTimelineSlotLayout(int displayIndex, int slotCount)
+    {
+        int safeSlotCount = Mathf.Max(1, slotCount);
+        int safeDisplayIndex = Mathf.Clamp(displayIndex, 0, safeSlotCount - 1);
+        const float totalWidth = 0.996f;
+        const float gap = 0.008f;
+        float currentWidth = safeSlotCount > 1 ? 0.142f : totalWidth;
+        float normalWidth = safeSlotCount > 1
+            ? Mathf.Max(0.050f, (totalWidth - currentWidth - gap * (safeSlotCount - 1)) / (safeSlotCount - 1))
+            : totalWidth;
+
+        float x = 0f;
+        for (int i = 0; i < safeDisplayIndex; i++)
+        {
+            x += (i == 0 ? currentWidth : normalWidth) + gap;
+        }
+
+        bool currentGate = safeDisplayIndex == 0;
+        float width = currentGate ? currentWidth : normalWidth;
+        return new PrefabTimelineSlotLayout
+        {
+            AnchorMin = new Vector2(x, currentGate ? 0.020f : 0.080f),
+            AnchorMax = new Vector2(Mathf.Min(totalWidth, x + width), currentGate ? 0.980f : 0.920f)
+        };
+    }
+
+    private static PrefabTimelineSlotLayout GetPrefabTimelineOffscreenRightLayout(int slotCount)
+    {
+        int safeSlotCount = Mathf.Max(1, slotCount);
+        PrefabTimelineSlotLayout lastLayout = GetPrefabTimelineSlotLayout(safeSlotCount - 1, safeSlotCount);
+        float shift = lastLayout.AnchorMax.x - lastLayout.AnchorMin.x + 0.040f;
+        lastLayout.AnchorMin.x += shift;
+        lastLayout.AnchorMax.x += shift;
+        return lastLayout;
+    }
+
+    private static PrefabTimelineSlotLayout ShiftPrefabTimelineLayout(PrefabTimelineSlotLayout layout, float x)
+    {
+        layout.AnchorMin.x += x;
+        layout.AnchorMax.x += x;
+        return layout;
+    }
+
+    private static void ApplyPrefabTimelineSlotLayout(BattleTimelineSlotView slot, PrefabTimelineSlotLayout layout)
+    {
+        if (slot == null)
+        {
+            return;
+        }
+
+        SetAnchors(slot.Root, layout.AnchorMin.x, layout.AnchorMin.y, layout.AnchorMax.x, layout.AnchorMax.y);
+    }
+
+    private static void ApplyPrefabTimelineSlotInnerLayout(BattleTimelineSlotView slot, bool current)
+    {
+        if (slot == null)
+        {
+            return;
+        }
+
+        SetAnchors(
+            slot.Icon != null ? slot.Icon.rectTransform : null,
+            current ? 0.105f : 0.120f,
+            current ? 0.165f : 0.185f,
+            current ? 0.895f : 0.880f,
+            current ? 0.835f : 0.815f);
     }
 
     private static void SetAnchors(RectTransform rectTransform, float minX, float minY, float maxX, float maxY)
@@ -2120,6 +2399,20 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         anchorMax = new Vector2(maxX, maxY);
     }
 
+    private static void GetBattleFieldGridCellAnchors(int row, int column, out Vector2 anchorMin, out Vector2 anchorMax)
+    {
+        int clampedRow = Mathf.Clamp(row, 0, BattleGridRows - 1);
+        int clampedColumn = Mathf.Clamp(column, 0, BattleGridTotalCols - 1);
+        float tileWidth = 1f / BattleGridTotalCols;
+        float tileHeight = 1f / BattleGridRows;
+        float minX = clampedColumn * tileWidth;
+        float maxX = minX + tileWidth;
+        float minY = (BattleGridRows - clampedRow - 1) * tileHeight;
+        float maxY = minY + tileHeight;
+        anchorMin = new Vector2(minX, minY);
+        anchorMax = new Vector2(maxX, maxY);
+    }
+
     private void CreateAllyGridView(Transform parent, PartyPosition position, int row, int column)
     {
         Vector2 cellMin;
@@ -2309,6 +2602,476 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
     }
 
+    private void BuildBattleSceneAttackRangeOverlay(Transform parent)
+    {
+        if (!mainBattleSceneMode || parent == null)
+        {
+            return;
+        }
+
+        ClearBattleSceneAttackRangeCells();
+        if (useSceneBattleGridPrefabVisuals)
+        {
+            BuildSceneBattleGridAttackRangeOverlays();
+            return;
+        }
+
+        battleSceneAttackRangeOverlayRoot = CreateRect("BattleSceneAttackRangeOverlayRoot", parent, BattleGridAnchor, BattleGridAnchor, BattleFieldOffsetMin, BattleFieldOffsetMax);
+        battleSceneAttackRangeOverlayRoot.localEulerAngles = new Vector3(BattleFieldTiltDegrees, 0f, 0f);
+        battleSceneAttackRangeOverlayRoot.localScale = Vector3.one;
+
+        Sprite rangeSprite = battlePanelSprites != null ? battlePanelSprites.TargetableOverlay : null;
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                Vector2 min;
+                Vector2 max;
+                GetBattleFieldGridCellAnchors(row, column, out min, out max);
+                Image cell = CreateImage("Attack Range Cell " + row + "-" + column, battleSceneAttackRangeOverlayRoot, min, max, Vector2.zero, Vector2.zero, Color.clear);
+                cell.sprite = rangeSprite;
+                cell.type = Image.Type.Simple;
+                cell.preserveAspect = false;
+                cell.raycastTarget = false;
+                cell.gameObject.SetActive(false);
+                battleSceneAttackRangeCells[row, column] = cell;
+            }
+        }
+
+        battleSceneAttackRangeOverlayRoot.gameObject.SetActive(false);
+    }
+
+    private void BuildSceneBattleGridAttackRangeOverlays()
+    {
+        GameObject grid = FindBattleSceneGridRoot();
+        if (grid == null)
+        {
+            return;
+        }
+
+        switch (BattleSceneAttackRangeMode)
+        {
+            case BattleSceneAttackRangeOverlayMode.AlignedPanelSprites:
+                if (BuildSceneBattleGridAttackRangeAlignedPanelOverlays(grid))
+                {
+                    return;
+                }
+                break;
+            case BattleSceneAttackRangeOverlayMode.ColliderPolygons:
+                if (BuildSceneBattleGridAttackRangeColliderOverlays(grid))
+                {
+                    return;
+                }
+                break;
+            case BattleSceneAttackRangeOverlayMode.RowSprites:
+                if (BuildSceneBattleGridAttackRangeRowOverlays(grid))
+                {
+                    return;
+                }
+                break;
+        }
+
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                Sprite panelSprite = LoadOptionalSprite(GetBattleSceneAttackRangePanelSpriteAssetPath(row, column));
+                if (panelSprite == null)
+                {
+                    continue;
+                }
+
+                GameObject spriteOverlay = new GameObject("AttackRangePanelSprite_R" + row + "_C" + column, typeof(SpriteRenderer));
+                spriteOverlay.transform.SetParent(grid.transform, false);
+                spriteOverlay.transform.localPosition = new Vector3(0f, 0f, -0.025f);
+                spriteOverlay.transform.localRotation = Quaternion.identity;
+                spriteOverlay.transform.localScale = Vector3.one;
+
+                SpriteRenderer spriteRenderer = spriteOverlay.GetComponent<SpriteRenderer>();
+                spriteRenderer.sprite = panelSprite;
+                spriteRenderer.sortingOrder = 28;
+                spriteRenderer.enabled = false;
+                battleSceneAttackRangeSceneSpriteRenderers[row, column] = spriteRenderer;
+            }
+        }
+    }
+
+    private bool BuildSceneBattleGridAttackRangeAlignedPanelOverlays(GameObject grid)
+    {
+        bool builtAny = false;
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                Sprite panelSprite = LoadBattleSceneAttackRangeAlignedPanelSprite(row, column);
+                if (panelSprite == null)
+                {
+                    continue;
+                }
+
+                GameObject spriteOverlay = new GameObject("AttackRangeAlignedPanelSprite_R" + row + "_C" + column, typeof(SpriteRenderer));
+                spriteOverlay.transform.SetParent(grid.transform, false);
+                spriteOverlay.transform.localPosition = new Vector3(0f, 0f, BattleSceneAttackRangeOverlayZ);
+                spriteOverlay.transform.localRotation = Quaternion.identity;
+                spriteOverlay.transform.localScale = Vector3.one;
+
+                SpriteRenderer spriteRenderer = spriteOverlay.GetComponent<SpriteRenderer>();
+                spriteRenderer.sprite = panelSprite;
+                spriteRenderer.sortingOrder = BattleSceneAttackRangeOutlineSortingOrder;
+                spriteRenderer.enabled = false;
+                battleSceneAttackRangeSceneSpriteRenderers[row, column] = spriteRenderer;
+                builtAny = true;
+            }
+        }
+
+        return builtAny;
+    }
+
+    private bool BuildSceneBattleGridAttackRangeColliderOverlays(GameObject grid)
+    {
+        Transform collidersRoot = grid != null ? grid.transform.Find("GridColliders") : null;
+        if (collidersRoot == null)
+        {
+            return false;
+        }
+
+        bool builtAny = false;
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                Transform cell = collidersRoot.Find(GetBattleScenePanelCellName(row, column));
+                PolygonCollider2D collider = cell != null ? cell.GetComponent<PolygonCollider2D>() : null;
+                if (collider == null || collider.pathCount == 0)
+                {
+                    continue;
+                }
+
+                Vector2[] points = BuildBattleSceneAttackRangeColliderPoints(grid.transform, collider, BattleSceneAttackRangeOverlayExpand);
+                if (points == null || points.Length < 3)
+                {
+                    continue;
+                }
+
+                GameObject overlayRoot = new GameObject("AttackRangeColliderOverlay_R" + row + "_C" + column);
+                overlayRoot.transform.SetParent(grid.transform, false);
+                overlayRoot.transform.localPosition = new Vector3(0f, 0f, BattleSceneAttackRangeOverlayZ);
+                overlayRoot.transform.localRotation = Quaternion.identity;
+                overlayRoot.transform.localScale = Vector3.one;
+
+                CreateBattleSceneAttackRangeFill(overlayRoot.transform, points, row, column);
+                CreateBattleSceneAttackRangeLine(
+                    overlayRoot.transform,
+                    "Glow",
+                    points,
+                    new Color(1f, 0.73f, 0.05f, 0.34f),
+                    BattleSceneAttackRangeGlowWidth,
+                    BattleSceneAttackRangeGlowSortingOrder,
+                    GetBattleSceneAttackRangeGlowMaterial());
+                CreateBattleSceneAttackRangeLine(
+                    overlayRoot.transform,
+                    "Outline",
+                    points,
+                    new Color(1f, 0.92f, 0.28f, 0.92f),
+                    BattleSceneAttackRangeOutlineWidth,
+                    BattleSceneAttackRangeOutlineSortingOrder,
+                    GetBattleSceneAttackRangeOutlineMaterial());
+
+                overlayRoot.SetActive(false);
+                battleSceneAttackRangeColliderOverlayRoots[row, column] = overlayRoot;
+                builtAny = true;
+            }
+        }
+
+        return builtAny;
+    }
+
+    private static Vector2[] BuildBattleSceneAttackRangeColliderPoints(Transform grid, PolygonCollider2D collider, float expand)
+    {
+        if (grid == null || collider == null || collider.pathCount == 0)
+        {
+            return null;
+        }
+
+        Vector2[] sourcePoints = collider.GetPath(0);
+        if (sourcePoints == null || sourcePoints.Length < 3)
+        {
+            return null;
+        }
+
+        Vector2[] points = new Vector2[sourcePoints.Length];
+        Vector2 center = Vector2.zero;
+        for (int i = 0; i < sourcePoints.Length; i++)
+        {
+            Vector3 worldPoint = collider.transform.TransformPoint(sourcePoints[i]);
+            Vector3 gridLocalPoint = grid.InverseTransformPoint(worldPoint);
+            points[i] = new Vector2(gridLocalPoint.x, gridLocalPoint.y);
+            center += points[i];
+        }
+
+        center /= points.Length;
+        for (int i = 0; i < points.Length; i++)
+        {
+            Vector2 direction = points[i] - center;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                points[i] += direction.normalized * expand;
+            }
+        }
+
+        return points;
+    }
+
+    private void CreateBattleSceneAttackRangeFill(Transform parent, Vector2[] points, int row, int column)
+    {
+        GameObject fillObject = new GameObject("Fill");
+        fillObject.transform.SetParent(parent, false);
+        fillObject.transform.localPosition = Vector3.zero;
+        fillObject.transform.localRotation = Quaternion.identity;
+        fillObject.transform.localScale = Vector3.one;
+
+        Mesh mesh = new Mesh();
+        mesh.name = "AttackRangeFill_R" + row + "_C" + column;
+
+        Vector3[] vertices = new Vector3[points.Length];
+        for (int i = 0; i < points.Length; i++)
+        {
+            vertices[i] = new Vector3(points[i].x, points[i].y, 0f);
+        }
+
+        List<int> triangles = new List<int>();
+        for (int i = 1; i < points.Length - 1; i++)
+        {
+            triangles.Add(0);
+            triangles.Add(i);
+            triangles.Add(i + 1);
+            triangles.Add(0);
+            triangles.Add(i + 1);
+            triangles.Add(i);
+        }
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles.ToArray();
+        mesh.RecalculateBounds();
+
+        MeshFilter meshFilter = fillObject.AddComponent<MeshFilter>();
+        meshFilter.mesh = mesh;
+
+        MeshRenderer meshRenderer = fillObject.AddComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = GetBattleSceneAttackRangeFillMaterial();
+        meshRenderer.sortingOrder = BattleSceneAttackRangeFillSortingOrder;
+    }
+
+    private void CreateBattleSceneAttackRangeLine(Transform parent, string name, Vector2[] points, Color color, float width, int sortingOrder, Material material)
+    {
+        GameObject lineObject = new GameObject(name);
+        lineObject.transform.SetParent(parent, false);
+        lineObject.transform.localPosition = Vector3.zero;
+        lineObject.transform.localRotation = Quaternion.identity;
+        lineObject.transform.localScale = Vector3.one;
+
+        LineRenderer lineRenderer = lineObject.AddComponent<LineRenderer>();
+        lineRenderer.useWorldSpace = false;
+        lineRenderer.loop = true;
+        lineRenderer.positionCount = points.Length;
+        lineRenderer.startWidth = width;
+        lineRenderer.endWidth = width;
+        lineRenderer.startColor = color;
+        lineRenderer.endColor = color;
+        lineRenderer.numCapVertices = 4;
+        lineRenderer.numCornerVertices = 4;
+        lineRenderer.alignment = LineAlignment.View;
+        lineRenderer.textureMode = LineTextureMode.Stretch;
+        lineRenderer.sortingOrder = sortingOrder;
+        lineRenderer.sharedMaterial = material;
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            lineRenderer.SetPosition(i, new Vector3(points[i].x, points[i].y, 0f));
+        }
+    }
+
+    private Material GetBattleSceneAttackRangeFillMaterial()
+    {
+        return GetBattleSceneAttackRangeMaterial(
+            ref battleSceneAttackRangeFillMaterial,
+            "BattleSceneAttackRangeFill",
+            new Color(1f, 0.72f, 0.04f, 0.28f));
+    }
+
+    private Material GetBattleSceneAttackRangeGlowMaterial()
+    {
+        return GetBattleSceneAttackRangeMaterial(
+            ref battleSceneAttackRangeGlowMaterial,
+            "BattleSceneAttackRangeGlow",
+            new Color(1f, 0.68f, 0.02f, 0.34f));
+    }
+
+    private Material GetBattleSceneAttackRangeOutlineMaterial()
+    {
+        return GetBattleSceneAttackRangeMaterial(
+            ref battleSceneAttackRangeOutlineMaterial,
+            "BattleSceneAttackRangeOutline",
+            new Color(1f, 0.92f, 0.28f, 0.92f));
+    }
+
+    private static Material GetBattleSceneAttackRangeMaterial(ref Material material, string name, Color color)
+    {
+        if (material != null)
+        {
+            return material;
+        }
+
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader == null)
+        {
+            shader = Shader.Find("Unlit/Transparent");
+        }
+
+        if (shader == null)
+        {
+            shader = Shader.Find("Unlit/Color");
+        }
+
+        material = new Material(shader);
+        material.name = name;
+        material.hideFlags = HideFlags.DontSave;
+        material.renderQueue = 3000;
+        if (material.HasProperty("_Color"))
+        {
+            material.color = color;
+        }
+
+        if (material.HasProperty("_MainTex"))
+        {
+            material.mainTexture = Texture2D.whiteTexture;
+        }
+
+        return material;
+    }
+
+    private bool BuildSceneBattleGridAttackRangeRowOverlays(GameObject grid)
+    {
+        bool builtAny = false;
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            Sprite rowSprite = LoadBattleSceneAttackRangeRowSprite(row);
+            if (rowSprite == null)
+            {
+                continue;
+            }
+
+            GameObject rowOverlay = new GameObject("AttackRangeRowSprite_R" + row, typeof(SpriteRenderer));
+            rowOverlay.transform.SetParent(grid.transform, false);
+            rowOverlay.transform.localPosition = new Vector3(0f, 0f, -0.024f);
+            rowOverlay.transform.localRotation = Quaternion.identity;
+            rowOverlay.transform.localScale = Vector3.one;
+
+            SpriteRenderer spriteRenderer = rowOverlay.GetComponent<SpriteRenderer>();
+            spriteRenderer.sprite = rowSprite;
+            spriteRenderer.sortingOrder = 28;
+            spriteRenderer.enabled = false;
+            battleSceneAttackRangeSceneRowRenderers[row] = spriteRenderer;
+            builtAny = true;
+        }
+
+        return builtAny;
+    }
+
+    private static Sprite LoadBattleSceneAttackRangeRowSprite(int row)
+    {
+        return LoadFullRectSpriteFromFile(GetBattleSceneAttackRangeRowSpriteAssetPath(row), FilterMode.Bilinear);
+    }
+
+    private static Sprite LoadBattleSceneAttackRangeAlignedPanelSprite(int row, int column)
+    {
+        return LoadFullRectSpriteFromFile(GetBattleSceneAttackRangeAlignedPanelSpriteAssetPath(row, column), FilterMode.Bilinear);
+    }
+
+    private static string GetBattleSceneAttackRangeAlignedPanelSpriteAssetPath(int row, int column)
+    {
+        return BattleSceneAttackRangeAlignedPanelAssetFolder + "/AttackRangePanel_R" + row + "_C" + column + ".png";
+    }
+
+    private static string GetBattleSceneAttackRangePanelSpriteAssetPath(int row, int column)
+    {
+        return BattleSceneAttackRangePanelAssetFolder + "/AttackRangePanel_R" + row + "_C" + column + ".png";
+    }
+
+    private static string GetBattleSceneAttackRangeRowSpriteAssetPath(int row)
+    {
+        return BattleSceneAttackRangeRowAssetFolder + "/AttackRangeRow_R" + row + ".png";
+    }
+
+    private void ClearBattleSceneAttackRangeCells()
+    {
+        GameObject grid = FindBattleSceneGridRoot();
+        Transform collidersRoot = grid != null ? grid.transform.Find("GridColliders") : null;
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            SpriteRenderer rowRenderer = battleSceneAttackRangeSceneRowRenderers[row];
+            if (rowRenderer != null)
+            {
+                Destroy(rowRenderer.gameObject);
+            }
+
+            Transform staleRowOverlay = grid != null ? grid.transform.Find("AttackRangeRowSprite_R" + row) : null;
+            if (staleRowOverlay != null)
+            {
+                Destroy(staleRowOverlay.gameObject);
+            }
+
+            battleSceneAttackRangeSceneRowRenderers[row] = null;
+        }
+
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                SpriteRenderer spriteRenderer = battleSceneAttackRangeSceneSpriteRenderers[row, column];
+                if (spriteRenderer != null)
+                {
+                    Destroy(spriteRenderer.gameObject);
+                }
+
+                Transform cell = collidersRoot != null ? collidersRoot.Find(GetBattleScenePanelCellName(row, column)) : null;
+                Transform staleOverlay = cell != null ? cell.Find("AttackRangeGlow_R" + row + "_C" + column) : null;
+                if (staleOverlay != null)
+                {
+                    Destroy(staleOverlay.gameObject);
+                }
+
+                Transform staleSpriteOverlay = grid != null ? grid.transform.Find("AttackRangePanelSprite_R" + row + "_C" + column) : null;
+                if (staleSpriteOverlay != null)
+                {
+                    Destroy(staleSpriteOverlay.gameObject);
+                }
+
+                Transform staleAlignedSpriteOverlay = grid != null ? grid.transform.Find("AttackRangeAlignedPanelSprite_R" + row + "_C" + column) : null;
+                if (staleAlignedSpriteOverlay != null)
+                {
+                    Destroy(staleAlignedSpriteOverlay.gameObject);
+                }
+
+                GameObject colliderOverlayRoot = battleSceneAttackRangeColliderOverlayRoots[row, column];
+                if (colliderOverlayRoot != null)
+                {
+                    Destroy(colliderOverlayRoot);
+                }
+
+                Transform staleColliderOverlay = grid != null ? grid.transform.Find("AttackRangeColliderOverlay_R" + row + "_C" + column) : null;
+                if (staleColliderOverlay != null)
+                {
+                    Destroy(staleColliderOverlay.gameObject);
+                }
+
+                battleSceneAttackRangeCells[row, column] = null;
+                battleSceneAttackRangeSceneSpriteRenderers[row, column] = null;
+                battleSceneAttackRangeColliderOverlayRoots[row, column] = null;
+            }
+        }
+    }
+
     private void BuildHandAndCommands(Transform parent)
     {
         if (!mainBattleSceneMode)
@@ -2317,7 +3080,51 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        BuildChipSelectPanel(parent);
+        BuildBattleScenePrototypeCommandPanel(parent);
+    }
+
+    private void BuildBattleScenePrototypeCommandPanel(Transform parent)
+    {
+        prototypeAttackViews.Clear();
+        RectTransform panel = CreatePanel("Battle Command Panel", parent, BattleSceneCommandPanelMin, BattleSceneCommandPanelMax, new Color(0.018f, 0.032f, 0.044f, 0.96f));
+        battleSceneCommandRoot = panel.gameObject;
+        CreateImage("Battle Command Inner", panel, new Vector2(0.035f, 0.030f), new Vector2(0.965f, 0.970f), Vector2.zero, Vector2.zero, new Color(0.030f, 0.050f, 0.064f, 0.96f)).raycastTarget = false;
+        CreateImage("Battle Command Accent", panel, new Vector2(0.035f, 0.965f), new Vector2(0.965f, 0.985f), Vector2.zero, Vector2.zero, new Color(1f, 0.78f, 0.20f, 0.95f)).raycastTarget = false;
+
+        CreateText("Battle Command Title", panel, new Vector2(0.080f, 0.880f), new Vector2(0.920f, 0.960f), Vector2.zero, Vector2.zero, "COMMAND", 20, TextAnchor.MiddleLeft, new Color(0.90f, 0.98f, 1f, 1f));
+        battleSceneCommandActorText = CreateText("Battle Command Actor", panel, new Vector2(0.080f, 0.785f), new Vector2(0.920f, 0.860f), Vector2.zero, Vector2.zero, string.Empty, 13, TextAnchor.MiddleLeft, new Color(1f, 0.91f, 0.42f, 1f));
+        battleSceneCommandTargetText = CreateText("Battle Command Target", panel, new Vector2(0.080f, 0.708f), new Vector2(0.920f, 0.775f), Vector2.zero, Vector2.zero, string.Empty, 12, TextAnchor.MiddleLeft, new Color(0.72f, 0.92f, 1f, 1f));
+        battleSceneCommandSelectedText = CreateText("Battle Command Selected", panel, new Vector2(0.080f, 0.625f), new Vector2(0.920f, 0.700f), Vector2.zero, Vector2.zero, string.Empty, 12, TextAnchor.MiddleLeft, new Color(0.86f, 1f, 0.84f, 1f));
+
+        for (int i = 0; i < BattleScenePrototypeAttackCount; i++)
+        {
+            float maxY = 0.590f - i * 0.150f;
+            float minY = maxY - 0.115f;
+            int capturedIndex = i;
+            Button button = CreateButton("Prototype Attack " + (i + 1), panel, new Vector2(0.080f, minY), new Vector2(0.920f, maxY), Vector2.zero, Vector2.zero, string.Empty, 13, new Color(0.065f, 0.092f, 0.110f, 0.96f));
+            button.onClick.AddListener(() => SelectPrototypeAttack(capturedIndex));
+            RegisterHoverEvents(button.gameObject, isHovering => SetPrototypeAttackHover(capturedIndex, isHovering));
+            Text label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.alignment = TextAnchor.MiddleLeft;
+                label.resizeTextMinSize = 9;
+                label.resizeTextMaxSize = 13;
+            }
+
+            prototypeAttackViews.Add(new PrototypeAttackButtonView
+            {
+                Button = button,
+                Panel = button.GetComponent<Image>(),
+                Label = label
+            });
+        }
+
+        battleSceneCommandOkButton = CreateButton("Prototype Attack OK", panel, new Vector2(0.080f, 0.070f), new Vector2(0.920f, 0.155f), Vector2.zero, Vector2.zero, "OK", 18, new Color(0.12f, 0.42f, 0.25f, 0.96f));
+        battleSceneCommandOkButton.onClick.AddListener(Confirm);
+        battleSceneCommandOkImage = battleSceneCommandOkButton.GetComponent<Image>();
+        statusText = CreateText("Battle Command Status", panel, new Vector2(0.080f, 0.020f), new Vector2(0.920f, 0.062f), Vector2.zero, Vector2.zero, string.Empty, 10, TextAnchor.MiddleLeft, new Color(0.78f, 0.94f, 0.88f, 1f));
+        battleSceneCommandRoot.SetActive(false);
     }
 
     private void BuildPrototypeHandAndCommands(Transform parent)
@@ -2490,11 +3297,222 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         text.resizeTextMaxSize = 15;
     }
 
+    private static PrototypeAttackDefinition GetPrototypeAttackDefinition(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                return new PrototypeAttackDefinition { Name = "Quick Attack", Damage = 20, Delay = 60, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+            case 2:
+                return new PrototypeAttackDefinition { Name = "Heavy Attack", Damage = 55, Delay = 150, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+            default:
+                return new PrototypeAttackDefinition { Name = "Standard Attack", Damage = 35, Delay = 100, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+        }
+    }
+
+    private PrototypeAttackDefinition GetSelectedPrototypeAttack()
+    {
+        selectedPrototypeAttackIndex = Mathf.Clamp(selectedPrototypeAttackIndex, 0, BattleScenePrototypeAttackCount - 1);
+        return GetPrototypeAttackDefinition(selectedPrototypeAttackIndex);
+    }
+
+    private void SelectPrototypeAttack(int index)
+    {
+        if (index < 0 || index >= BattleScenePrototypeAttackCount)
+        {
+            return;
+        }
+
+        selectedPrototypeAttackIndex = index;
+        PrototypeAttackDefinition attack = GetSelectedPrototypeAttack();
+        RefreshAll("Selected " + attack.Name + ". Power " + attack.Damage + " / Delay " + attack.Delay + ".");
+    }
+
+    private void SetPrototypeAttackHover(int index, bool hovering)
+    {
+        if (!mainBattleSceneMode)
+        {
+            return;
+        }
+
+        if (hovering)
+        {
+            if (index < 0 || index >= BattleScenePrototypeAttackCount)
+            {
+                return;
+            }
+
+            hoveredPrototypeAttackIndex = index;
+        }
+        else if (hoveredPrototypeAttackIndex == index)
+        {
+            hoveredPrototypeAttackIndex = -1;
+        }
+
+        RefreshBattleSceneCommandPanel();
+    }
+
+    private void ConfirmBattleScenePrototypeAttack()
+    {
+        if (!IsPlayerTurn())
+        {
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        PrototypeAttackDefinition attack = GetSelectedPrototypeAttack();
+        AllyUnit actor = activeUnit != null ? activeUnit.Ally : null;
+        EnemyUnit target = ResolvePrototypeAttackTarget(actor, attack);
+        if (actor == null || target == null)
+        {
+            RefreshAll("No enemy is inside " + attack.Name + "'s range.");
+            return;
+        }
+
+        int resolvedPlayerTurn = playerActionTurnCount;
+        int defeatedCount = ApplyPrototypeAttackDamage(actor, target, attack);
+        if (defeatedCount > maxSimultaneousDefeatCount)
+        {
+            maxSimultaneousDefeatCount = defeatedCount;
+        }
+
+        ClearQueuedActions();
+        CloseCardSelect();
+        AdvanceActiveUnit(activeUnit, attack.Delay);
+        if (TryShowVictory(resolvedPlayerTurn))
+        {
+            return;
+        }
+
+        string enemySummary = ResolveEnemyTurnsUntilPlayerTurn();
+        if (battleEnded)
+        {
+            return;
+        }
+
+        playerActionTurnCount++;
+        RefreshAll(actor.Name + " used " + attack.Name + ". Delay " + attack.Delay + "." + enemySummary);
+    }
+
+    private EnemyUnit ResolvePrototypeAttackTarget(AllyUnit actor, PrototypeAttackDefinition attack)
+    {
+        if (actor == null || attack == null)
+        {
+            return null;
+        }
+
+        if (selectedEnemy != null && selectedEnemy.IsAlive && IsEnemyInPrototypeAttackRange(actor, selectedEnemy, attack))
+        {
+            return selectedEnemy;
+        }
+
+        int actorRow = GetAllyGridRow(actor.Position);
+        EnemyUnit bestTarget = null;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyUnit enemy = enemies[i];
+            if (enemy == null || !enemy.IsAlive || enemy.GridPosition.x != actorRow)
+            {
+                continue;
+            }
+
+            if (bestTarget == null || enemy.GridPosition.y < bestTarget.GridPosition.y)
+            {
+                bestTarget = enemy;
+            }
+        }
+
+        return bestTarget;
+    }
+
+    private bool IsEnemyInCurrentPrototypeAttackRange(EnemyUnit enemy)
+    {
+        if (!mainBattleSceneMode || activeUnit == null || !activeUnit.IsAlly)
+        {
+            return false;
+        }
+
+        return IsEnemyInPrototypeAttackRange(activeUnit.Ally, enemy, GetSelectedPrototypeAttack());
+    }
+
+    private bool IsEnemyInPrototypeAttackRange(AllyUnit actor, EnemyUnit enemy, PrototypeAttackDefinition attack)
+    {
+        if (actor == null || enemy == null || !enemy.IsAlive || attack == null)
+        {
+            return false;
+        }
+
+        switch (attack.RangePattern)
+        {
+            case PrototypeAttackRangePattern.RowToEnemyEdge:
+                return enemy.GridPosition.x == GetAllyGridRow(actor.Position);
+            default:
+                return false;
+        }
+    }
+
+    private int ApplyPrototypeAttackDamage(AllyUnit attacker, EnemyUnit target, PrototypeAttackDefinition attack)
+    {
+        EnemyUnit resolvedTarget = target != null && target.IsAlive ? target : null;
+        if (resolvedTarget == null || attack == null)
+        {
+            return 0;
+        }
+
+        bool wasAlive = resolvedTarget.IsAlive;
+        PrototypeDamageResult damageResult = CalculatePrototypeAttackDamage(new PrototypeDamageRequest
+        {
+            Attacker = attacker,
+            Target = resolvedTarget,
+            Attack = attack
+        });
+        int damage = Mathf.Max(0, damageResult.FinalDamage);
+        resolvedTarget.Hp = Mathf.Max(0, resolvedTarget.Hp - damage);
+        if (attacker != null)
+        {
+            attacker.Status = attack.Name + " -" + damage + damageResult.Reason;
+        }
+
+        if (!resolvedTarget.IsAlive)
+        {
+            resolvedTarget.Status = "KO";
+            if (selectedEnemy == resolvedTarget)
+            {
+                selectedEnemy = GetFirstAliveEnemy();
+            }
+        }
+
+        return wasAlive && !resolvedTarget.IsAlive ? 1 : 0;
+    }
+
+    private PrototypeDamageResult CalculatePrototypeAttackDamage(PrototypeDamageRequest request)
+    {
+        PrototypeAttackDefinition attack = request != null ? request.Attack : null;
+        EnemyUnit target = request != null ? request.Target : null;
+        int baseDamage = attack != null ? Mathf.Max(0, attack.Damage) : 0;
+        CardAttribute attribute = attack != null ? attack.Attribute : CardAttribute.Neutral;
+        bool weaknessHit = target != null
+            && attribute != CardAttribute.Neutral
+            && attribute == target.Weakness;
+        float multiplier = weaknessHit ? 2f : 1f;
+        int finalDamage = Mathf.Max(0, Mathf.RoundToInt(baseDamage * multiplier));
+        return new PrototypeDamageResult
+        {
+            BaseDamage = baseDamage,
+            FinalDamage = finalDamage,
+            Attribute = attribute,
+            Multiplier = multiplier,
+            WeaknessHit = weaknessHit,
+            Reason = weaknessHit ? " Weakness x2" : string.Empty
+        };
+    }
+
     private void QueueCardFromHand(int handIndex)
     {
-        if (mainBattleSceneMode && !cardSelectOpen)
+        if (mainBattleSceneMode)
         {
-            OpenCardSelect();
+            SelectPrototypeAttack(handIndex);
+            return;
         }
 
         if (!IsPlayerTurn())
@@ -2664,6 +3682,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             }
 
             RefreshAll(actedEnemyName + " acted and returned to the timeline. Delay " + enemyDelay + "." + enemyChainSummary);
+            return;
+        }
+
+        if (mainBattleSceneMode)
+        {
+            ConfirmBattleScenePrototypeAttack();
             return;
         }
 
@@ -3150,7 +4174,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        int delay = Mathf.Max(1, actionDelay);
+        int delay = ResolveReadyDelay(unit, actionDelay);
         if (unit.IsAlly)
         {
             unit.Ally.NextReadyTick = currentTick + delay;
@@ -3166,6 +4190,14 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         {
             selectedAlly = activeUnit.Ally;
         }
+    }
+
+    private static int ResolveReadyDelay(TimelineUnit unit, int actionDelay)
+    {
+        int safeActionDelay = Mathf.Max(1, actionDelay);
+        int speed = unit != null ? Mathf.Max(0, unit.Speed) : 0;
+        int speedReduction = Mathf.Clamp(Mathf.RoundToInt(speed * 0.30f), 0, Mathf.Max(0, safeActionDelay - 1));
+        return Mathf.Max(1, safeActionDelay - speedReduction);
     }
 
     private void EnsureUniquePartyPositions()
@@ -3363,8 +4395,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             selectedAlly = ally;
             if (mainBattleSceneMode && IsPlayerTurn())
             {
-                OpenCardSelect();
-                RefreshAll("Chip select opened for " + ally.Name + ".");
+                RefreshAll("Selected ally: " + ally.Name + ".");
             }
             else
             {
@@ -3493,7 +4524,533 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         BattleTimelineSlotView[] slots = battleTimelineHudView.Slots;
         int slotCount = slots != null ? slots.Length : 0;
-        for (int i = 0; i < slotCount; i++)
+        if (slotCount <= 0)
+        {
+            return;
+        }
+
+        RefreshPrefabTimelineGate();
+
+        List<PrefabTimelineDisplayState> desiredStates = BuildPrefabTimelineDisplayStates(previews, slotCount);
+        string signature = BuildPrefabTimelineSignature(desiredStates);
+        if (desiredStates.Count == 0)
+        {
+            StopPrefabTimelineAnimation();
+            ClearPrefabTimelineSlots(slots);
+            prefabTimelineSignature = signature;
+            prefabTimelineSlotStates.Clear();
+            return;
+        }
+
+        AssignPrefabTimelineSlots(desiredStates, slots);
+        if (string.Equals(signature, prefabTimelineSignature, StringComparison.Ordinal)
+            && prefabTimelineSlotStates.Count == desiredStates.Count)
+        {
+            for (int i = 0; i < desiredStates.Count; i++)
+            {
+                ApplyPrefabTimelineSlotVisual(desiredStates[i]);
+            }
+
+            if (prefabTimelineAnimationRoutine == null)
+            {
+                SnapPrefabTimelineSlots(desiredStates, slots);
+            }
+
+            UpdatePrefabTimelineSlotStates(desiredStates);
+            return;
+        }
+
+        StopPrefabTimelineAnimation();
+        if (string.IsNullOrEmpty(prefabTimelineSignature) || prefabTimelineSlotStates.Count == 0)
+        {
+            prefabTimelineSignature = signature;
+            SnapPrefabTimelineSlots(desiredStates, slots);
+            UpdatePrefabTimelineSlotStates(desiredStates);
+            return;
+        }
+
+        List<PrefabTimelineGhostMotion> ghosts = CreatePrefabTimelineGhosts(desiredStates);
+        prefabTimelineSignature = signature;
+        prefabTimelineAnimationRoutine = StartCoroutine(AnimatePrefabTimelineSlots(desiredStates, ghosts, slots));
+        UpdatePrefabTimelineSlotStates(desiredStates);
+    }
+
+    private void RefreshPrefabTimelineGate()
+    {
+        if (battleTimelineHudView.CurrentMarker != null)
+        {
+            battleTimelineHudView.CurrentMarker.gameObject.SetActive(false);
+        }
+
+        if (battleTimelineHudView.RightArrow != null)
+        {
+            battleTimelineHudView.RightArrow.gameObject.SetActive(false);
+            Image arrowImage = battleTimelineHudView.RightArrow.GetComponent<Image>();
+            if (arrowImage != null)
+            {
+                arrowImage.enabled = false;
+                arrowImage.raycastTarget = false;
+            }
+        }
+    }
+
+    private List<PrefabTimelineDisplayState> BuildPrefabTimelineDisplayStates(List<TimelinePreview> previews, int slotCount)
+    {
+        List<PrefabTimelineDisplayState> states = new List<PrefabTimelineDisplayState>();
+        if (previews == null || slotCount <= 0)
+        {
+            return states;
+        }
+
+        Dictionary<string, int> occurrences = new Dictionary<string, int>();
+        List<TimelinePreview> unitPreviews = new List<TimelinePreview>();
+        for (int i = 0; i < previews.Count; i++)
+        {
+            if (previews[i].Unit != null)
+            {
+                unitPreviews.Add(previews[i]);
+            }
+        }
+
+        if (unitPreviews.Count == 0)
+        {
+            return states;
+        }
+
+        int blankCount = 0;
+        AddPrefabTimelineUnitDisplayState(states, occurrences, unitPreviews[0], 0);
+        AddPrefabTimelineBlankDisplayState(states, ref blankCount, unitPreviews[0].DeltaTick + PrefabTimelineBlankCardStepTicks, slotCount);
+
+        for (int i = 1; i < unitPreviews.Count && states.Count < slotCount; i++)
+        {
+            TimelinePreview previousPreview = unitPreviews[i - 1];
+            TimelinePreview preview = unitPreviews[i];
+            int gap = Mathf.Max(0, preview.DeltaTick - previousPreview.DeltaTick);
+            int gapBlankCount = Mathf.Clamp(gap / PrefabTimelineBlankCardStepTicks, 0, PrefabTimelineBlankCardMaxPerGap);
+            for (int gapIndex = 0; gapIndex < gapBlankCount && states.Count < slotCount; gapIndex++)
+            {
+                int blankDelta = previousPreview.DeltaTick + PrefabTimelineBlankCardStepTicks * (gapIndex + 1);
+                AddPrefabTimelineBlankDisplayState(states, ref blankCount, blankDelta, slotCount);
+            }
+
+            if (states.Count >= slotCount)
+            {
+                break;
+            }
+
+            AddPrefabTimelineUnitDisplayState(states, occurrences, preview, i);
+            if (blankCount < PrefabTimelineBlankCardMinVisible && states.Count < slotCount && i % 2 == 1)
+            {
+                AddPrefabTimelineBlankDisplayState(states, ref blankCount, preview.DeltaTick + PrefabTimelineBlankCardStepTicks, slotCount);
+            }
+        }
+
+        while (blankCount < PrefabTimelineBlankCardMinVisible && states.Count < slotCount)
+        {
+            AddPrefabTimelineBlankDisplayState(states, ref blankCount, PrefabTimelineBlankCardStepTicks * (blankCount + 1), slotCount);
+        }
+
+        return states;
+    }
+
+    private void AddPrefabTimelineUnitDisplayState(List<PrefabTimelineDisplayState> states, Dictionary<string, int> occurrences, TimelinePreview preview, int logicalIndex)
+    {
+        if (states == null || occurrences == null || preview.Unit == null)
+        {
+            return;
+        }
+
+        string baseKey = BuildPrefabTimelineEntryBaseKey(preview);
+        int occurrence;
+        occurrences.TryGetValue(baseKey, out occurrence);
+        occurrences[baseKey] = occurrence + 1;
+
+        string trackingBaseKey = BuildPrefabTimelineTrackingBaseKey(preview);
+        int trackingOccurrence;
+        occurrences.TryGetValue(trackingBaseKey, out trackingOccurrence);
+        occurrences[trackingBaseKey] = trackingOccurrence + 1;
+        states.Add(new PrefabTimelineDisplayState
+        {
+            Key = baseKey + "#" + occurrence,
+            TrackingKey = trackingBaseKey + "#" + trackingOccurrence,
+            LogicalIndex = logicalIndex,
+            DisplayIndex = states.Count,
+            Preview = preview
+        });
+    }
+
+    private void AddPrefabTimelineBlankDisplayState(List<PrefabTimelineDisplayState> states, ref int blankCount, int deltaTick, int slotCount)
+    {
+        if (states == null || states.Count >= slotCount)
+        {
+            return;
+        }
+
+        int safeDeltaTick = Mathf.Max(0, deltaTick);
+        int guard = 0;
+        while (HasPrefabTimelineBlankAtDelta(states, safeDeltaTick) && guard < TimelinePreviewCount)
+        {
+            safeDeltaTick += PrefabTimelineBlankCardStepTicks;
+            guard++;
+        }
+
+        int blankTick = currentTick + safeDeltaTick;
+        states.Add(new PrefabTimelineDisplayState
+        {
+            Key = "Blank:" + blankTick + ":" + blankCount,
+            TrackingKey = "Blank:" + blankTick + ":" + blankCount,
+            LogicalIndex = -1,
+            DisplayIndex = states.Count,
+            Preview = new TimelinePreview { Unit = null, DeltaTick = safeDeltaTick },
+            IsBlank = true,
+            BlankDeltaTick = safeDeltaTick
+        });
+        blankCount++;
+    }
+
+    private static bool HasPrefabTimelineBlankAtDelta(List<PrefabTimelineDisplayState> states, int deltaTick)
+    {
+        if (states == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < states.Count; i++)
+        {
+            if (states[i] != null && states[i].IsBlank && states[i].BlankDeltaTick == deltaTick)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private string BuildPrefabTimelineEntryBaseKey(TimelinePreview preview)
+    {
+        TimelineUnit unit = preview.Unit;
+        BattleTimelineEntry entry = unit != null ? unit.Entry : null;
+        string unitId = entry != null && !string.IsNullOrEmpty(entry.UnitId) ? entry.UnitId : unit != null ? unit.DisplayName : "Unknown";
+        ActionTimelineEntryType entryType = entry != null
+            ? entry.EntryType
+            : unit != null && unit.IsSkill ? ActionTimelineEntryType.Skill : unit != null && unit.IsAlly ? ActionTimelineEntryType.Ally : ActionTimelineEntryType.Enemy;
+        int nextActTick = currentTick + Mathf.Max(0, preview.DeltaTick);
+        return entryType + ":" + unitId + ":" + nextActTick;
+    }
+
+    private string BuildPrefabTimelineTrackingBaseKey(TimelinePreview preview)
+    {
+        TimelineUnit unit = preview.Unit;
+        BattleTimelineEntry entry = unit != null ? unit.Entry : null;
+        string unitId = entry != null && !string.IsNullOrEmpty(entry.UnitId) ? entry.UnitId : unit != null ? unit.DisplayName : "Unknown";
+        ActionTimelineEntryType entryType = entry != null
+            ? entry.EntryType
+            : unit != null && unit.IsSkill ? ActionTimelineEntryType.Skill : unit != null && unit.IsAlly ? ActionTimelineEntryType.Ally : ActionTimelineEntryType.Enemy;
+        return entryType + ":" + unitId;
+    }
+
+    private static string GetPrefabTimelineTrackingKey(PrefabTimelineDisplayState state)
+    {
+        if (state == null)
+        {
+            return string.Empty;
+        }
+
+        return !string.IsNullOrEmpty(state.TrackingKey) ? state.TrackingKey : state.Key;
+    }
+
+    private static string BuildPrefabTimelineSignature(List<PrefabTimelineDisplayState> states)
+    {
+        if (states == null || states.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        string signature = string.Empty;
+        for (int i = 0; i < states.Count; i++)
+        {
+            signature += states[i].Key + "|";
+        }
+
+        return signature;
+    }
+
+    private void AssignPrefabTimelineSlots(List<PrefabTimelineDisplayState> desiredStates, BattleTimelineSlotView[] slots)
+    {
+        Dictionary<string, Queue<PrefabTimelineDisplayState>> oldStatesByKey = new Dictionary<string, Queue<PrefabTimelineDisplayState>>();
+        for (int i = 0; i < prefabTimelineSlotStates.Count; i++)
+        {
+            PrefabTimelineDisplayState state = prefabTimelineSlotStates[i];
+            string trackingKey = GetPrefabTimelineTrackingKey(state);
+            if (state == null || state.Slot == null || string.IsNullOrEmpty(trackingKey))
+            {
+                continue;
+            }
+
+            Queue<PrefabTimelineDisplayState> queue;
+            if (!oldStatesByKey.TryGetValue(trackingKey, out queue))
+            {
+                queue = new Queue<PrefabTimelineDisplayState>();
+                oldStatesByKey.Add(trackingKey, queue);
+            }
+
+            queue.Enqueue(state);
+        }
+
+        HashSet<BattleTimelineSlotView> usedSlots = new HashSet<BattleTimelineSlotView>();
+        for (int i = 0; i < desiredStates.Count; i++)
+        {
+            Queue<PrefabTimelineDisplayState> queue;
+            string trackingKey = GetPrefabTimelineTrackingKey(desiredStates[i]);
+            if (oldStatesByKey.TryGetValue(trackingKey, out queue) && queue.Count > 0)
+            {
+                PrefabTimelineDisplayState oldState = queue.Dequeue();
+                desiredStates[i].Slot = oldState.Slot;
+                desiredStates[i].MatchedPrevious = true;
+                usedSlots.Add(oldState.Slot);
+            }
+        }
+
+        for (int i = 0; i < desiredStates.Count; i++)
+        {
+            if (desiredStates[i].Slot != null)
+            {
+                continue;
+            }
+
+            for (int slotIndex = 0; slotIndex < slots.Length; slotIndex++)
+            {
+                BattleTimelineSlotView slot = slots[slotIndex];
+                if (slot == null || usedSlots.Contains(slot))
+                {
+                    continue;
+                }
+
+                desiredStates[i].Slot = slot;
+                usedSlots.Add(slot);
+                break;
+            }
+        }
+    }
+
+    private void SnapPrefabTimelineSlots(List<PrefabTimelineDisplayState> desiredStates, BattleTimelineSlotView[] slots)
+    {
+        HashSet<BattleTimelineSlotView> usedSlots = new HashSet<BattleTimelineSlotView>();
+        for (int i = 0; i < desiredStates.Count; i++)
+        {
+            PrefabTimelineDisplayState state = desiredStates[i];
+            if (state.Slot == null)
+            {
+                continue;
+            }
+
+            ApplyPrefabTimelineSlotVisual(state);
+            ApplyPrefabTimelineSlotLayout(state.Slot, GetPrefabTimelineSlotLayout(state.DisplayIndex, slots.Length));
+            state.Slot.SetAlpha(1f);
+            usedSlots.Add(state.Slot);
+        }
+
+        HideUnusedPrefabTimelineSlots(slots, usedSlots);
+    }
+
+    private IEnumerator AnimatePrefabTimelineSlots(List<PrefabTimelineDisplayState> desiredStates, List<PrefabTimelineGhostMotion> ghosts, BattleTimelineSlotView[] slots)
+    {
+        List<PrefabTimelineSlotMotion> motions = new List<PrefabTimelineSlotMotion>();
+        HashSet<BattleTimelineSlotView> usedSlots = new HashSet<BattleTimelineSlotView>();
+        for (int i = 0; i < desiredStates.Count; i++)
+        {
+            PrefabTimelineDisplayState state = desiredStates[i];
+            if (state.Slot == null)
+            {
+                continue;
+            }
+
+            bool existed = state.MatchedPrevious;
+            PrefabTimelineSlotLayout startLayout = existed
+                ? GetCurrentPrefabTimelineSlotLayout(state.Slot)
+                : GetPrefabTimelineOffscreenRightLayout(slots.Length);
+            PrefabTimelineSlotLayout endLayout = GetPrefabTimelineSlotLayout(state.DisplayIndex, slots.Length);
+            ApplyPrefabTimelineSlotVisual(state);
+            if (!existed)
+            {
+                ApplyPrefabTimelineSlotLayout(state.Slot, startLayout);
+                state.Slot.SetAlpha(0f);
+            }
+
+            motions.Add(new PrefabTimelineSlotMotion
+            {
+                Slot = state.Slot,
+                StartLayout = startLayout,
+                EndLayout = endLayout,
+                StartAlpha = existed ? GetPrefabTimelineSlotAlpha(state.Slot) : 0f,
+                EndAlpha = 1f
+            });
+            usedSlots.Add(state.Slot);
+        }
+
+        HideUnusedPrefabTimelineSlots(slots, usedSlots);
+
+        float elapsed = 0f;
+        while (elapsed < PrefabTimelineMoveSeconds)
+        {
+            float rawT = Mathf.Clamp01(elapsed / PrefabTimelineMoveSeconds);
+            float t = Mathf.SmoothStep(0f, 1f, rawT);
+            ApplyPrefabTimelineMotions(motions, ghosts, t);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        ApplyPrefabTimelineMotions(motions, ghosts, 1f);
+        ClearPrefabTimelineGhosts();
+        prefabTimelineAnimationRoutine = null;
+    }
+
+    private void ApplyPrefabTimelineMotions(List<PrefabTimelineSlotMotion> motions, List<PrefabTimelineGhostMotion> ghosts, float t)
+    {
+        for (int i = 0; i < motions.Count; i++)
+        {
+            PrefabTimelineSlotMotion motion = motions[i];
+            if (motion == null || motion.Slot == null)
+            {
+                continue;
+            }
+
+            ApplyPrefabTimelineSlotLayout(motion.Slot, LerpPrefabTimelineSlotLayout(motion.StartLayout, motion.EndLayout, t));
+            motion.Slot.SetAlpha(Mathf.Lerp(motion.StartAlpha, motion.EndAlpha, t));
+        }
+
+        for (int i = 0; i < ghosts.Count; i++)
+        {
+            PrefabTimelineGhostMotion ghost = ghosts[i];
+            if (ghost == null || ghost.Root == null)
+            {
+                continue;
+            }
+
+            PrefabTimelineSlotLayout layout = LerpPrefabTimelineSlotLayout(ghost.StartLayout, ghost.EndLayout, t);
+            SetAnchors(ghost.Root, layout.AnchorMin.x, layout.AnchorMin.y, layout.AnchorMax.x, layout.AnchorMax.y);
+            if (ghost.Group != null)
+            {
+                ghost.Group.alpha = 1f - t;
+            }
+        }
+    }
+
+    private List<PrefabTimelineGhostMotion> CreatePrefabTimelineGhosts(List<PrefabTimelineDisplayState> desiredStates)
+    {
+        List<PrefabTimelineGhostMotion> ghosts = new List<PrefabTimelineGhostMotion>();
+        Dictionary<string, int> desiredCounts = new Dictionary<string, int>();
+        for (int i = 0; i < desiredStates.Count; i++)
+        {
+            string trackingKey = GetPrefabTimelineTrackingKey(desiredStates[i]);
+            int count;
+            desiredCounts.TryGetValue(trackingKey, out count);
+            desiredCounts[trackingKey] = count + 1;
+        }
+
+        for (int i = 0; i < prefabTimelineSlotStates.Count; i++)
+        {
+            PrefabTimelineDisplayState oldState = prefabTimelineSlotStates[i];
+            if (oldState == null || oldState.Slot == null || oldState.Slot.Root == null)
+            {
+                continue;
+            }
+
+            string trackingKey = GetPrefabTimelineTrackingKey(oldState);
+            int remainingCount;
+            if (desiredCounts.TryGetValue(trackingKey, out remainingCount) && remainingCount > 0)
+            {
+                desiredCounts[trackingKey] = remainingCount - 1;
+                continue;
+            }
+
+            RectTransform oldRoot = oldState.Slot.Root;
+            GameObject ghostObject = Instantiate(oldRoot.gameObject, oldRoot.parent, false);
+            ghostObject.name = oldRoot.gameObject.name + " Fading Out";
+            RectTransform ghostRoot = ghostObject.transform as RectTransform;
+            if (ghostRoot == null)
+            {
+                Destroy(ghostObject);
+                continue;
+            }
+
+            PrefabTimelineSlotLayout startLayout = GetCurrentPrefabTimelineSlotLayout(ghostRoot);
+            CanvasGroup group = ghostObject.GetComponent<CanvasGroup>();
+            if (group == null)
+            {
+                group = ghostObject.AddComponent<CanvasGroup>();
+            }
+
+            group.alpha = GetPrefabTimelineSlotAlpha(oldState.Slot);
+            prefabTimelineGhostObjects.Add(ghostObject);
+            ghosts.Add(new PrefabTimelineGhostMotion
+            {
+                Root = ghostRoot,
+                Group = group,
+                StartLayout = startLayout,
+                EndLayout = ShiftPrefabTimelineLayout(startLayout, PrefabTimelineFadeShift)
+            });
+        }
+
+        return ghosts;
+    }
+
+    private void ApplyPrefabTimelineSlotVisual(PrefabTimelineDisplayState state)
+    {
+        if (state == null || state.Slot == null)
+        {
+            return;
+        }
+
+        BattleTimelineSlotView slot = state.Slot;
+        if (slot.Root != null)
+        {
+            slot.Root.gameObject.SetActive(true);
+        }
+
+        if (state.IsBlank || state.Preview.Unit == null)
+        {
+            SetImageType(slot.Root, Image.Type.Sliced);
+            ApplyPrefabTimelineSlotInnerLayout(slot, false);
+            slot.SetBlankVisual();
+            return;
+        }
+
+        TimelinePreview preview = state.Preview;
+        bool active = state.LogicalIndex == 0;
+        bool skill = preview.Unit.IsSkill;
+        bool ally = preview.Unit.IsAlly;
+        bool selected = skill ? false : ally
+            ? selectedAlly != null && preview.Unit.Ally == selectedAlly
+            : selectedEnemy != null && preview.Unit.Enemy == selectedEnemy;
+        Color entryColor = !skill
+            ? ally ? new Color(0.12f, 0.88f, 1f, 1f) : new Color(1f, 0.34f, 0.14f, 1f)
+            : GetTimelineEntryColor(preview.Unit);
+
+        SetImageType(slot.Root, Image.Type.Sliced);
+        ApplyPrefabTimelineSlotInnerLayout(slot, active);
+        slot.SetTimelineLabelsVisible(false);
+        slot.SetIcon(GetTimelineUnitIconSprite(preview.Unit, ally, active, selected), active ? Color.Lerp(entryColor, Color.white, 0.18f) : entryColor);
+        slot.SetActiveVisual(active, ally, entryColor);
+    }
+
+    private void UpdatePrefabTimelineSlotStates(List<PrefabTimelineDisplayState> desiredStates)
+    {
+        prefabTimelineSlotStates.Clear();
+        for (int i = 0; i < desiredStates.Count; i++)
+        {
+            prefabTimelineSlotStates.Add(desiredStates[i]);
+        }
+    }
+
+    private void ClearPrefabTimelineSlots(BattleTimelineSlotView[] slots)
+    {
+        if (slots == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < slots.Length; i++)
         {
             BattleTimelineSlotView slot = slots[i];
             if (slot == null)
@@ -3501,43 +5058,96 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 continue;
             }
 
-            if (i >= previews.Count)
+            if (slot.Root != null)
             {
-                if (slot.Root != null)
-                {
-                    slot.Root.gameObject.SetActive(false);
-                }
+                slot.Root.gameObject.SetActive(false);
+            }
 
-                slot.Clear();
+            slot.SetAlpha(0f);
+            slot.Clear();
+        }
+    }
+
+    private void HideUnusedPrefabTimelineSlots(BattleTimelineSlotView[] slots, HashSet<BattleTimelineSlotView> usedSlots)
+    {
+        for (int i = 0; i < slots.Length; i++)
+        {
+            BattleTimelineSlotView slot = slots[i];
+            if (slot == null || usedSlots.Contains(slot))
+            {
                 continue;
             }
 
             if (slot.Root != null)
             {
-                slot.Root.gameObject.SetActive(true);
+                slot.Root.gameObject.SetActive(false);
             }
 
-            TimelinePreview preview = previews[i];
-            bool active = i == 0;
-            bool skill = preview.Unit.IsSkill;
-            bool ally = preview.Unit.IsAlly;
-            bool selected = skill ? false : ally
-                ? selectedAlly != null && preview.Unit.Ally == selectedAlly
-                : selectedEnemy != null && preview.Unit.Enemy == selectedEnemy;
-            Color entryColor = !skill
-                ? ally ? new Color(0.12f, 0.88f, 1f, 1f) : new Color(1f, 0.34f, 0.14f, 1f)
-                : GetTimelineEntryColor(preview.Unit);
-
-            slot.SetTimelineLabelsVisible(false);
-            slot.SetIcon(GetTimelineUnitIconSprite(preview.Unit, ally, active, selected), active ? Color.Lerp(entryColor, Color.white, 0.18f) : entryColor);
-            slot.SetActiveVisual(active, ally, entryColor);
+            slot.SetAlpha(0f);
+            slot.Clear();
         }
+    }
 
-        if (battleTimelineHudView.CurrentMarker != null)
+    private void StopPrefabTimelineAnimation()
+    {
+        if (prefabTimelineAnimationRoutine != null)
         {
-            battleTimelineHudView.CurrentMarker.gameObject.SetActive(false);
+            StopCoroutine(prefabTimelineAnimationRoutine);
+            prefabTimelineAnimationRoutine = null;
         }
 
+        ClearPrefabTimelineGhosts();
+    }
+
+    private void ClearPrefabTimelineGhosts()
+    {
+        for (int i = 0; i < prefabTimelineGhostObjects.Count; i++)
+        {
+            if (prefabTimelineGhostObjects[i] != null)
+            {
+                Destroy(prefabTimelineGhostObjects[i]);
+            }
+        }
+
+        prefabTimelineGhostObjects.Clear();
+    }
+
+    private static float GetPrefabTimelineSlotAlpha(BattleTimelineSlotView slot)
+    {
+        if (slot == null)
+        {
+            return 0f;
+        }
+
+        return slot.EnsureCanvasGroup().alpha;
+    }
+
+    private static PrefabTimelineSlotLayout GetCurrentPrefabTimelineSlotLayout(BattleTimelineSlotView slot)
+    {
+        return slot != null ? GetCurrentPrefabTimelineSlotLayout(slot.Root) : new PrefabTimelineSlotLayout();
+    }
+
+    private static PrefabTimelineSlotLayout GetCurrentPrefabTimelineSlotLayout(RectTransform root)
+    {
+        if (root == null)
+        {
+            return new PrefabTimelineSlotLayout();
+        }
+
+        return new PrefabTimelineSlotLayout
+        {
+            AnchorMin = root.anchorMin,
+            AnchorMax = root.anchorMax
+        };
+    }
+
+    private static PrefabTimelineSlotLayout LerpPrefabTimelineSlotLayout(PrefabTimelineSlotLayout start, PrefabTimelineSlotLayout end, float t)
+    {
+        return new PrefabTimelineSlotLayout
+        {
+            AnchorMin = Vector2.Lerp(start.AnchorMin, end.AnchorMin, t),
+            AnchorMax = Vector2.Lerp(start.AnchorMax, end.AnchorMax, t)
+        };
     }
 
     private void RefreshTimeline()
@@ -3816,12 +5426,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             }
             else
             {
-                next.ReadyTick += GetPreviewLoopDelay(next);
+                next.ReadyTick += GetPreviewReadyDelay(next);
                 next.Sequence += 10;
             }
         }
 
         return previews;
+    }
+
+    private int GetPreviewReadyDelay(TimelineUnit unit)
+    {
+        return ResolveReadyDelay(unit, GetPreviewLoopDelay(unit));
     }
 
     private int GetPreviewLoopDelay(TimelineUnit unit)
@@ -4001,6 +5616,348 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RefreshEnemySprites();
     }
 
+    private void ApplyBattleSceneUnifiedPanelGrid()
+    {
+        if (!BattleSceneUseUnifiedPanelCells || !mainBattleSceneMode || !useSceneBattleGridPrefabVisuals)
+        {
+            return;
+        }
+
+        GameObject grid = FindBattleSceneGridRoot();
+        if (grid == null)
+        {
+            return;
+        }
+
+        SpriteRenderer sourceRenderer = grid.GetComponent<SpriteRenderer>();
+        if (sourceRenderer != null)
+        {
+            Sprite frameSprite = LoadBattleSceneUnifiedBoardFrameSprite();
+            if (frameSprite != null)
+            {
+                sourceRenderer.sprite = frameSprite;
+                sourceRenderer.enabled = true;
+            }
+            else
+            {
+                sourceRenderer.enabled = false;
+            }
+        }
+
+        Transform visualRoot = grid.transform.Find(BattleSceneUnifiedPanelRootName);
+        if (visualRoot == null)
+        {
+            GameObject visualRootObject = new GameObject(BattleSceneUnifiedPanelRootName);
+            visualRoot = visualRootObject.transform;
+            visualRoot.SetParent(grid.transform, false);
+        }
+
+        visualRoot.localPosition = Vector3.zero;
+        visualRoot.localRotation = Quaternion.identity;
+        visualRoot.localScale = Vector3.one;
+
+        for (int i = visualRoot.childCount - 1; i >= 0; i--)
+        {
+            DestroyBattleSceneRuntimeObject(visualRoot.GetChild(i).gameObject);
+        }
+
+        int sortingLayerId = sourceRenderer != null ? sourceRenderer.sortingLayerID : 0;
+        Sprite allyPanelSprite = LoadBattleSceneUnifiedTilePanelSprite(true);
+        Sprite enemyPanelSprite = LoadBattleSceneUnifiedTilePanelSprite(false);
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                Sprite panelSprite = column < BattleGridAllyCols ? allyPanelSprite : enemyPanelSprite;
+                if (panelSprite == null)
+                {
+                    panelSprite = LoadBattleSceneUnifiedPanelSprite(row, column);
+                }
+
+                if (panelSprite == null)
+                {
+                    continue;
+                }
+
+                GameObject panelObject = new GameObject("UnifiedPanel_R" + row + "_C" + column, typeof(SpriteRenderer));
+                panelObject.transform.SetParent(visualRoot, false);
+                Vector2 center = GetBattleSceneVisualPanelLocalCenter(row, column);
+                panelObject.transform.localPosition = new Vector3(center.x, center.y, 0f);
+                panelObject.transform.localRotation = GetBattleSceneVisualPanelLocalRotation(row, column);
+                panelObject.transform.localScale = GetBattleSceneVisualPanelSpriteScale(row, column);
+
+                SpriteRenderer renderer = panelObject.GetComponent<SpriteRenderer>();
+                renderer.sprite = panelSprite;
+                renderer.sortingLayerID = sortingLayerId;
+                renderer.sortingOrder = BattleSceneUnifiedPanelSortingOrder + row;
+            }
+        }
+
+        ApplyBattleSceneUnifiedPanelColliders(grid.transform);
+        RepositionBattleSceneUnifiedUnits(grid.transform);
+    }
+
+    private static void ApplyBattleSceneUnifiedPanelColliders(Transform grid)
+    {
+        if (grid == null)
+        {
+            return;
+        }
+
+        Transform collidersRoot = grid.Find("GridColliders");
+        if (collidersRoot == null)
+        {
+            return;
+        }
+
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                Transform cell = collidersRoot.Find(GetBattleScenePanelCellName(row, column));
+                if (cell == null)
+                {
+                    continue;
+                }
+
+                Vector2 center;
+                Vector2[] colliderPoints = BuildBattleSceneUnifiedPanelLocalPoints(row, column, out center);
+                cell.localPosition = new Vector3(center.x, center.y, cell.localPosition.z);
+                cell.localRotation = Quaternion.identity;
+                cell.localScale = Vector3.one;
+
+                PolygonCollider2D polygon = cell.GetComponent<PolygonCollider2D>();
+                if (polygon == null)
+                {
+                    polygon = cell.gameObject.AddComponent<PolygonCollider2D>();
+                }
+
+                polygon.isTrigger = true;
+                polygon.pathCount = 1;
+                polygon.SetPath(0, colliderPoints);
+
+                Transform anchor = cell.Find("UnitAnchor");
+                if (anchor != null)
+                {
+                    anchor.localPosition = new Vector3(0f, 0.30f, -0.05f);
+                    anchor.localRotation = Quaternion.identity;
+                    anchor.localScale = Vector3.one;
+                }
+            }
+        }
+    }
+
+    private void RepositionBattleSceneUnifiedUnits(Transform grid)
+    {
+        if (grid == null)
+        {
+            return;
+        }
+
+        Transform units = grid.Find("Units");
+        if (units == null)
+        {
+            return;
+        }
+
+        RepositionBattleSceneUnifiedRootUnit(grid, units, "Ally_Front_CyberKnight", 1, 1, new Vector3(0f, 0.27f, 0f));
+        RepositionBattleSceneUnifiedRootUnit(grid, units, "Ally_Middle_CyberWolf", 0, 1, new Vector3(0f, 0.19f, 0f));
+        RepositionBattleSceneUnifiedRootUnit(grid, units, "Ally_Back_DigitalFairy", 2, 1, new Vector3(0f, 0.22f, 0f));
+        RepositionBattleSceneUnifiedVisualUnit(grid, units, "Enemy_DrillMole", 1, BattleGridAllyCols + 1, new Vector3(0f, 0.28f, 0f));
+        RepositionBattleSceneUnifiedVisualUnit(grid, units, "Enemy_ElecGecko", 0, BattleGridAllyCols + 2, new Vector3(-0.06f, 0.25f, 0f));
+        RepositionBattleSceneUnifiedVisualUnit(grid, units, "Enemy_BladeBug", 2, BattleGridAllyCols + 2, new Vector3(0f, 0.42f, 0f));
+    }
+
+    private static void RepositionBattleSceneUnifiedRootUnit(Transform grid, Transform units, string unitName, int row, int globalColumn, Vector3 displayOffset)
+    {
+        Transform unit = units.Find(unitName);
+        Transform anchor = FindBattleSceneUnifiedUnitAnchor(grid, row, globalColumn);
+        if (unit == null || anchor == null)
+        {
+            return;
+        }
+
+        unit.localPosition = units.InverseTransformPoint(anchor.position) + displayOffset;
+        unit.localRotation = Quaternion.identity;
+    }
+
+    private static void RepositionBattleSceneUnifiedVisualUnit(Transform grid, Transform units, string unitName, int row, int globalColumn, Vector3 displayOffset)
+    {
+        Transform unit = units.Find(unitName);
+        Transform anchor = FindBattleSceneUnifiedUnitAnchor(grid, row, globalColumn);
+        if (unit == null || anchor == null)
+        {
+            return;
+        }
+
+        unit.localPosition = units.InverseTransformPoint(anchor.position);
+        unit.localRotation = Quaternion.identity;
+        Transform visual = unit.Find("Visual");
+        if (visual != null)
+        {
+            visual.localPosition = displayOffset;
+            visual.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            unit.localPosition += displayOffset;
+        }
+    }
+
+    private static Transform FindBattleSceneUnifiedUnitAnchor(Transform grid, int row, int globalColumn)
+    {
+        Transform collidersRoot = grid != null ? grid.Find("GridColliders") : null;
+        Transform cell = collidersRoot != null ? collidersRoot.Find(GetBattleScenePanelCellName(row, globalColumn)) : null;
+        return cell != null ? cell.Find("UnitAnchor") : null;
+    }
+
+    private static Vector2[] BuildBattleSceneUnifiedPanelLocalPoints(int row, int globalColumn, out Vector2 center)
+    {
+        Vector2[] corners = GetBattleSceneUnifiedPanelPixelCorners(row, globalColumn);
+        Vector2[] polygonPixels = BuildBattleSceneUnifiedBeveledPixelPolygon(corners, BattleSceneUnifiedColliderTrim);
+        Vector2[] gridLocalPoints = new Vector2[polygonPixels.Length];
+        center = Vector2.zero;
+        for (int i = 0; i < polygonPixels.Length; i++)
+        {
+            gridLocalPoints[i] = ConvertBattleSceneUnifiedPixelToLocal(polygonPixels[i]);
+            center += gridLocalPoints[i];
+        }
+
+        center /= gridLocalPoints.Length;
+        Vector2[] localPoints = new Vector2[gridLocalPoints.Length];
+        for (int i = 0; i < gridLocalPoints.Length; i++)
+        {
+            localPoints[i] = gridLocalPoints[i] - center;
+        }
+
+        return localPoints;
+    }
+
+    private static Vector2[] GetBattleSceneUnifiedPanelPixelCorners(int row, int globalColumn)
+    {
+        int clampedRow = Mathf.Clamp(row, 0, BattleGridRows - 1);
+        int clampedColumn = Mathf.Clamp(globalColumn, 0, BattleGridTotalCols - 1);
+        return BattleSceneUnifiedPanelCornerPixels[clampedRow * BattleGridTotalCols + clampedColumn];
+    }
+
+    private static Vector2[] GetBattleSceneVisualPanelPixelCorners(int row, int globalColumn)
+    {
+        int clampedRow = Mathf.Clamp(row, 0, BattleGridRows - 1);
+        int clampedColumn = Mathf.Clamp(globalColumn, 0, BattleGridTotalCols - 1);
+        return BattleSceneVisualPanelCornerPixels[clampedRow * BattleGridTotalCols + clampedColumn];
+    }
+
+    private static Vector2 GetBattleSceneUnifiedPanelLocalCenter(int row, int globalColumn)
+    {
+        return GetBattleScenePanelLocalCenter(GetBattleSceneUnifiedPanelPixelCorners(row, globalColumn));
+    }
+
+    private static Vector2 GetBattleSceneVisualPanelLocalCenter(int row, int globalColumn)
+    {
+        return GetBattleScenePanelLocalCenter(GetBattleSceneVisualPanelPixelCorners(row, globalColumn));
+    }
+
+    private static Vector2 GetBattleScenePanelLocalCenter(Vector2[] corners)
+    {
+        Vector2 center = Vector2.zero;
+        for (int i = 0; i < corners.Length; i++)
+        {
+            center += corners[i];
+        }
+
+        center /= corners.Length;
+        return ConvertBattleSceneUnifiedPixelToLocal(center);
+    }
+
+    private static Quaternion GetBattleSceneVisualPanelLocalRotation(int row, int globalColumn)
+    {
+        Vector2[] corners = GetBattleSceneVisualPanelPixelCorners(row, globalColumn);
+        Vector2 topLeft = corners[0];
+        Vector2 topRight = corners[1];
+        float pixelAngle = Mathf.Atan2(topRight.y - topLeft.y, topRight.x - topLeft.x) * Mathf.Rad2Deg;
+        return Quaternion.Euler(0f, 0f, -pixelAngle);
+    }
+
+    private static Vector3 GetBattleSceneVisualPanelSpriteScale(int row, int globalColumn)
+    {
+        Vector2[] corners = GetBattleSceneVisualPanelPixelCorners(row, globalColumn);
+        float topWidth = Vector2.Distance(corners[0], corners[1]);
+        float bottomWidth = Vector2.Distance(corners[3], corners[2]);
+        float leftHeight = Vector2.Distance(corners[0], corners[3]);
+        float rightHeight = Vector2.Distance(corners[1], corners[2]);
+        float width = Mathf.Max(1f, (topWidth + bottomWidth) * 0.5f);
+        float height = Mathf.Max(1f, (leftHeight + rightHeight) * 0.5f);
+        return new Vector3(
+            width / BattleSceneVisualPanelBaseWidthPixels,
+            height / BattleSceneVisualPanelBaseHeightPixels,
+            1f);
+    }
+
+    private static Vector2[] BuildBattleSceneUnifiedBeveledPixelPolygon(Vector2[] corners, float trim)
+    {
+        Vector2 topLeft = corners[0];
+        Vector2 topRight = corners[1];
+        Vector2 bottomRight = corners[2];
+        Vector2 bottomLeft = corners[3];
+        return new[]
+        {
+            Vector2.Lerp(topLeft, topRight, trim),
+            Vector2.Lerp(topLeft, topRight, 1f - trim),
+            Vector2.Lerp(topRight, bottomRight, trim),
+            Vector2.Lerp(topRight, bottomRight, 1f - trim),
+            Vector2.Lerp(bottomRight, bottomLeft, trim),
+            Vector2.Lerp(bottomRight, bottomLeft, 1f - trim),
+            Vector2.Lerp(bottomLeft, topLeft, trim),
+            Vector2.Lerp(bottomLeft, topLeft, 1f - trim)
+        };
+    }
+
+    private static Vector2 ConvertBattleSceneUnifiedPixelToLocal(Vector2 pixel)
+    {
+        return new Vector2(
+            (pixel.x - BattleSceneUnifiedTextureWidthPixels * 0.5f) / BattleSceneUnifiedPixelsPerUnit,
+            (BattleSceneUnifiedTextureHeightPixels * 0.5f - pixel.y) / BattleSceneUnifiedPixelsPerUnit);
+    }
+
+    private static Sprite LoadBattleSceneUnifiedPanelSprite(int row, int column)
+    {
+        return LoadFullRectSpriteFromFile(GetBattleSceneUnifiedPanelSpriteAssetPath(row, column), FilterMode.Bilinear);
+    }
+
+    private static Sprite LoadBattleSceneUnifiedBoardFrameSprite()
+    {
+        return LoadFullRectSpriteFromFile(BattleSceneUnifiedBoardFrameAssetPath, FilterMode.Bilinear);
+    }
+
+    private static Sprite LoadBattleSceneUnifiedTilePanelSprite(bool allyPanel)
+    {
+        return LoadFullRectSpriteFromFile(
+            allyPanel ? BattleSceneUnifiedTilePanelAllyAssetPath : BattleSceneUnifiedTilePanelEnemyAssetPath,
+            FilterMode.Bilinear);
+    }
+
+    private static string GetBattleSceneUnifiedPanelSpriteAssetPath(int row, int column)
+    {
+        return BattleSceneUnifiedPanelAssetFolder + "/UnifiedPanel_R" + row + "_C" + column + ".png";
+    }
+
+    private static void DestroyBattleSceneRuntimeObject(GameObject target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (Application.isPlaying)
+        {
+            Destroy(target);
+        }
+        else
+        {
+            DestroyImmediate(target);
+        }
+    }
+
     private void CacheSceneBattleGridUnitRenderers()
     {
         sceneBattleGridUnitRenderers.Clear();
@@ -4010,7 +5967,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        GameObject grid = GameObject.Find(BattleGridBottomPrefabName);
+        GameObject grid = FindBattleSceneGridRoot();
         Transform units = grid != null ? grid.transform.Find("Units") : null;
         if (units == null)
         {
@@ -4066,7 +6023,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private static Transform EnsureBattleSceneEnemyHpRoot()
     {
-        GameObject grid = GameObject.Find(BattleGridBottomPrefabName);
+        GameObject grid = FindBattleSceneGridRoot();
         if (grid == null)
         {
             return null;
@@ -4436,7 +6393,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 EnemyUnit enemy = GetEnemyAt(row, column);
                 bool selected = enemy != null && selectedEnemy == enemy;
                 bool active = activeUnit != null && !activeUnit.IsAlly && activeUnit.Enemy == enemy;
-                bool targetable = IsPlayerTurn() && enemy != null && enemy.IsAlive;
+                bool targetable = IsPlayerTurn() && enemy != null && enemy.IsAlive && (!mainBattleSceneMode || IsEnemyInCurrentPrototypeAttackRange(enemy));
                 if (enemy == null)
                 {
                     view.Panel.sprite = mainBattleSceneMode ? GetBattlePanelBaseSprite(false) : GetSpriteOrNull(enemyGridSprites, s => s.Empty);
@@ -4589,7 +6546,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             CacheSceneBattleGridUnitRenderers();
         }
 
-        GameObject grid = GameObject.Find(BattleGridBottomPrefabName);
+        GameObject grid = FindBattleSceneGridRoot();
         DisableLegacyBattleSceneEnemyHpTexts(grid != null ? grid.transform.Find("Units") : null);
 
         Transform hpRoot = EnsureBattleSceneEnemyHpRoot();
@@ -4826,9 +6783,42 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             z);
     }
 
+    private static GameObject FindBattleSceneGridRoot()
+    {
+        GameObject activeRoot = GameObject.Find(BattleGridBottomPrefabName);
+        if (activeRoot != null)
+        {
+            return activeRoot;
+        }
+
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+        for (int i = 0; i < allObjects.Length; i++)
+        {
+            GameObject candidate = allObjects[i];
+            if (candidate != null && candidate.name == BattleGridBottomPrefabName && candidate.scene.IsValid())
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
     private static string GetBattleSceneEnemyCellName(int row, int column)
     {
         return "Enemy_Cell_R" + row + "_C" + column;
+    }
+
+    private static string GetBattleScenePanelCellName(int row, int globalColumn)
+    {
+        int clampedRow = Mathf.Clamp(row, 0, BattleGridRows - 1);
+        int clampedColumn = Mathf.Clamp(globalColumn, 0, BattleGridTotalCols - 1);
+        if (clampedColumn < BattleGridAllyCols)
+        {
+            return "Ally_Cell_R" + clampedRow + "_C" + clampedColumn;
+        }
+
+        return "Enemy_Cell_R" + clampedRow + "_C" + (clampedColumn - BattleGridAllyCols);
     }
 
     private void UpdateEnemyHpNumberPosition(EnemyCellView view, EnemyUnit enemy)
@@ -4984,12 +6974,262 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         if (cardSelectRoot != null)
         {
-            cardSelectRoot.SetActive(mainBattleSceneMode && cardSelectOpen && canAct);
+            cardSelectRoot.SetActive(!mainBattleSceneMode && cardSelectOpen && canAct);
         }
 
+        RefreshBattleSceneCommandPanel();
         RefreshSelectedCommandName();
         RefreshChipQueueSlots();
         RefreshChipDetail();
+    }
+
+    private void RefreshBattleSceneCommandPanel()
+    {
+        if (battleSceneCommandRoot == null)
+        {
+            return;
+        }
+
+        bool canAct = mainBattleSceneMode && !battleEnded && IsPlayerTurn();
+        battleSceneCommandRoot.SetActive(canAct);
+        if (!canAct)
+        {
+            HideBattleSceneAttackRangeOverlay();
+            return;
+        }
+
+        PrototypeAttackDefinition selectedAttack = GetSelectedPrototypeAttack();
+        AllyUnit actor = activeUnit != null ? activeUnit.Ally : null;
+        EnemyUnit target = ResolvePrototypeAttackTarget(actor, selectedAttack);
+
+        if (battleSceneCommandActorText != null)
+        {
+            battleSceneCommandActorText.text = actor != null ? "ACTOR  " + actor.Name : "ACTOR  --";
+        }
+
+        if (battleSceneCommandTargetText != null)
+        {
+            bool directTarget = target != null && selectedEnemy == target;
+            battleSceneCommandTargetText.text = target != null
+                ? "TARGET " + target.Name + "  HP " + target.Hp + (directTarget ? string.Empty : "  RANGE")
+                : "TARGET -- OUT OF RANGE";
+        }
+
+        if (battleSceneCommandSelectedText != null)
+        {
+            battleSceneCommandSelectedText.text = selectedAttack.Name + "  POW " + selectedAttack.Damage + "  D" + selectedAttack.Delay + "  " + selectedAttack.Attribute;
+        }
+
+        for (int i = 0; i < prototypeAttackViews.Count; i++)
+        {
+            PrototypeAttackButtonView view = prototypeAttackViews[i];
+            if (view == null)
+            {
+                continue;
+            }
+
+            PrototypeAttackDefinition attack = GetPrototypeAttackDefinition(i);
+            bool selected = i == selectedPrototypeAttackIndex;
+            Color color = selected
+                ? new Color(0.88f, 0.64f, 0.16f, 0.98f)
+                : new Color(0.065f, 0.092f, 0.110f, 0.96f);
+            if (view.Panel != null)
+            {
+                view.Panel.color = color;
+            }
+
+            if (view.Label != null)
+            {
+                view.Label.text = (i + 1) + "  " + attack.Name + "\nPOW " + attack.Damage + "   DELAY " + attack.Delay + "   " + attack.Attribute;
+                view.Label.color = selected ? new Color(0.08f, 0.052f, 0.012f, 1f) : Color.white;
+            }
+
+            if (view.Button != null)
+            {
+                view.Button.interactable = canAct;
+                ColorBlock colors = view.Button.colors;
+                colors.normalColor = color;
+                colors.highlightedColor = Color.Lerp(color, Color.white, 0.18f);
+                colors.pressedColor = Color.Lerp(color, Color.black, 0.24f);
+                colors.selectedColor = colors.highlightedColor;
+                view.Button.colors = colors;
+            }
+        }
+
+        if (battleSceneCommandOkButton != null)
+        {
+            battleSceneCommandOkButton.interactable = canAct && actor != null && target != null;
+        }
+
+        if (battleSceneCommandOkImage != null)
+        {
+            battleSceneCommandOkImage.color = canAct && actor != null && target != null
+                ? new Color(0.12f, 0.42f, 0.25f, 0.96f)
+                : new Color(0.08f, 0.08f, 0.08f, 0.55f);
+        }
+
+        RefreshBattleSceneAttackRangeOverlay();
+    }
+
+    private void RefreshBattleSceneAttackRangeOverlay()
+    {
+        if (!mainBattleSceneMode || !HasBattleSceneAttackRangeVisuals())
+        {
+            return;
+        }
+
+        HideBattleSceneAttackRangeCells();
+        if (battleEnded || !IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
+        {
+            if (battleSceneAttackRangeOverlayRoot != null)
+            {
+                battleSceneAttackRangeOverlayRoot.gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
+        int attackIndex = hoveredPrototypeAttackIndex >= 0 ? hoveredPrototypeAttackIndex : selectedPrototypeAttackIndex;
+        if (attackIndex < 0 || attackIndex >= BattleScenePrototypeAttackCount)
+        {
+            if (battleSceneAttackRangeOverlayRoot != null)
+            {
+                battleSceneAttackRangeOverlayRoot.gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
+        PrototypeAttackDefinition attack = GetPrototypeAttackDefinition(attackIndex);
+        int row = GetAllyGridRow(activeUnit.Ally.Position);
+        Color rangeColor = hoveredPrototypeAttackIndex >= 0
+            ? new Color(1f, 0.96f, 0.24f, 0.82f)
+            : new Color(1f, 0.82f, 0.16f, 0.68f);
+
+        switch (attack.RangePattern)
+        {
+            case PrototypeAttackRangePattern.RowToEnemyEdge:
+                if (SetBattleSceneAttackRangeRow(row, true))
+                {
+                    break;
+                }
+
+                for (int column = BattleScenePrototypeAttackRangeStartColumn; column < BattleGridTotalCols; column++)
+                {
+                    SetBattleSceneAttackRangeCell(row, column, true, rangeColor);
+                }
+                break;
+        }
+
+        if (battleSceneAttackRangeOverlayRoot != null)
+        {
+            battleSceneAttackRangeOverlayRoot.gameObject.SetActive(true);
+        }
+    }
+
+    private void HideBattleSceneAttackRangeOverlay()
+    {
+        HideBattleSceneAttackRangeCells();
+        if (battleSceneAttackRangeOverlayRoot != null)
+        {
+            battleSceneAttackRangeOverlayRoot.gameObject.SetActive(false);
+        }
+    }
+
+    private void HideBattleSceneAttackRangeCells()
+    {
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            SetBattleSceneAttackRangeRow(row, false);
+        }
+
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                SetBattleSceneAttackRangeCell(row, column, false, Color.clear);
+            }
+        }
+    }
+
+    private bool SetBattleSceneAttackRangeRow(int row, bool visible)
+    {
+        if (row < 0 || row >= BattleGridRows)
+        {
+            return false;
+        }
+
+        SpriteRenderer rowRenderer = battleSceneAttackRangeSceneRowRenderers[row];
+        if (rowRenderer == null)
+        {
+            return false;
+        }
+
+        rowRenderer.enabled = visible;
+        rowRenderer.color = visible ? Color.white : Color.clear;
+        return true;
+    }
+
+    private void SetBattleSceneAttackRangeCell(int row, int column, bool visible, Color color)
+    {
+        if (row < 0 || row >= BattleGridRows || column < 0 || column >= BattleGridTotalCols)
+        {
+            return;
+        }
+
+        Image cell = battleSceneAttackRangeCells[row, column];
+        if (cell != null)
+        {
+            cell.color = visible ? color : Color.clear;
+            cell.gameObject.SetActive(visible);
+        }
+
+        SpriteRenderer spriteRenderer = battleSceneAttackRangeSceneSpriteRenderers[row, column];
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = visible;
+            spriteRenderer.color = visible ? Color.white : Color.clear;
+        }
+
+        GameObject colliderOverlayRoot = battleSceneAttackRangeColliderOverlayRoots[row, column];
+        if (colliderOverlayRoot != null)
+        {
+            colliderOverlayRoot.SetActive(visible);
+        }
+    }
+
+    private bool HasBattleSceneAttackRangeVisuals()
+    {
+        if (battleSceneAttackRangeOverlayRoot != null)
+        {
+            return true;
+        }
+
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            if (battleSceneAttackRangeSceneRowRenderers[row] != null)
+            {
+                return true;
+            }
+        }
+
+        for (int row = 0; row < BattleGridRows; row++)
+        {
+            for (int column = 0; column < BattleGridTotalCols; column++)
+            {
+                if (battleSceneAttackRangeSceneSpriteRenderers[row, column] != null)
+                {
+                    return true;
+                }
+
+                if (battleSceneAttackRangeColliderOverlayRoots[row, column] != null)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void RefreshChipCardView(CardButtonView view, PrototypeCard card, bool queued, bool selected, int index)
@@ -5109,7 +7349,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         string commandName = string.Empty;
-        if (mainBattleSceneMode && cardSelectOpen && IsPlayerTurn())
+        if (mainBattleSceneMode && IsPlayerTurn())
+        {
+            PrototypeAttackDefinition attack = GetSelectedPrototypeAttack();
+            commandName = attack != null ? attack.Name : string.Empty;
+        }
+        else if (cardSelectOpen && IsPlayerTurn())
         {
             PrototypeCard card = GetSelectedChipCard();
             commandName = card != null ? GetCardDisplayName(card) : string.Empty;
@@ -5741,6 +7986,29 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return null;
         }
 
+        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+    }
+
+    private static Sprite LoadFullRectSpriteFromFile(string assetPath, FilterMode filterMode)
+    {
+        string fullPath = GetFullAssetFilePath(assetPath);
+        if (!System.IO.File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!texture.LoadImage(bytes))
+        {
+            UnityEngine.Object.Destroy(texture);
+            Debug.LogWarning("BattleScene failed to load full rect sprite texture: " + assetPath);
+            return null;
+        }
+
+        texture.name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = filterMode;
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
     }
 

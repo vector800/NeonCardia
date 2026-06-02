@@ -145,7 +145,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -184,9 +184,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 2925843319539204184}
   background: {fileID: 4917462095006829095}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 44005822548345846}
   indexText: {fileID: 3749565801855342856}
   stateText: {fileID: 6933202727735039458}
@@ -260,7 +261,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -299,9 +300,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 1361162612409375040}
   background: {fileID: 4828740573592014542}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 6188336849185308993}
   indexText: {fileID: 1587031873839928058}
   stateText: {fileID: 7548730635209632272}
@@ -526,7 +528,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -565,9 +567,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 3439932032849953381}
   background: {fileID: 4619256497565337155}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 1887078794617072265}
   indexText: {fileID: 2808038717263153385}
   stateText: {fileID: 7470551602412696959}
@@ -984,8 +987,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5914414430377719533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.185735, y: 0.28}
-  m_AnchorMax: {x: 0.770735, y: 0.86}
+  m_AnchorMin: {x: 0.175, y: 0.18}
+  m_AnchorMax: {x: 0.855, y: 0.84}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1019,11 +1022,11 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 30
+    m_FontSize: 24
     m_FontStyle: 1
     m_BestFit: 1
     m_MinSize: 18
-    m_MaxSize: 30
+    m_MaxSize: 24
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -1085,7 +1088,7 @@ RectTransform:
   - {fileID: 3910262639792376015}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.012, y: 0.728}
+  m_AnchorMin: {x: 0.012, y: 0.872}
   m_AnchorMax: {x: 0.865, y: 0.982}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
@@ -1118,7 +1121,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 68b36275dedd9b0409d4aa249584f62e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 22a637f61cb748d7bd98b2345e7f8d61, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1302,7 +1305,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1341,9 +1344,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 2835430292474123380}
   background: {fileID: 4007456341182465084}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 1182110644925697580}
   indexText: {fileID: 120153667999182995}
   stateText: {fileID: 835180833394964361}
@@ -1819,8 +1823,8 @@ RectTransform:
   - {fileID: 2394060148429824939}
   m_Father: {fileID: 4461527121811089096}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.047, y: 0.257}
-  m_AnchorMax: {x: 0.194, y: 0.743}
+  m_AnchorMin: {x: 0.026, y: 0.195}
+  m_AnchorMax: {x: 0.151, y: 0.805}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1839,21 +1843,21 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4023965524980825382}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: 9fff6f6c57f34215ac4cc6772e52b176, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2102,7 +2106,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2141,9 +2145,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 1341370961527926968}
   background: {fileID: 7447900022392135039}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 8505381457134358945}
   indexText: {fileID: 8723528000602329294}
   stateText: {fileID: 8328788010721844869}
@@ -2709,7 +2714,7 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 5914414430377719533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.130735, y: 0.24}
+  m_AnchorMin: {x: 0.130735, y: 0.16}
   m_AnchorMax: {x: 0.820735, y: 0.9}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
@@ -2784,8 +2789,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 4461527121811089096}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.215, y: 0.07}
-  m_AnchorMax: {x: 0.905, y: 0.105}
+  m_AnchorMin: {x: 0.165, y: 0.112}
+  m_AnchorMax: {x: 0.925, y: 0.148}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2817,7 +2822,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: bbd9dbe63fc20a3439f57153a61286e1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9b997c0d77394efb0b85881fa5218497, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2897,7 +2902,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2936,9 +2941,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 7672501740374507731}
   background: {fileID: 4245290291905004241}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 7769937067845072665}
   indexText: {fileID: 8842213456278005382}
   stateText: {fileID: 7023979956903412664}
@@ -3277,7 +3283,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3316,9 +3322,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 285546478665074695}
   background: {fileID: 7920107732170981263}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 5859624186858846306}
   indexText: {fileID: 6855194387901072896}
   stateText: {fileID: 4109045777297429336}
@@ -3552,8 +3559,8 @@ RectTransform:
   - {fileID: 2835430292474123380}
   m_Father: {fileID: 4461527121811089096}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.165, y: 0.105}
-  m_AnchorMax: {x: 0.93, y: 0.925}
+  m_AnchorMin: {x: 0.158, y: 0.06}
+  m_AnchorMax: {x: 0.93, y: 0.94}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3815,7 +3822,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3854,9 +3861,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleTimelineSlotView
   root: {fileID: 4517242855488225885}
   background: {fileID: 7019967992305846056}
-  currentBackgroundSprite: {fileID: 21300000, guid: 619278deae1abe74d98ce1384958a7a8, type: 3}
-  allyBackgroundSprite: {fileID: 21300000, guid: 11d1e3b6631715c45bcc35c91791c488, type: 3}
-  enemyBackgroundSprite: {fileID: 21300000, guid: 1c33e952bcfeed44a9f19652c5c59a8a, type: 3}
+  currentBackgroundSprite: {fileID: 21300000, guid: d70a069d130a464b94e2f88c34c9b116, type: 3}
+  allyBackgroundSprite: {fileID: 21300000, guid: 08c950ce245d4eeea4a4b857a094c454, type: 3}
+  enemyBackgroundSprite: {fileID: 21300000, guid: 78d97b1c68824898b102721d336535c5, type: 3}
+  blankBackgroundSprite: {fileID: 21300000, guid: 1ec60d7f2faa404ead8cc8ca8e09fa3b, type: 3}
   icon: {fileID: 7408863398465925522}
   indexText: {fileID: 5338724624385854062}
   stateText: {fileID: 5845704918112474601}

@@ -1,0 +1,21 @@
+private static readonly Vector2[][] BattleSceneUnifiedPanelCornerPixels =
+{
+    new[] { new Vector2(92.0f, 198.0f), new Vector2(330.0f, 198.0f), new Vector2(330.0f, 324.0f), new Vector2(92.0f, 324.0f) },
+    new[] { new Vector2(342.0f, 198.0f), new Vector2(580.0f, 198.0f), new Vector2(580.0f, 324.0f), new Vector2(342.0f, 324.0f) },
+    new[] { new Vector2(592.0f, 198.0f), new Vector2(830.0f, 198.0f), new Vector2(830.0f, 324.0f), new Vector2(592.0f, 324.0f) },
+    new[] { new Vector2(842.0f, 198.0f), new Vector2(1080.0f, 198.0f), new Vector2(1080.0f, 324.0f), new Vector2(842.0f, 324.0f) },
+    new[] { new Vector2(1092.0f, 198.0f), new Vector2(1330.0f, 198.0f), new Vector2(1330.0f, 324.0f), new Vector2(1092.0f, 324.0f) },
+    new[] { new Vector2(1342.0f, 198.0f), new Vector2(1580.0f, 198.0f), new Vector2(1580.0f, 324.0f), new Vector2(1342.0f, 324.0f) },
+    new[] { new Vector2(92.0f, 331.0f), new Vector2(330.0f, 331.0f), new Vector2(330.0f, 457.0f), new Vector2(92.0f, 457.0f) },
+    new[] { new Vector2(342.0f, 331.0f), new Vector2(580.0f, 331.0f), new Vector2(580.0f, 457.0f), new Vector2(342.0f, 457.0f) },
+    new[] { new Vector2(592.0f, 331.0f), new Vector2(830.0f, 331.0f), new Vector2(830.0f, 457.0f), new Vector2(592.0f, 457.0f) },
+    new[] { new Vector2(842.0f, 331.0f), new Vector2(1080.0f, 331.0f), new Vector2(1080.0f, 457.0f), new Vector2(842.0f, 457.0f) },
+    new[] { new Vector2(1092.0f, 331.0f), new Vector2(1330.0f, 331.0f), new Vector2(1330.0f, 457.0f), new Vector2(1092.0f, 457.0f) },
+    new[] { new Vector2(1342.0f, 331.0f), new Vector2(1580.0f, 331.0f), new Vector2(1580.0f, 457.0f), new Vector2(1342.0f, 457.0f) },
+    new[] { new Vector2(92.0f, 464.0f), new Vector2(330.0f, 464.0f), new Vector2(330.0f, 590.0f), new Vector2(92.0f, 590.0f) },
+    new[] { new Vector2(342.0f, 464.0f), new Vector2(580.0f, 464.0f), new Vector2(580.0f, 590.0f), new Vector2(342.0f, 590.0f) },
+    new[] { new Vector2(592.0f, 464.0f), new Vector2(830.0f, 464.0f), new Vector2(830.0f, 590.0f), new Vector2(592.0f, 590.0f) },
+    new[] { new Vector2(842.0f, 464.0f), new Vector2(1080.0f, 464.0f), new Vector2(1080.0f, 590.0f), new Vector2(842.0f, 590.0f) },
+    new[] { new Vector2(1092.0f, 464.0f), new Vector2(1330.0f, 464.0f), new Vector2(1330.0f, 590.0f), new Vector2(1092.0f, 590.0f) },
+    new[] { new Vector2(1342.0f, 464.0f), new Vector2(1580.0f, 464.0f), new Vector2(1580.0f, 590.0f), new Vector2(1342.0f, 590.0f) }
+};

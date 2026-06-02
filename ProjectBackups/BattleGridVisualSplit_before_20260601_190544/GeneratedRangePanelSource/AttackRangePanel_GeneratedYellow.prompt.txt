@@ -1,0 +1,10 @@
+Use case: game asset
+Asset type: cyberpunk JRPG battle grid attack-range highlight panel source texture
+Primary request: Create one square sci-fi floor panel face that looks like it is actively glowing for an attack range highlight.
+Style/medium: polished 2D game asset, neon cyberpunk, clean raster sprite texture.
+Composition/framing: perfectly centered orthographic top-down square panel face, no perspective tilt, generous padding, all edges visible.
+Subject: a dark glass/metal square panel surface with rounded bevel-like chamfered corners, luminous warm yellow-gold inner glow across the panel face, subtle circuit-line engraving, soft internal bloom, no characters or UI.
+Lighting/mood: the panel itself emits light; crisp high-tech glow, readable but not overexposed.
+Color palette: yellow-gold glow, amber highlights, very dark graphite/black interior; avoid cyan, blue, red, green, purple.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal.
+Constraints: The background must be one uniform #00ff00 color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Keep the subject fully separated from the background with crisp edges and generous padding. Do not use #00ff00 anywhere in the subject. No cast shadow, no contact shadow, no reflection, no text, no watermark, no numbers, no icons, no characters. The panel must be a reusable tile texture, not a full battlefield.

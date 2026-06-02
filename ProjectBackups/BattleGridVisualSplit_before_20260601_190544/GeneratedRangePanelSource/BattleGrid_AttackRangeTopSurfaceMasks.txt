@@ -1,0 +1,23 @@
+Top-surface attack range mask bounds
+
+All masks are generated from per-panel top-surface bright-pixel hulls.
+The last column never falls back to boardRight or texture.width.
+
+R0C0 source_bounds=(207, 174, 405, 280) mask_bbox=(207, 187, 406, 281) hull_points=12
+R0C1 source_bounds=(434, 174, 618, 281) mask_bbox=(434, 188, 619, 282) hull_points=9
+R0C2 source_bounds=(652, 174, 823, 282) mask_bbox=(652, 188, 824, 283) hull_points=7
+R0C3 source_bounds=(860, 174, 1032, 281) mask_bbox=(860, 187, 1033, 282) hull_points=5
+R0C4 source_bounds=(1066, 174, 1244, 281) mask_bbox=(1066, 187, 1245, 282) hull_points=6
+R0C5 source_bounds=(1273, 174, 1467, 280) mask_bbox=(1273, 187, 1468, 281) hull_points=10
+R1C0 source_bounds=(158, 308, 379, 436) mask_bbox=(158, 308, 380, 437) hull_points=7
+R1C1 source_bounds=(404, 307, 605, 437) mask_bbox=(404, 307, 606, 438) hull_points=7
+R1C2 source_bounds=(638, 307, 822, 437) mask_bbox=(638, 307, 823, 438) hull_points=11
+R1C3 source_bounds=(861, 306, 1042, 437) mask_bbox=(861, 306, 1043, 438) hull_points=4
+R1C4 source_bounds=(1077, 306, 1271, 437) mask_bbox=(1077, 306, 1272, 438) hull_points=5
+R1C5 source_bounds=(1298, 306, 1514, 436) mask_bbox=(1298, 306, 1515, 437) hull_points=6
+R2C0 source_bounds=(102, 466, 342, 621) mask_bbox=(102, 466, 343, 622) hull_points=8
+R2C1 source_bounds=(366, 465, 586, 622) mask_bbox=(366, 465, 587, 623) hull_points=7
+R2C2 source_bounds=(619, 464, 819, 623) mask_bbox=(619, 464, 820, 624) hull_points=8
+R2C3 source_bounds=(861, 464, 1055, 622) mask_bbox=(861, 464, 1056, 619) hull_points=6
+R2C4 source_bounds=(1092, 464, 1303, 622) mask_bbox=(1092, 464, 1304, 623) hull_points=10
+R2C5 source_bounds=(1330, 464, 1567, 623) mask_bbox=(1330, 464, 1568, 624) hull_points=9

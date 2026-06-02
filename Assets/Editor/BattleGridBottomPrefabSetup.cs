@@ -42,24 +42,24 @@ public static class BattleGridBottomPrefabSetup
     private static readonly Vector2 EnemyHpTextSize = new Vector2(2.2f, 0.8f);
     private static readonly Vector2[][] PanelCornerPixels = new Vector2[][]
     {
-        new[] { new Vector2(202f, 198f), new Vector2(383f, 198f), new Vector2(370f, 287f), new Vector2(183f, 287f) },
-        new[] { new Vector2(421f, 198f), new Vector2(596f, 198f), new Vector2(589f, 287f), new Vector2(407f, 287f) },
-        new[] { new Vector2(649f, 198f), new Vector2(806f, 198f), new Vector2(807f, 287f), new Vector2(629f, 287f) },
-        new[] { new Vector2(864f, 198f), new Vector2(1043f, 198f), new Vector2(1058f, 287f), new Vector2(876f, 287f) },
-        new[] { new Vector2(1084f, 198f), new Vector2(1264f, 198f), new Vector2(1269f, 287f), new Vector2(1081f, 287f) },
-        new[] { new Vector2(1302f, 198f), new Vector2(1514f, 198f), new Vector2(1528f, 287f), new Vector2(1295f, 287f) },
-        new[] { new Vector2(165f, 322f), new Vector2(370f, 322f), new Vector2(359f, 431f), new Vector2(139f, 431f) },
-        new[] { new Vector2(397f, 322f), new Vector2(597f, 322f), new Vector2(592f, 431f), new Vector2(379f, 431f) },
-        new[] { new Vector2(628f, 322f), new Vector2(813f, 322f), new Vector2(815f, 431f), new Vector2(611f, 431f) },
-        new[] { new Vector2(863f, 322f), new Vector2(1055f, 322f), new Vector2(1066f, 431f), new Vector2(851f, 431f) },
-        new[] { new Vector2(1088f, 322f), new Vector2(1280f, 322f), new Vector2(1304f, 431f), new Vector2(1097f, 431f) },
-        new[] { new Vector2(1320f, 322f), new Vector2(1530f, 322f), new Vector2(1544f, 431f), new Vector2(1311f, 431f) },
-        new[] { new Vector2(128f, 456f), new Vector2(345f, 456f), new Vector2(330f, 586f), new Vector2(92f, 586f) },
-        new[] { new Vector2(365f, 456f), new Vector2(586f, 456f), new Vector2(573f, 586f), new Vector2(348f, 586f) },
-        new[] { new Vector2(610f, 456f), new Vector2(812f, 456f), new Vector2(817f, 586f), new Vector2(591f, 586f) },
-        new[] { new Vector2(866f, 456f), new Vector2(1070f, 456f), new Vector2(1080f, 586f), new Vector2(851f, 586f) },
-        new[] { new Vector2(1093f, 456f), new Vector2(1310f, 456f), new Vector2(1334f, 586f), new Vector2(1088f, 586f) },
-        new[] { new Vector2(1329f, 456f), new Vector2(1565f, 456f), new Vector2(1595f, 586f), new Vector2(1320f, 586f) }
+        new[] { new Vector2(205f, 198f), new Vector2(386f, 197f), new Vector2(367f, 292f), new Vector2(184f, 292f) },
+        new[] { new Vector2(422f, 198f), new Vector2(598f, 197f), new Vector2(592f, 293f), new Vector2(409f, 291f) },
+        new[] { new Vector2(643f, 199f), new Vector2(810f, 197f), new Vector2(814f, 293f), new Vector2(630f, 291f) },
+        new[] { new Vector2(863f, 199f), new Vector2(1037f, 198f), new Vector2(1057f, 288f), new Vector2(867f, 294f) },
+        new[] { new Vector2(1080f, 200f), new Vector2(1266f, 198f), new Vector2(1261f, 291f), new Vector2(1077f, 292f) },
+        new[] { new Vector2(1297f, 197f), new Vector2(1497f, 201f), new Vector2(1518f, 289f), new Vector2(1294f, 293f) },
+        new[] { new Vector2(168f, 320f), new Vector2(369f, 320f), new Vector2(356f, 429f), new Vector2(140f, 431f) },
+        new[] { new Vector2(398f, 321f), new Vector2(592f, 321f), new Vector2(595f, 428f), new Vector2(380f, 431f) },
+        new[] { new Vector2(628f, 321f), new Vector2(813f, 321f), new Vector2(811f, 430f), new Vector2(618f, 430f) },
+        new[] { new Vector2(863f, 320f), new Vector2(1052f, 321f), new Vector2(1061f, 429f), new Vector2(854f, 430f) },
+        new[] { new Vector2(1087f, 320f), new Vector2(1277f, 320f), new Vector2(1296f, 430f), new Vector2(1094f, 430f) },
+        new[] { new Vector2(1320f, 318f), new Vector2(1530f, 322f), new Vector2(1534f, 431f), new Vector2(1320f, 429f) },
+        new[] { new Vector2(123f, 461f), new Vector2(337f, 459f), new Vector2(337f, 586f), new Vector2(90f, 588f) },
+        new[] { new Vector2(365f, 461f), new Vector2(585f, 459f), new Vector2(571f, 587f), new Vector2(348f, 589f) },
+        new[] { new Vector2(611f, 459f), new Vector2(810f, 461f), new Vector2(811f, 587f), new Vector2(600f, 588f) },
+        new[] { new Vector2(865f, 458f), new Vector2(1066f, 458f), new Vector2(1072f, 588f), new Vector2(853f, 588f) },
+        new[] { new Vector2(1097f, 457f), new Vector2(1306f, 458f), new Vector2(1327f, 589f), new Vector2(1088f, 586f) },
+        new[] { new Vector2(1331f, 457f), new Vector2(1560f, 458f), new Vector2(1589f, 589f), new Vector2(1316f, 586f) }
     };
 
     [MenuItem("Tools/NeonCardia/Setup Bottom Battle Grid Hitboxes")]

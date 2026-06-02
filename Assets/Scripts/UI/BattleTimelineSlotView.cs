@@ -9,15 +9,18 @@ public sealed class BattleTimelineSlotView : MonoBehaviour
     [SerializeField] private Sprite currentBackgroundSprite;
     [SerializeField] private Sprite allyBackgroundSprite;
     [SerializeField] private Sprite enemyBackgroundSprite;
+    [SerializeField] private Sprite blankBackgroundSprite;
     [SerializeField] private Image icon;
     [SerializeField] private Text indexText;
     [SerializeField] private Text stateText;
+    private CanvasGroup canvasGroup;
 
     public RectTransform Root { get { return root; } }
     public Image Background { get { return background; } }
     public Sprite CurrentBackgroundSprite { get { return currentBackgroundSprite; } }
     public Sprite AllyBackgroundSprite { get { return allyBackgroundSprite; } }
     public Sprite EnemyBackgroundSprite { get { return enemyBackgroundSprite; } }
+    public Sprite BlankBackgroundSprite { get { return blankBackgroundSprite; } }
     public Image Icon { get { return icon; } }
     public Text IndexText { get { return indexText; } }
     public Text StateText { get { return stateText; } }
@@ -115,11 +118,52 @@ public sealed class BattleTimelineSlotView : MonoBehaviour
         }
     }
 
+    public void SetBlankVisual()
+    {
+        if (background != null)
+        {
+            background.sprite = blankBackgroundSprite;
+            background.type = Image.Type.Sliced;
+            background.color = blankBackgroundSprite != null
+                ? Color.white
+                : new Color(0.72f, 0.70f, 0.86f, 0.72f);
+        }
+
+        SetIcon(null, Color.clear);
+        SetTimelineLabelsVisible(false);
+    }
+
     public void SetBackgroundSprites(Sprite currentSprite, Sprite allySprite, Sprite enemySprite)
     {
         currentBackgroundSprite = currentSprite;
         allyBackgroundSprite = allySprite;
         enemyBackgroundSprite = enemySprite;
+    }
+
+    public void SetBackgroundSprites(Sprite currentSprite, Sprite allySprite, Sprite enemySprite, Sprite blankSprite)
+    {
+        SetBackgroundSprites(currentSprite, allySprite, enemySprite);
+        blankBackgroundSprite = blankSprite;
+    }
+
+    public CanvasGroup EnsureCanvasGroup()
+    {
+        if (canvasGroup == null)
+        {
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
+        return canvasGroup;
+    }
+
+    public void SetAlpha(float alpha)
+    {
+        CanvasGroup group = EnsureCanvasGroup();
+        group.alpha = Mathf.Clamp01(alpha);
     }
 
     public void Clear()
@@ -144,6 +188,11 @@ public sealed class BattleTimelineSlotView : MonoBehaviour
         if (background == null)
         {
             background = GetComponent<Image>();
+        }
+
+        if (canvasGroup == null)
+        {
+            canvasGroup = GetComponent<CanvasGroup>();
         }
 
         if (indexText == null)

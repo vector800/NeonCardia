@@ -1,0 +1,8 @@
+Unified PanelCell geometry
+
+All panel visuals, range masks, and runtime colliders use these same selected cell corners.
+Selected rotation candidate: tiled_grid
+
+row 0 bbox area spread: min=29988.0 max=29988.0 delta=0.0
+row 1 bbox area spread: min=29988.0 max=29988.0 delta=0.0
+row 2 bbox area spread: min=29988.0 max=29988.0 delta=0.0

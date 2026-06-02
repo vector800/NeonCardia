@@ -1,0 +1,5 @@
+Use case: precise-object-edit
+Asset type: Unity JRPG battle grid attack-range source image
+Input image: BattleGrid_Full_Image2.png edit target.
+Primary request: Preserve the original full battle grid composition, perspective, canvas framing, grid shape, panel positions, bevels, outer base, red player side frame, cyan enemy side frame, circuit engravings, and neon style. Edit only the 18 top floor panel surfaces so they look like selected attack-range panels glowing warm yellow-gold. The yellow glow must follow each existing panel shape exactly. Output a full edited version of the same battle grid image with all 18 panels in yellow selected state.
+Constraints: no characters, no UI, no text, no numbers, no watermark, no new panels, no changed camera angle.

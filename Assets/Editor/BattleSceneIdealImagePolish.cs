@@ -124,7 +124,7 @@ public static class BattleSceneIdealImagePolish
         SetStretch(currentHpLabel, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
 
         RectTransform currentHpValue = root.Find("LeftPanel/CurrentHpValue") as RectTransform;
-        SetStretch(currentHpValue, new Vector2(0.185735f, 0.280f), new Vector2(0.770735f, 0.860f));
+        SetStretch(currentHpValue, new Vector2(0.185735f, 0.240f), new Vector2(0.770735f, 0.820f));
 
         RectTransform slotsRoot = root.Find("SlotsRoot") as RectTransform;
         SetStretch(slotsRoot, new Vector2(0.165f, 0.105f), new Vector2(0.930f, 0.925f));
@@ -188,7 +188,7 @@ public static class BattleSceneIdealImagePolish
         ConfigureImage(panel, CurrentHpPanelSquarePath, Image.Type.Simple, Color.white);
         panel.enabled = true;
         panel.transform.SetAsFirstSibling();
-        SetStretch(panel.transform as RectTransform, new Vector2(0.130735f, 0.240f), new Vector2(0.820735f, 0.900f));
+        SetStretch(panel.transform as RectTransform, new Vector2(0.130735f, 0.160f), new Vector2(0.820735f, 0.900f));
         EditorUtility.SetDirty(panel.gameObject);
     }
 
