@@ -941,6 +941,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         UpdateAllyIdleAnimation();
         UpdateEnemyIdleAnimation();
 
+        Keyboard debugKeyboard = Keyboard.current;
+        if (mainBattleSceneMode
+            && debugKeyboard != null
+            && debugKeyboard.f9Key.wasPressedThisFrame
+            && BattleConnectionContext.HasActiveBattle)
+        {
+            // TEST ONLY: lets the map-battle connection flow return without playing out the whole battle.
+            TryCompleteBattleConnection(BattleConnectionResultType.Win, Mathf.Max(1, playerActionTurnCount), "TEST ONLY victory. Returning to map.");
+            return;
+        }
+
         if (mainBattleSceneMode && battleCommandCardRangePreviewActive)
         {
             HandleBattleCommandCardRangePreviewInput();
@@ -4188,11 +4199,47 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         SceneManager.LoadScene("DeckBuildScene");
     }
 
+    private bool TryCompleteBattleConnection(BattleConnectionResultType resultType, int victoryTurn, string message)
+    {
+        if (!BattleConnectionContext.HasActiveBattle)
+        {
+            return false;
+        }
+
+        BattleConnectionResultData resultData = BattleConnectionContext.CompleteBattle(
+            resultType,
+            victoryTurn,
+            playerDamageTakenCount,
+            maxSimultaneousDefeatCount);
+        if (resultData == null)
+        {
+            return false;
+        }
+
+        battleEnded = true;
+        HideBattleSceneAttackRangeOverlay();
+        RefreshAll(message);
+
+        Debug.Log("[MapBattleConnection] BattleScene completed. result="
+            + resultData.ResultType
+            + " returnScene=" + resultData.ReturnSceneName
+            + " returnPosition=" + resultData.ReturnPosition
+            + " enemyGroupId=" + resultData.EnemyGroupId);
+
+        SceneManager.LoadScene(resultData.ReturnSceneName);
+        return true;
+    }
+
     private bool TryShowVictory(int victoryTurn)
     {
         if (GetFirstAliveEnemy() != null)
         {
             return false;
+        }
+
+        if (TryCompleteBattleConnection(BattleConnectionResultType.Win, victoryTurn, "Victory. Returning to map."))
+        {
+            return true;
         }
 
         battleEnded = true;
@@ -4233,6 +4280,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         battleEnded = true;
+        if (TryCompleteBattleConnection(BattleConnectionResultType.Lose, playerActionTurnCount, "Defeat. Returning to map."))
+        {
+            return true;
+        }
+
         RefreshAll("Defeat. Return to menu or retry from the scene.");
         return true;
     }
@@ -9975,6 +10027,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         {
             battleEnded = true;
             HideBattleSceneAttackRangeOverlay();
+            if (TryCompleteBattleConnection(BattleConnectionResultType.Escape, playerActionTurnCount, actor.Name + " escaped. Returning to map."))
+            {
+                return;
+            }
+
             RefreshAll(actor.Name + " escaped from battle.");
             return;
         }
