@@ -36,7 +36,7 @@ public static class BattleSceneIdealImagePolish
         ApplyGridPrefabPolish();
         ApplyBattleSceneComposition();
         AssetDatabase.SaveAssets();
-        Debug.Log("Applied ideal BattleScene visual polish: compact top HUD, square HP panel, right-side enemy name space, grid positioning, and HP anchors.");
+        Debug.Log("Applied ideal BattleScene visual polish: compact top HUD timeline, right-side enemy name space, grid positioning, and HP anchors.");
     }
 
     private static void EnsureHudSprites()
@@ -77,10 +77,7 @@ public static class BattleSceneIdealImagePolish
             Transform leftPanel = root.transform.Find("LeftPanel");
             if (leftPanel != null)
             {
-                ClearImage(leftPanel.GetComponent<Image>());
-                ConfigureCurrentHpPanelImage(leftPanel);
-                ConfigureLeftPanelText(leftPanel);
-                ConfigureCurrentHpGauge(leftPanel);
+                DisableCurrentHpPanel(leftPanel);
             }
 
             ConfigureSlots(root.transform);
@@ -115,7 +112,7 @@ public static class BattleSceneIdealImagePolish
         SetStretch(hudRect, new Vector2(HudAnchorMinX, HudAnchorMinY), new Vector2(HudAnchorMaxX, HudAnchorMaxY));
 
         RectTransform leftPanel = root.Find("LeftPanel") as RectTransform;
-        SetStretch(leftPanel, new Vector2(0.047f, 0.257f), new Vector2(0.194f, 0.743f));
+        SetStretch(leftPanel, new Vector2(0.000f, 0.257f), new Vector2(0.001f, 0.743f));
 
         RectTransform actionOrderText = root.Find("LeftPanel/ActionOrderText") as RectTransform;
         SetStretch(actionOrderText, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
@@ -124,13 +121,13 @@ public static class BattleSceneIdealImagePolish
         SetStretch(currentHpLabel, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
 
         RectTransform currentHpValue = root.Find("LeftPanel/CurrentHpValue") as RectTransform;
-        SetStretch(currentHpValue, new Vector2(0.185735f, 0.240f), new Vector2(0.770735f, 0.820f));
+        SetStretch(currentHpValue, new Vector2(0.500f, 0.500f), new Vector2(0.500f, 0.500f));
 
         RectTransform slotsRoot = root.Find("SlotsRoot") as RectTransform;
-        SetStretch(slotsRoot, new Vector2(0.165f, 0.105f), new Vector2(0.930f, 0.925f));
+        SetStretch(slotsRoot, new Vector2(0.047f, 0.105f), new Vector2(0.930f, 0.925f));
 
         RectTransform connectorLine = root.Find("ConnectorLine") as RectTransform;
-        SetStretch(connectorLine, new Vector2(0.215f, 0.070f), new Vector2(0.905f, 0.105f));
+        SetStretch(connectorLine, new Vector2(0.060f, 0.070f), new Vector2(0.905f, 0.105f));
 
         RectTransform currentMarker = root.Find("CurrentMarker") as RectTransform;
         SetStretch(currentMarker, new Vector2(0.178f, 0.000f), new Vector2(0.225f, 0.080f));
@@ -166,19 +163,21 @@ public static class BattleSceneIdealImagePolish
         Text value = FindText(leftPanel, "CurrentHpValue");
         if (value != null)
         {
-            value.gameObject.SetActive(true);
-            value.fontSize = 30;
-            value.resizeTextForBestFit = true;
-            value.resizeTextMinSize = 18;
-            value.resizeTextMaxSize = 30;
-            value.fontStyle = FontStyle.Bold;
-            value.alignment = TextAnchor.MiddleCenter;
-            value.horizontalOverflow = HorizontalWrapMode.Overflow;
-            value.verticalOverflow = VerticalWrapMode.Overflow;
-            value.color = Color.white;
-            AddTextOutline(value, new Color(0f, 0.08f, 0.13f, 0.96f), new Vector2(2.4f, -2.4f));
+            HideText(value);
             EditorUtility.SetDirty(value);
         }
+    }
+
+    private static void DisableCurrentHpPanel(Transform leftPanel)
+    {
+        ClearImage(leftPanel.GetComponent<Image>());
+        leftPanel.gameObject.SetActive(false);
+
+        ConfigureLeftPanelText(leftPanel);
+        SetChildActiveIfPresent(leftPanel, "CurrentHpPanelImage", false);
+        SetChildActiveIfPresent(leftPanel, "CurrentHpGaugeBack", false);
+        SetChildActiveIfPresent(leftPanel, "CurrentHpGaugeFill", false);
+        EditorUtility.SetDirty(leftPanel.gameObject);
     }
 
     private static void ConfigureCurrentHpPanelImage(Transform leftPanel)

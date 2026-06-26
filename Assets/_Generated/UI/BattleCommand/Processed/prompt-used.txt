@@ -1,0 +1,1 @@
+Battle command UI component atlas for NeonCardia, text-free sci-fi HUD components, solid magenta background, 4x4 atlas.

@@ -1,0 +1,793 @@
+fileFormatVersion: 2
+guid: 85e74f4bf89824645b3168bd09a999b3
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5827916095913286743
+    second: raw-sheet-clean_0
+  - first:
+      213: -578954870367651006
+    second: raw-sheet-clean_1
+  - first:
+      213: -6940714027880645716
+    second: raw-sheet-clean_2
+  - first:
+      213: -2603195141429916328
+    second: raw-sheet-clean_3
+  - first:
+      213: -2048655393948712089
+    second: raw-sheet-clean_4
+  - first:
+      213: -7682742901006592893
+    second: raw-sheet-clean_5
+  - first:
+      213: -94207273554459644
+    second: raw-sheet-clean_6
+  - first:
+      213: -3393044555960739093
+    second: raw-sheet-clean_7
+  - first:
+      213: -4993677583968403564
+    second: raw-sheet-clean_8
+  - first:
+      213: -3783084363866428177
+    second: raw-sheet-clean_9
+  - first:
+      213: -7810281946618902933
+    second: raw-sheet-clean_10
+  - first:
+      213: 6251047975581187007
+    second: raw-sheet-clean_11
+  - first:
+      213: 2844092606190559624
+    second: raw-sheet-clean_12
+  - first:
+      213: 5961386467432283573
+    second: raw-sheet-clean_13
+  - first:
+      213: 1501502302420285442
+    second: raw-sheet-clean_14
+  - first:
+      213: -678675785430359011
+    second: raw-sheet-clean_15
+  - first:
+      213: -4842490572886082851
+    second: raw-sheet-clean_16
+  - first:
+      213: -8292469568577314553
+    second: raw-sheet-clean_17
+  - first:
+      213: 4093782907567816113
+    second: raw-sheet-clean_18
+  - first:
+      213: 3358848208208961221
+    second: raw-sheet-clean_19
+  - first:
+      213: 3300057040225964783
+    second: raw-sheet-clean_20
+  - first:
+      213: 702716954819893325
+    second: raw-sheet-clean_21
+  - first:
+      213: -1258313730100055542
+    second: raw-sheet-clean_22
+  - first:
+      213: 2739881751275926360
+    second: raw-sheet-clean_23
+  - first:
+      213: -3824176028877983786
+    second: raw-sheet-clean_24
+  - first:
+      213: 7077603160587250064
+    second: raw-sheet-clean_25
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: raw-sheet-clean_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 983
+        width: 329
+        height: 271
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75c51b5cfcae0e050800000000000000
+      internalID: 5827916095913286743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_1
+      rect:
+        serializedVersion: 2
+        x: 357
+        y: 979
+        width: 318
+        height: 135
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24bf0c2ec9327f7f0800000000000000
+      internalID: -578954870367651006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_2
+      rect:
+        serializedVersion: 2
+        x: 711
+        y: 966
+        width: 278
+        height: 160
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cab7a987d51adaf90800000000000000
+      internalID: -6940714027880645716
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_3
+      rect:
+        serializedVersion: 2
+        x: 1053
+        y: 969
+        width: 201
+        height: 285
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85d0c0aafc79fdbd0800000000000000
+      internalID: -2603195141429916328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 687
+        width: 329
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 763cf7006c6b193e0800000000000000
+      internalID: -2048655393948712089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_5
+      rect:
+        serializedVersion: 2
+        x: 355
+        y: 682
+        width: 316
+        height: 139
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38419d4590a616590800000000000000
+      internalID: -7682742901006592893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_6
+      rect:
+        serializedVersion: 2
+        x: 695
+        y: 686
+        width: 256
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 404478cdbfe41bef0800000000000000
+      internalID: -94207273554459644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_7
+      rect:
+        serializedVersion: 2
+        x: 971
+        y: 682
+        width: 261
+        height: 132
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bea13e614fb79e0d0800000000000000
+      internalID: -3393044555960739093
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_8
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 385
+        width: 299
+        height: 130
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49f7bbce1b4e2bab0800000000000000
+      internalID: -4993677583968403564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_9
+      rect:
+        serializedVersion: 2
+        x: 328
+        y: 382
+        width: 268
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fec286090d8cf7bc0800000000000000
+      internalID: -3783084363866428177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_10
+      rect:
+        serializedVersion: 2
+        x: 620
+        y: 339
+        width: 305
+        height: 196
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b66422043fd4c9390800000000000000
+      internalID: -7810281946618902933
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_11
+      rect:
+        serializedVersion: 2
+        x: 948
+        y: 336
+        width: 284
+        height: 200
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fbbf07aa30f20c650800000000000000
+      internalID: 6251047975581187007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_12
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 255
+        width: 282
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 881ad4c182f387720800000000000000
+      internalID: 2844092606190559624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_13
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 69
+        width: 11
+        height: 206
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bd3f1848691bb250800000000000000
+      internalID: 5961386467432283573
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_14
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 202
+        width: 282
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2083135836866d410800000000000000
+      internalID: 1501502302420285442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_15
+      rect:
+        serializedVersion: 2
+        x: 486
+        y: 198
+        width: 393
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d14a3cb08fbd496f0800000000000000
+      internalID: -678675785430359011
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_16
+      rect:
+        serializedVersion: 2
+        x: 991
+        y: 164
+        width: 46
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dda72f60b740cccb0800000000000000
+      internalID: -4842490572886082851
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_17
+      rect:
+        serializedVersion: 2
+        x: 1064
+        y: 165
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 701663edcda3bec80800000000000000
+      internalID: -8292469568577314553
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_18
+      rect:
+        serializedVersion: 2
+        x: 1135
+        y: 164
+        width: 46
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1bd35295dd900d830800000000000000
+      internalID: 4093782907567816113
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_19
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 151
+        width: 282
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ce90c046a60d9e20800000000000000
+      internalID: 3358848208208961221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_20
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 1254
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe21235c4682ccd20800000000000000
+      internalID: 3300057040225964783
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_21
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 69
+        width: 55
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d481fa5e85d80c900800000000000000
+      internalID: 702716954819893325
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_22
+      rect:
+        serializedVersion: 2
+        x: 281
+        y: 69
+        width: 53
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a02b36d4452998ee0800000000000000
+      internalID: -1258313730100055542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_23
+      rect:
+        serializedVersion: 2
+        x: 545
+        y: 93
+        width: 275
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 853706fafe3060620800000000000000
+      internalID: 2739881751275926360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_24
+      rect:
+        serializedVersion: 2
+        x: 990
+        y: 86
+        width: 45
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6dfe920c92ccdeac0800000000000000
+      internalID: -3824176028877983786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: raw-sheet-clean_25
+      rect:
+        serializedVersion: 2
+        x: 1077
+        y: 88
+        width: 22
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0992cf76392b83260800000000000000
+      internalID: 7077603160587250064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      raw-sheet-clean_0: 5827916095913286743
+      raw-sheet-clean_1: -578954870367651006
+      raw-sheet-clean_10: -7810281946618902933
+      raw-sheet-clean_11: 6251047975581187007
+      raw-sheet-clean_12: 2844092606190559624
+      raw-sheet-clean_13: 5961386467432283573
+      raw-sheet-clean_14: 1501502302420285442
+      raw-sheet-clean_15: -678675785430359011
+      raw-sheet-clean_16: -4842490572886082851
+      raw-sheet-clean_17: -8292469568577314553
+      raw-sheet-clean_18: 4093782907567816113
+      raw-sheet-clean_19: 3358848208208961221
+      raw-sheet-clean_2: -6940714027880645716
+      raw-sheet-clean_20: 3300057040225964783
+      raw-sheet-clean_21: 702716954819893325
+      raw-sheet-clean_22: -1258313730100055542
+      raw-sheet-clean_23: 2739881751275926360
+      raw-sheet-clean_24: -3824176028877983786
+      raw-sheet-clean_25: 7077603160587250064
+      raw-sheet-clean_3: -2603195141429916328
+      raw-sheet-clean_4: -2048655393948712089
+      raw-sheet-clean_5: -7682742901006592893
+      raw-sheet-clean_6: -94207273554459644
+      raw-sheet-clean_7: -3393044555960739093
+      raw-sheet-clean_8: -4993677583968403564
+      raw-sheet-clean_9: -3783084363866428177
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -571,7 +571,7 @@ public sealed class PanelAlignedBattleSceneController : MonoBehaviour
             return;
         }
 
-        battleTimelineHudView.SetCurrentHp(180, 180);
+        battleTimelineHudView.HideCurrentHpDisplay();
         BattleTimelineSlotView[] slots = battleTimelineHudView.Slots;
         string[] labels = { "A", "B", "E1", "E2", "E3", "A", "E2", "B" };
         bool[] allies = { true, true, false, false, false, true, false, true };

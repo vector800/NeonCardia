@@ -1,0 +1,1057 @@
+﻿diff --git a/Assets/Scenes/BattleScene.unity b/Assets/Scenes/BattleScene.unity
+index 61e8fa0..bac13d8 100644
+--- a/Assets/Scenes/BattleScene.unity
++++ b/Assets/Scenes/BattleScene.unity
+@@ -967,6 +967,8 @@ MonoBehaviour:
+   showDebugLabels: 0
+   usePrefabActionOrderHud: 1
+   battleTimelineHudPrefab: {fileID: 1535704344168638681, guid: 63da7e5cae13870479844de6cd8903fd, type: 3}
++  battlePartyStatusHudPrefab: {fileID: 4286948674352835930, guid: 74a03f1fd58b42f488270e916f402988, type: 3}
++  battlePartyStatusPanelPrefab: {fileID: 4540818923563794054, guid: e63071ff11c0d794fb343871cac77a49, type: 3}
+ --- !u!4 &912340002
+ Transform:
+   m_ObjectHideFlags: 0
+diff --git a/Assets/Scripts/BattleTimelinePrototypeController.cs b/Assets/Scripts/BattleTimelinePrototypeController.cs
+index 64266f1..eb4316c 100644
+--- a/Assets/Scripts/BattleTimelinePrototypeController.cs
++++ b/Assets/Scripts/BattleTimelinePrototypeController.cs
+@@ -13,12 +13,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+ {
+     private const int HandSize = 5;
+     private const int MaxQueuedActions = 3;
+-    private const int TimelinePreviewCount = 8;
++    private const int TimelinePreviewCount = 15;
+     private const float PrefabTimelineMoveSeconds = 0.22f;
+     private const float PrefabTimelineFadeShift = 0.070f;
+-    private const int PrefabTimelineBlankCardMinVisible = 2;
+-    private const int PrefabTimelineBlankCardStepTicks = 60;
+-    private const int PrefabTimelineBlankCardMaxPerGap = 2;
++    private const int PrefabTimelineBlankCardStepTicks = 40;
++    private const float TimelineAutoProcessDelaySeconds = 0.28f;
+     private const int BattleScenePrototypeAttackCount = 3;
+     private const int BattleScenePrototypeAttackRangeStartColumn = 0;
+     private const int WeaponPower = 10;
+@@ -35,6 +34,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+     private const string BattleBackgroundAssetPath = "Assets/Art/Backgrounds/Battle/CyberBattleBackground.png";
+     private const string BattleUiFrameAssetPath = "Assets/Art/UI/Battle/BattleUIFrame.png";
+     private const string CardFrameAssetPath = "Assets/Art/Cards/Frames/CardFrame_Base.png";
++    private const string BattlePartyStatusHudPrefabPath = "Assets/Prefabs/UI/BattlePartyStatusHUD.prefab";
++    private const string BattlePartyStatusPanelPrefabPath = "Assets/Prefabs/UI/BattlePartyStatusPanel.prefab";
+     private const string TimelineIconsAssetPath = "Assets/Art/UI/Battle/Timeline/TimelineIconSheet.png";
+     private static readonly string[] TimelineFaceIconAssetPaths =
+     {
+@@ -45,6 +46,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_02.png",
+         "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_03.png"
+     };
++    private static readonly string[] PartyStatusHudFaceIconAssetPaths =
++    {
++        "Assets/Art/UI/Battle/PartyStatusHUD/UI_BattlePartyHUD_FaceClean_Wolf.png",
++        "Assets/Art/UI/Battle/PartyStatusHUD/UI_BattlePartyHUD_FaceClean_Mech.png",
++        "Assets/Art/UI/Battle/PartyStatusHUD/UI_BattlePartyHUD_FaceClean_Girl.png"
++    };
+     private const string AllyPortraitFramesAssetPath = "Assets/Art/UI/Party/AllyPortraitFramesSheet.png";
+     private const string EnemyGridPanelsAssetPath = "Assets/Art/UI/Grid/EnemyGridPanelsSheet.png";
+     private const string EnemySpritesAssetPath = "Assets/Art/Enemies/Prototype/EnemySpritesSheet.png";
+@@ -115,7 +122,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+     private const float BattleSceneHudMinY = 0.872f;
+     private const float BattleSceneHudMaxY = 0.982f;
+     private static readonly Vector2 BattleSceneCommandPanelMin = new Vector2(0.012f, 0.225f);
+-    private static readonly Vector2 BattleSceneCommandPanelMax = new Vector2(0.265f, 0.695f);
++    private static readonly Vector2 BattleSceneCommandPanelMax = new Vector2(0.265f, 0.580f);
++    private static readonly Vector2 BattlePartyStatusHudMin = new Vector2(0.027f, 0.755f);
++    private static readonly Vector2 BattlePartyStatusHudMax = new Vector2(0.246f, 0.875f);
++    private static readonly Vector2 BattlePartyStatusPanelMin = new Vector2(0.022f, 0.590f);
++    private static readonly Vector2 BattlePartyStatusPanelMax = new Vector2(0.214f, 0.865f);
+     private const float BattleSpriteScaleRowDelta = 0.13f;
+     private const float BattleSpriteYOffsetRowDelta = -0.035f;
+     private const string BattleSceneEnemyHpTextName = "HPText";
+@@ -236,8 +247,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+     private RectTransform battleSceneAttackRangeOverlayRoot;
+     private RectTransform selectedCommandNameRoot;
+     private BattleTimelineHudView battleTimelineHudView;
++    private BattlePartyStatusHUD battlePartyStatusHud;
++    private BattlePartyStatusPanelController battlePartyStatusPanel;
+     private string prefabTimelineSignature = string.Empty;
+     private Coroutine prefabTimelineAnimationRoutine;
++    private Coroutine timelineAutoProcessRoutine;
++    private bool timelineAutoProcessInProgress;
+     private Material battleSceneAttackRangeFillMaterial;
+     private Material battleSceneAttackRangeGlowMaterial;
+     private Material battleSceneAttackRangeOutlineMaterial;
+@@ -268,6 +283,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+     private Sprite cardFrameSprite;
+     private TimelineSpriteSet timelineSprites;
+     private Sprite[] timelineFaceIconSprites = new Sprite[0];
++    private Sprite[] partyStatusHudFaceIconSprites = new Sprite[0];
+     private AllyUiSpriteSet allySprites;
+     private EnemyGridSpriteSet enemyGridSprites;
+     private EnemySpriteSet enemySprites;
+@@ -278,6 +294,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+     [SerializeField] private bool mainBattleSceneMode;
+     [SerializeField] private bool usePrefabActionOrderHud;
+     [SerializeField] private BattleTimelineHudView battleTimelineHudPrefab;
++    [SerializeField] private BattlePartyStatusHUD battlePartyStatusHudPrefab;
++    [SerializeField] private BattlePartyStatusPanelController battlePartyStatusPanelPrefab;
+     [SerializeField] private BattlePanelVisualSet battlePanelVisualSet;
+     [SerializeField] private float allyIdleFrameSeconds = 0.20f;
+     [SerializeField] private float enemyIdleFrameSeconds = 0.14f;
+@@ -747,6 +765,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+ 
+         LoadTimelineFaceIconSprites();
++        LoadPartyStatusHudFaceIconSprites();
+         LoadAllyCharacterSprites();
+         LoadEnemyCharacterSprites();
+         LoadSceneBattleGridUnitAnimations();
+@@ -769,6 +788,22 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+     }
+ 
++    protected void ConfigurePartyStatusHud(BattlePartyStatusHUD prefab)
++    {
++        if (prefab != null)
++        {
++            battlePartyStatusHudPrefab = prefab;
++        }
++    }
++
++    protected void ConfigurePartyStatusPanel(BattlePartyStatusPanelController prefab)
++    {
++        if (prefab != null)
++        {
++            battlePartyStatusPanelPrefab = prefab;
++        }
++    }
++
+     protected virtual void Update()
+     {
+         UpdateAllyIdleAnimation();
+@@ -976,7 +1011,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+ 
+         BuildTimelineDeck();
+         DrawToHand();
+-        activeUnit = GetCurrentActiveUnit();
++        activeUnit = GetTimelineHeadActiveUnit();
+     }
+ 
+     private void BuildTimelineDeck()
+@@ -1175,7 +1210,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+ 
+         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+-        scaler.referenceResolution = new Vector2(1280f, 720f);
++        scaler.referenceResolution = new Vector2(1920f, 1080f);
+         scaler.matchWidthOrHeight = 0.5f;
+ 
+         RectTransform root = CreateRect(mainBattleSceneMode ? "BattleSceneTimelineRoot" : "BattleTimelinePrototypeRoot", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+@@ -1192,6 +1227,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+         BuildHeader(root);
+         BuildTimeline(root);
++        BuildBattlePartyStatusPanel(root);
+         BuildSelectedCommandName(root);
+         BuildImage2BattleFieldArt(root);
+         RectTransform battleFieldRoot = mainBattleSceneMode ? CreateBattleFieldRoot(root) : root;
+@@ -1237,6 +1273,15 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+     }
+ 
++    private void LoadPartyStatusHudFaceIconSprites()
++    {
++        partyStatusHudFaceIconSprites = new Sprite[PartyStatusHudFaceIconAssetPaths.Length];
++        for (int i = 0; i < PartyStatusHudFaceIconAssetPaths.Length; i++)
++        {
++            partyStatusHudFaceIconSprites[i] = LoadOptionalSprite(PartyStatusHudFaceIconAssetPaths[i]);
++        }
++    }
++
+     private void LoadAllyCharacterSprites()
+     {
+         allySpriteDefinitions.Clear();
+@@ -1789,6 +1834,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             hudRect.localScale = Vector3.one;
+         }
+ 
++        EnsurePrefabTimelineSlotCapacity(battleTimelineHudView, TimelinePreviewCount);
+         battleTimelineHudView.CacheReferences();
+         ApplyPrefabTimelineHudLayout(battleTimelineHudView);
+         if (battleTimelineHudView.ActionOrderText != null)
+@@ -1804,6 +1850,124 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         return true;
+     }
+ 
++    private void BuildBattlePartyStatusPanel(Transform parent)
++    {
++        if (!mainBattleSceneMode)
++        {
++            return;
++        }
++
++        if (BuildBattlePartyStatusHud(parent))
++        {
++            return;
++        }
++
++        BattlePartyStatusPanelController prefab = battlePartyStatusPanelPrefab;
++#if UNITY_EDITOR
++        if (prefab == null)
++        {
++            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<BattlePartyStatusPanelController>(BattlePartyStatusPanelPrefabPath);
++        }
++#endif
++
++        if (prefab == null)
++        {
++            return;
++        }
++
++        battlePartyStatusPanel = Instantiate(prefab, parent, false);
++        battlePartyStatusPanel.name = "BattlePartyStatusPanel";
++        RectTransform panelRect = battlePartyStatusPanel.transform as RectTransform;
++        if (panelRect != null)
++        {
++            panelRect.anchorMin = BattlePartyStatusPanelMin;
++            panelRect.anchorMax = BattlePartyStatusPanelMax;
++            panelRect.offsetMin = Vector2.zero;
++            panelRect.offsetMax = Vector2.zero;
++            panelRect.localScale = Vector3.one;
++        }
++
++        battlePartyStatusPanel.CacheReferences();
++        battlePartyStatusPanel.RefreshReserveMembers();
++    }
++
++    private bool BuildBattlePartyStatusHud(Transform parent)
++    {
++        BattlePartyStatusHUD prefab = battlePartyStatusHudPrefab;
++#if UNITY_EDITOR
++        if (prefab == null)
++        {
++            GameObject prefabObject = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(BattlePartyStatusHudPrefabPath);
++            prefab = prefabObject != null ? prefabObject.GetComponent<BattlePartyStatusHUD>() : null;
++        }
++#endif
++
++        if (prefab == null)
++        {
++            return false;
++        }
++
++        battlePartyStatusHud = Instantiate(prefab, parent, false);
++        battlePartyStatusHud.name = "BattlePartyStatusHUD";
++        RectTransform hudRect = battlePartyStatusHud.transform as RectTransform;
++        if (hudRect != null)
++        {
++            hudRect.anchorMin = BattlePartyStatusHudMin;
++            hudRect.anchorMax = BattlePartyStatusHudMax;
++            hudRect.pivot = new Vector2(0f, 1f);
++            hudRect.offsetMin = Vector2.zero;
++            hudRect.offsetMax = Vector2.zero;
++            hudRect.sizeDelta = Vector2.zero;
++            hudRect.localScale = Vector3.one;
++        }
++
++        battlePartyStatusHud.CacheReferences();
++        battlePartyStatusHud.RefreshPreviewMembers();
++        return true;
++    }
++
++    private static void EnsurePrefabTimelineSlotCapacity(BattleTimelineHudView hudView, int targetCount)
++    {
++        if (hudView == null || targetCount <= 0)
++        {
++            return;
++        }
++
++        hudView.CacheReferences();
++        RectTransform slotsRoot = hudView.SlotsRoot;
++        BattleTimelineSlotView[] existingSlots = hudView.Slots;
++        int existingCount = existingSlots != null ? existingSlots.Length : 0;
++        if (slotsRoot == null || existingCount >= targetCount)
++        {
++            return;
++        }
++
++        BattleTimelineSlotView template = null;
++        for (int i = existingCount - 1; i >= 0; i--)
++        {
++            if (existingSlots[i] != null)
++            {
++                template = existingSlots[i];
++                break;
++            }
++        }
++
++        if (template == null)
++        {
++            return;
++        }
++
++        for (int i = existingCount; i < targetCount; i++)
++        {
++            BattleTimelineSlotView clone = UnityEngine.Object.Instantiate(template, slotsRoot, false);
++            clone.name = "Slot_" + (i + 1).ToString("00");
++            clone.CacheReferences();
++            clone.Clear();
++        }
++
++        hudView.CacheReferences();
++    }
++
+     private static void ApplyPrefabTimelineHudLayout(BattleTimelineHudView hudView)
+     {
+         if (hudView == null)
+@@ -3304,9 +3468,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             case 0:
+                 return new PrototypeAttackDefinition { Name = "Quick Attack", Damage = 20, Delay = 60, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+             case 2:
+-                return new PrototypeAttackDefinition { Name = "Heavy Attack", Damage = 55, Delay = 150, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
++                return new PrototypeAttackDefinition { Name = "Heavy Attack", Damage = 55, Delay = 180, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+             default:
+-                return new PrototypeAttackDefinition { Name = "Standard Attack", Damage = 35, Delay = 100, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
++                return new PrototypeAttackDefinition { Name = "Standard Attack", Damage = 35, Delay = 80, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+         }
+     }
+ 
+@@ -3384,14 +3548,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             return;
+         }
+ 
+-        string enemySummary = ResolveEnemyTurnsUntilPlayerTurn();
+-        if (battleEnded)
+-        {
+-            return;
+-        }
+-
+         playerActionTurnCount++;
+-        RefreshAll(actor.Name + " used " + attack.Name + ". Delay " + attack.Delay + "." + enemySummary);
++        RefreshAll(actor.Name + " used " + attack.Name + ". Delay " + attack.Delay + ".");
+     }
+ 
+     private EnemyUnit ResolvePrototypeAttackTarget(AllyUnit actor, PrototypeAttackDefinition attack)
+@@ -3628,60 +3786,29 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             return;
+         }
+ 
+-        activeUnit = GetCurrentActiveUnit();
+-        if (activeUnit == null)
++        if (timelineAutoProcessInProgress || timelineAutoProcessRoutine != null)
+         {
+-            RefreshAll("Battle is over.");
++            RefreshAll("Timeline is advancing.");
+             return;
+         }
+ 
+-        currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
+-
+-        if (activeUnit.IsSkill)
++        activeUnit = GetTimelineHeadActiveUnit();
++        if (activeUnit == null)
+         {
+-            string skillName = activeUnit.SkillAction != null ? activeUnit.SkillAction.DisplayName : "Skill";
+-            int defeatedCount = ResolveSkillTurn(activeUnit.SkillAction);
+-            if (defeatedCount > maxSimultaneousDefeatCount)
+-            {
+-                maxSimultaneousDefeatCount = defeatedCount;
+-            }
+-
+-            ConsumeSkillTimelineAction(activeUnit.SkillAction);
+-            ClearQueuedActions();
+-            if (TryShowVictory(playerActionTurnCount))
+-            {
+-                return;
+-            }
+-
+-            string skillChainSummary = ResolveEnemyTurnsUntilPlayerTurn();
+-            if (battleEnded)
+-            {
+-                return;
+-            }
+-
+-            RefreshAll(skillName + " resolved and left the Action Bar." + skillChainSummary);
++            RefreshAll("Timeline is advancing through an empty interval.");
+             return;
+         }
+ 
+-        if (!activeUnit.IsAlly)
+-        {
+-            int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(activeUnit.Enemy != null && activeUnit.Enemy.IsBoss);
+-            string actedEnemyName = activeUnit.Enemy != null ? activeUnit.Enemy.Name : "Enemy";
+-            ResolveEnemyTurn(activeUnit.Enemy);
+-            ClearQueuedActions();
+-            AdvanceActiveUnit(activeUnit, enemyDelay);
+-            if (TryShowDefeat())
+-            {
+-                return;
+-            }
++        currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
+ 
+-            string enemyChainSummary = ResolveEnemyTurnsUntilPlayerTurn();
+-            if (battleEnded)
++        if (activeUnit.IsSkill || !activeUnit.IsAlly)
++        {
++            string autoMessage;
++            if (ProcessTimelineHeadIfAutomatic(out autoMessage))
+             {
+-                return;
++                RefreshAll(autoMessage);
+             }
+ 
+-            RefreshAll(actedEnemyName + " acted and returned to the timeline. Delay " + enemyDelay + "." + enemyChainSummary);
+             return;
+         }
+ 
+@@ -3697,14 +3824,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             string waitedName = activeUnit.Ally != null ? activeUnit.Ally.Name : "Ally";
+             CloseCardSelect();
+             AdvanceActiveUnit(activeUnit, waitDelay);
+-            string waitEnemySummary = ResolveEnemyTurnsUntilPlayerTurn();
+-            if (battleEnded)
+-            {
+-                return;
+-            }
+ 
+             playerActionTurnCount++;
+-            RefreshAll(waitedName + " waited. Delay " + waitDelay + "." + waitEnemySummary);
++            RefreshAll(waitedName + " waited. Delay " + waitDelay + ".");
+             return;
+         }
+ 
+@@ -3722,14 +3844,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             return;
+         }
+ 
+-        string enemySummary = ResolveEnemyTurnsUntilPlayerTurn();
+-        if (battleEnded)
+-        {
+-            return;
+-        }
+-
+         playerActionTurnCount++;
+-        RefreshAll(summary + " Delay " + actionDelay + "." + enemySummary);
++        RefreshAll(summary + " Delay " + actionDelay + ".");
+     }
+ 
+     private void RetryBattle()
+@@ -3796,58 +3912,6 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         return true;
+     }
+ 
+-    private string ResolveEnemyTurnsUntilPlayerTurn()
+-    {
+-        string summary = string.Empty;
+-        int safety = 0;
+-        activeUnit = GetCurrentActiveUnit();
+-
+-        while (!battleEnded
+-            && activeUnit != null
+-            && !activeUnit.IsAlly
+-            && GetFirstAliveEnemy() != null
+-            && GetFirstAliveAlly() != null
+-            && safety < 16)
+-        {
+-            currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
+-            if (activeUnit.IsSkill)
+-            {
+-                string skillName = activeUnit.SkillAction != null ? activeUnit.SkillAction.DisplayName : "Skill";
+-                int defeatedCount = ResolveSkillTurn(activeUnit.SkillAction);
+-                if (defeatedCount > maxSimultaneousDefeatCount)
+-                {
+-                    maxSimultaneousDefeatCount = defeatedCount;
+-                }
+-
+-                ConsumeSkillTimelineAction(activeUnit.SkillAction);
+-                summary += " " + skillName + " auto resolved.";
+-                if (TryShowVictory(playerActionTurnCount))
+-                {
+-                    break;
+-                }
+-            }
+-            else
+-            {
+-                int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(activeUnit.Enemy != null && activeUnit.Enemy.IsBoss);
+-                string actedEnemyName = activeUnit.Enemy != null ? activeUnit.Enemy.Name : "Enemy";
+-                ResolveEnemyTurn(activeUnit.Enemy);
+-                AdvanceActiveUnit(activeUnit, enemyDelay);
+-                summary += " " + actedEnemyName + " auto acted D" + enemyDelay + ".";
+-
+-                if (TryShowDefeat())
+-                {
+-                    break;
+-                }
+-            }
+-
+-            safety++;
+-
+-            activeUnit = GetCurrentActiveUnit();
+-        }
+-
+-        return summary;
+-    }
+-
+     private string SelectRewardCardName()
+     {
+         string[] fallbackRewards = { "アクアショット", "フリーズ", "テッキュウナゲ" };
+@@ -4052,7 +4116,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         skillAction.IsAlive = false;
+         skillTimelineActions.Remove(skillAction);
+         activeUnitSequence++;
+-        activeUnit = GetCurrentActiveUnit();
++        activeUnit = GetTimelineHeadActiveUnit();
+         if (activeUnit != null && activeUnit.IsAlly)
+         {
+             selectedAlly = activeUnit.Ally;
+@@ -4185,7 +4249,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+ 
+         activeUnitSequence++;
+-        activeUnit = GetCurrentActiveUnit();
++        activeUnit = GetTimelineHeadActiveUnit();
+         if (activeUnit != null && activeUnit.IsAlly)
+         {
+             selectedAlly = activeUnit.Ally;
+@@ -4195,9 +4259,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+     private static int ResolveReadyDelay(TimelineUnit unit, int actionDelay)
+     {
+         int safeActionDelay = Mathf.Max(1, actionDelay);
+-        int speed = unit != null ? Mathf.Max(0, unit.Speed) : 0;
+-        int speedReduction = Mathf.Clamp(Mathf.RoundToInt(speed * 0.30f), 0, Mathf.Max(0, safeActionDelay - 1));
+-        return Mathf.Max(1, safeActionDelay - speedReduction);
++        int speed = unit != null ? unit.Speed : 100;
++        float speedRate = 100f / Mathf.Max(speed, 1);
++        return Mathf.Max(30, Mathf.RoundToInt(safeActionDelay * speedRate));
+     }
+ 
+     private void EnsureUniquePartyPositions()
+@@ -4433,9 +4497,10 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+ 
+     private void RefreshAll(string message)
+     {
+-        activeUnit = GetCurrentActiveUnit();
++        activeUnit = GetTimelineHeadActiveUnit();
+         RefreshTimeline();
+         RefreshAllies();
++        RefreshPartyStatusPanel();
+         RefreshEnemies();
+         RefreshHand();
+         RefreshCommands();
+@@ -4445,6 +4510,230 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         {
+             statusText.text = message;
+         }
++
++        ScheduleTimelineAutoProcessIfNeeded();
++    }
++
++    private void RefreshPartyStatusPanel()
++    {
++        if (battlePartyStatusHud == null && battlePartyStatusPanel == null)
++        {
++            return;
++        }
++
++        SetPartyStatusActiveMember(0, GetAllyAtPosition(PartyPosition.Middle));
++        SetPartyStatusActiveMember(1, GetAllyAtPosition(PartyPosition.Front));
++        SetPartyStatusActiveMember(2, GetAllyAtPosition(PartyPosition.Back));
++
++        if (battlePartyStatusPanel != null)
++        {
++            battlePartyStatusPanel.RefreshReserveMembers();
++        }
++    }
++
++    private void SetPartyStatusActiveMember(int index, AllyUnit ally)
++    {
++        if (battlePartyStatusHud == null && battlePartyStatusPanel == null)
++        {
++            return;
++        }
++
++        string displayName = GetPartyStatusDisplayName(ally);
++        Sprite faceIcon = GetPartyStatusFaceIcon(ally);
++        Sprite hudFaceIcon = GetPartyStatusHudFaceIcon(ally);
++        int hp = ally != null ? ally.Hp : 0;
++        int maxHp = ally != null ? ally.MaxHp : 0;
++
++        if (battlePartyStatusHud != null)
++        {
++            int mp = GetPartyStatusMp(ally);
++            int maxMp = GetPartyStatusMaxMp(ally);
++            bool selected = ally != null && selectedAlly == ally;
++            battlePartyStatusHud.SetMember(index, displayName, hudFaceIcon != null ? hudFaceIcon : faceIcon, hp, maxHp, mp, maxMp, selected);
++        }
++
++        if (battlePartyStatusPanel != null)
++        {
++            battlePartyStatusPanel.SetActiveMember(index, displayName, faceIcon, hp, maxHp);
++        }
++    }
++
++    private string GetPartyStatusDisplayName(AllyUnit ally)
++    {
++        if (ally == null)
++        {
++            return "Empty";
++        }
++
++        if (ally.Name == "AllyMiddle")
++        {
++            return "Cyber Wolf";
++        }
++
++        if (ally.Name == "AllyFront")
++        {
++            return "Armor Ally";
++        }
++
++        if (ally.Name == "AllyBack")
++        {
++            return "Blue Girl";
++        }
++
++        return GetAllyDisplayName(ally);
++    }
++
++    private Sprite GetPartyStatusFaceIcon(AllyUnit ally)
++    {
++        if (ally == null)
++        {
++            return null;
++        }
++
++        int allyIndex = allies.IndexOf(ally);
++        Sprite faceIcon = GetTimelineFaceIconSprite(true, allyIndex);
++        if (faceIcon != null)
++        {
++            return faceIcon;
++        }
++
++        return GetAllyIdleSprite(GetAllySpriteDefinition(ally));
++    }
++
++    private Sprite GetPartyStatusHudFaceIcon(AllyUnit ally)
++    {
++        if (ally == null || partyStatusHudFaceIconSprites == null)
++        {
++            return null;
++        }
++
++        int spriteIndex = -1;
++        if (ally.Name == "AllyMiddle")
++        {
++            spriteIndex = 0;
++        }
++        else if (ally.Name == "AllyFront")
++        {
++            spriteIndex = 1;
++        }
++        else if (ally.Name == "AllyBack")
++        {
++            spriteIndex = 2;
++        }
++
++        if (spriteIndex < 0 || spriteIndex >= partyStatusHudFaceIconSprites.Length)
++        {
++            return null;
++        }
++
++        return partyStatusHudFaceIconSprites[spriteIndex];
++    }
++
++    private int GetPartyStatusMp(AllyUnit ally)
++    {
++        return ally != null ? Mathf.Clamp(ally.Speed, 0, GetPartyStatusMaxMp(ally)) : 0;
++    }
++
++    private int GetPartyStatusMaxMp(AllyUnit ally)
++    {
++        return ally != null ? 100 : 0;
++    }
++
++    private void ScheduleTimelineAutoProcessIfNeeded()
++    {
++        if (battleEnded || timelineAutoProcessInProgress || timelineAutoProcessRoutine != null)
++        {
++            return;
++        }
++
++        int blankAdvanceTicks;
++        if (TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
++        {
++            timelineAutoProcessRoutine = StartCoroutine(AutoProcessTimelineHeadRoutine());
++            return;
++        }
++
++        TimelineUnit headUnit = GetCurrentActiveUnit();
++        if (headUnit != null && (headUnit.IsSkill || !headUnit.IsAlly))
++        {
++            timelineAutoProcessRoutine = StartCoroutine(AutoProcessTimelineHeadRoutine());
++        }
++    }
++
++    private IEnumerator AutoProcessTimelineHeadRoutine()
++    {
++        timelineAutoProcessInProgress = true;
++        yield return new WaitForSecondsRealtime(TimelineAutoProcessDelaySeconds);
++
++        string message;
++        if (ProcessTimelineHeadIfAutomatic(out message))
++        {
++            timelineAutoProcessInProgress = false;
++            timelineAutoProcessRoutine = null;
++            RefreshAll(message);
++            yield break;
++        }
++
++        timelineAutoProcessInProgress = false;
++        timelineAutoProcessRoutine = null;
++    }
++
++    private bool ProcessTimelineHeadIfAutomatic(out string message)
++    {
++        message = string.Empty;
++        if (battleEnded)
++        {
++            return false;
++        }
++
++        int blankAdvanceTicks;
++        if (TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
++        {
++            currentTick += blankAdvanceTicks;
++            activeUnitSequence++;
++            message = "Timeline flowed through an empty interval. +" + blankAdvanceTicks + " ticks.";
++            return true;
++        }
++
++        TimelineUnit headUnit = GetCurrentActiveUnit();
++        if (headUnit == null || headUnit.IsAlly)
++        {
++            return false;
++        }
++
++        currentTick = Mathf.Max(currentTick, headUnit.ReadyTick);
++        if (headUnit.IsSkill)
++        {
++            string skillName = headUnit.SkillAction != null ? headUnit.SkillAction.DisplayName : "Skill";
++            int defeatedCount = ResolveSkillTurn(headUnit.SkillAction);
++            if (defeatedCount > maxSimultaneousDefeatCount)
++            {
++                maxSimultaneousDefeatCount = defeatedCount;
++            }
++
++            ConsumeSkillTimelineAction(headUnit.SkillAction);
++            ClearQueuedActions();
++            if (TryShowVictory(playerActionTurnCount))
++            {
++                return false;
++            }
++
++            message = skillName + " resolved and left the timeline.";
++            return true;
++        }
++
++        int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(headUnit.Enemy != null && headUnit.Enemy.IsBoss);
++        string actedEnemyName = headUnit.Enemy != null ? headUnit.Enemy.Name : "Enemy";
++        ResolveEnemyTurn(headUnit.Enemy);
++        ClearQueuedActions();
++        AdvanceActiveUnit(headUnit, enemyDelay);
++        if (TryShowDefeat())
++        {
++            return false;
++        }
++
++        message = actedEnemyName + " acted and returned to the timeline. Delay " + enemyDelay + ".";
++        return true;
+     }
+ 
+     private void RefreshHeader()
+@@ -4453,6 +4742,13 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             ? activeUnit.IsSkill ? ShortSkillName(activeUnit.SkillAction) : activeUnit.IsAlly ? GetAllyDisplayName(activeUnit.Ally) : ShortEnemyName(activeUnit.Enemy)
+             : "None";
+         string side = activeUnit != null && activeUnit.IsAlly ? "PLAYER TURN" : activeUnit != null && activeUnit.IsSkill ? "SKILL TURN" : "ENEMY TURN";
++        int blankAdvanceTicks;
++        if (!battleEnded && TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
++        {
++            side = "TIMELINE";
++            activeName = "Empty +" + blankAdvanceTicks;
++        }
++
+         if (battleEnded && GetFirstAliveEnemy() == null)
+         {
+             side = "RESULT";
+@@ -4603,51 +4899,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+ 
+         Dictionary<string, int> occurrences = new Dictionary<string, int>();
+-        List<TimelinePreview> unitPreviews = new List<TimelinePreview>();
+-        for (int i = 0; i < previews.Count; i++)
+-        {
+-            if (previews[i].Unit != null)
+-            {
+-                unitPreviews.Add(previews[i]);
+-            }
+-        }
+-
+-        if (unitPreviews.Count == 0)
+-        {
+-            return states;
+-        }
+-
+         int blankCount = 0;
+-        AddPrefabTimelineUnitDisplayState(states, occurrences, unitPreviews[0], 0);
+-        AddPrefabTimelineBlankDisplayState(states, ref blankCount, unitPreviews[0].DeltaTick + PrefabTimelineBlankCardStepTicks, slotCount);
+-
+-        for (int i = 1; i < unitPreviews.Count && states.Count < slotCount; i++)
++        for (int i = 0; i < previews.Count && states.Count < slotCount; i++)
+         {
+-            TimelinePreview previousPreview = unitPreviews[i - 1];
+-            TimelinePreview preview = unitPreviews[i];
+-            int gap = Mathf.Max(0, preview.DeltaTick - previousPreview.DeltaTick);
+-            int gapBlankCount = Mathf.Clamp(gap / PrefabTimelineBlankCardStepTicks, 0, PrefabTimelineBlankCardMaxPerGap);
+-            for (int gapIndex = 0; gapIndex < gapBlankCount && states.Count < slotCount; gapIndex++)
+-            {
+-                int blankDelta = previousPreview.DeltaTick + PrefabTimelineBlankCardStepTicks * (gapIndex + 1);
+-                AddPrefabTimelineBlankDisplayState(states, ref blankCount, blankDelta, slotCount);
+-            }
+-
+-            if (states.Count >= slotCount)
++            TimelinePreview preview = previews[i];
++            if (preview.Unit == null)
+             {
+-                break;
++                AddPrefabTimelineBlankDisplayState(states, ref blankCount, preview.DeltaTick, slotCount);
++                continue;
+             }
+ 
+             AddPrefabTimelineUnitDisplayState(states, occurrences, preview, i);
+-            if (blankCount < PrefabTimelineBlankCardMinVisible && states.Count < slotCount && i % 2 == 1)
+-            {
+-                AddPrefabTimelineBlankDisplayState(states, ref blankCount, preview.DeltaTick + PrefabTimelineBlankCardStepTicks, slotCount);
+-            }
+-        }
+-
+-        while (blankCount < PrefabTimelineBlankCardMinVisible && states.Count < slotCount)
+-        {
+-            AddPrefabTimelineBlankDisplayState(states, ref blankCount, PrefabTimelineBlankCardStepTicks * (blankCount + 1), slotCount);
+         }
+ 
+         return states;
+@@ -5017,7 +5279,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+ 
+         TimelinePreview preview = state.Preview;
+-        bool active = state.LogicalIndex == 0;
++        bool active = state.DisplayIndex == 0;
+         bool skill = preview.Unit.IsSkill;
+         bool ally = preview.Unit.IsAlly;
+         bool selected = skill ? false : ally
+@@ -5173,6 +5435,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             TimelinePreview preview = previews[i];
+             view.Panel.gameObject.SetActive(true);
+             bool active = i == 0;
++            if (preview.Unit == null)
++            {
++                ApplyTimelineBlankSlotVisual(view, active, preview.DeltaTick);
++                continue;
++            }
++
+             bool ally = preview.Unit.IsAlly;
+             bool skill = preview.Unit.IsSkill;
+             bool selected = skill ? false : ally
+@@ -5307,6 +5575,87 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         RefreshCurrentHpPanel();
+     }
+ 
++    private void ApplyTimelineBlankSlotVisual(TimelineSlotView view, bool active, int deltaTick)
++    {
++        if (view == null || view.Panel == null)
++        {
++            return;
++        }
++
++        Color blankColor = active
++            ? new Color(0.22f, 0.23f, 0.30f, 0.74f)
++            : new Color(0.08f, 0.10f, 0.16f, 0.56f);
++        Color lineColor = active
++            ? new Color(0.74f, 0.78f, 0.96f, 0.48f)
++            : new Color(0.48f, 0.56f, 0.74f, 0.30f);
++
++        view.Panel.sprite = null;
++        view.Panel.color = blankColor;
++        if (view.Glow != null)
++        {
++            view.Glow.color = active ? new Color(0.72f, 0.76f, 1f, 0.12f) : Color.clear;
++        }
++
++        SetImageColorIfPresent(view.InnerPanel, new Color(0.012f, 0.016f, 0.030f, active ? 0.70f : 0.46f));
++        SetImageColorIfPresent(view.IconPlate, new Color(0.018f, 0.022f, 0.035f, active ? 0.55f : 0.32f));
++        SetImageColorIfPresent(view.NumberPlate, new Color(0.014f, 0.018f, 0.030f, active ? 0.58f : 0.34f));
++        SetImageColorIfPresent(view.TopEdge, lineColor);
++        SetImageColorIfPresent(view.BottomEdge, new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.72f));
++        SetImageColorIfPresent(view.LeftEdge, new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.46f));
++        SetImageColorIfPresent(view.RightEdge, new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.46f));
++        SetImageColorIfPresent(view.TopCut, Color.clear);
++        SetImageColorIfPresent(view.BottomCut, Color.clear);
++
++        if (view.Accent != null)
++        {
++            view.Accent.color = lineColor;
++        }
++
++        if (view.ProgressSegment != null)
++        {
++            view.ProgressSegment.gameObject.SetActive(true);
++            view.ProgressSegment.color = new Color(lineColor.r, lineColor.g, lineColor.b, active ? 0.42f : 0.22f);
++        }
++
++        if (view.ProgressDot != null)
++        {
++            view.ProgressDot.gameObject.SetActive(true);
++            view.ProgressDot.fontSize = active ? 13 : 10;
++            view.ProgressDot.color = new Color(0.72f, 0.78f, 0.92f, active ? 0.72f : 0.46f);
++        }
++
++        if (view.CurrentMarker != null)
++        {
++            view.CurrentMarker.gameObject.SetActive(false);
++        }
++
++        if (view.UnitIcon != null)
++        {
++            view.UnitIcon.sprite = null;
++            view.UnitIcon.color = Color.clear;
++            view.UnitIcon.rectTransform.localScale = Vector3.one;
++        }
++
++        if (view.Cursor != null)
++        {
++            view.Cursor.gameObject.SetActive(false);
++        }
++
++        if (view.NameText != null)
++        {
++            view.NameText.text = active ? "--" : string.Empty;
++            view.NameText.color = new Color(0.74f, 0.80f, 0.92f, active ? 0.86f : 0.58f);
++        }
++
++        if (view.DetailText != null)
++        {
++            bool showTimelineDetail = mainBattleSceneMode || showDebugLabels;
++            view.DetailText.gameObject.SetActive(showTimelineDetail);
++            view.DetailText.text = showTimelineDetail ? (active ? "WAIT" : "T+" + deltaTick) : string.Empty;
++            view.DetailText.color = new Color(0.72f, 0.78f, 0.94f, active ? 0.80f : 0.54f);
++        }
++    }
++
+     private void RefreshCurrentHpPanel()
+     {
+         int hp;
+@@ -5378,13 +5727,13 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         if (mainBattleSceneMode)
+         {
+             List<TimelinePreview> previews = BuildTimelinePreview();
+-            if (previews.Count > 0 && previews[0].Unit != null)
++            if (previews.Count > 0)
+             {
+                 return previews[0].Unit;
+             }
+         }
+ 
+-        return activeUnit != null ? activeUnit : GetCurrentActiveUnit();
++        return activeUnit;
+     }
+ 
+     private List<TimelinePreview> BuildTimelinePreview()
+@@ -5416,9 +5765,25 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         }
+ 
+         List<TimelinePreview> previews = new List<TimelinePreview>();
+-        for (int i = 0; i < TimelinePreviewCount && simulatedUnits.Count > 0; i++)
++        int previewTick = currentTick;
++        int safety = 0;
++        while (previews.Count < TimelinePreviewCount && simulatedUnits.Count > 0 && safety < TimelinePreviewCount * 12)
+         {
+             TimelineUnit next = GetEarliestUnit(simulatedUnits);
++            if (next == null)
++            {
++                break;
++            }
++
++            int gap = next.ReadyTick - previewTick;
++            if (gap > 0)
++            {
++                previews.Add(new TimelinePreview { Unit = null, DeltaTick = Mathf.Max(0, previewTick - currentTick) });
++                previewTick += Mathf.Clamp(PrefabTimelineBlankCardStepTicks, 1, gap);
++                safety++;
++                continue;
++            }
++
+             previews.Add(new TimelinePreview { Unit = next, DeltaTick = Mathf.Max(0, next.ReadyTick - currentTick) });
+             if (next.IsSkill)
+             {
+@@ -5426,9 +5791,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+             }
+             else
+             {
+-                next.ReadyTick += GetPreviewReadyDelay(next);
++                next.ReadyTick = Mathf.Max(previewTick, next.ReadyTick) + GetPreviewReadyDelay(next);
+                 next.Sequence += 10;
+             }
++
++            safety++;
+         }
+ 
+         return previews;
+@@ -6955,11 +7322,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+ 
+         if (confirmButton != null)
+         {
+-            confirmButton.interactable = !battleEnded && activeUnit != null && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
++            confirmButton.interactable = timelineAutoProcessRoutine == null && !timelineAutoProcessInProgress && canAct;
+             Text confirmLabel = confirmButton.GetComponentInChildren<Text>();
+             if (confirmLabel != null)
+             {
+-                confirmLabel.text = IsPlayerTurn() ? "Confirm" : activeUnit != null && activeUnit.IsSkill ? "Skill Act" : "Enemy Act";
++                confirmLabel.text = canAct ? "Confirm" : activeUnit == null ? "Wait" : activeUnit.IsSkill ? "Skill Act" : "Enemy Act";
+             }
+         }
+ 
+@@ -7606,6 +7973,36 @@ public class BattleTimelinePrototypeController : MonoBehaviour
+         return !battleEnded && activeUnit != null && activeUnit.IsAlly && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
+     }
+ 
++    private TimelineUnit GetTimelineHeadActiveUnit()
++    {
++        int blankAdvanceTicks;
++        if (TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
++        {
++            return null;
++        }
++
++        return GetCurrentActiveUnit();
++    }
++
++    private bool TryGetTimelineBlankHeadAdvance(out int advanceTicks)
++    {
++        advanceTicks = 0;
++        TimelineUnit nextUnit = GetCurrentActiveUnit();
++        if (nextUnit == null)
++        {
++            return false;
++        }
++
++        int gap = nextUnit.ReadyTick - currentTick;
++        if (gap <= 0)
++        {
++            return false;
++        }
++
++        advanceTicks = Mathf.Clamp(PrefabTimelineBlankCardStepTicks, 1, gap);
++        return true;
++    }
++
+     private TimelineUnit GetCurrentActiveUnit()
+     {
+         List<TimelineUnit> units = new List<TimelineUnit>();

@@ -36,26 +36,30 @@ public sealed class BattleTimelineHudView : MonoBehaviour
 
     public void SetCurrentHp(int currentHp, int maxHp)
     {
-        if (currentHpValue == null)
-        {
-            return;
-        }
-
-        int safeMaxHp = Mathf.Max(0, maxHp);
-        int safeCurrentHp = Mathf.Clamp(currentHp, 0, safeMaxHp);
-        currentHpValue.text = safeCurrentHp.ToString();
-        currentHpValue.color = Color.white;
+        HideCurrentHpDisplay();
     }
 
     public void SetCurrentHpUnavailable()
     {
-        if (currentHpValue == null)
+        HideCurrentHpDisplay();
+    }
+
+    public void HideCurrentHpDisplay()
+    {
+        SetObjectActive(actionOrderText, false);
+        SetObjectActive(currentHpLabel, false);
+        SetObjectActive(currentHpValue, false);
+
+        SetChildActiveIfPresent(leftPanel, "CurrentHpGaugeBack", false);
+        SetChildActiveIfPresent(leftPanel, "CurrentHpPanelImage", false);
+
+        Image leftPanelImage = leftPanel != null ? leftPanel.GetComponent<Image>() : null;
+        if (leftPanelImage != null)
         {
-            return;
+            leftPanelImage.enabled = false;
         }
 
-        currentHpValue.text = "--";
-        currentHpValue.color = new Color(0.58f, 0.72f, 0.78f, 0.86f);
+        SetObjectActive(leftPanel, false);
     }
 
     public BattleTimelineSlotView GetSlot(int index)
@@ -101,5 +105,27 @@ public sealed class BattleTimelineHudView : MonoBehaviour
 
         Transform found = transform.Find(path);
         return found != null ? found.GetComponent<Text>() : null;
+    }
+
+    private static void SetObjectActive(Component component, bool active)
+    {
+        if (component != null)
+        {
+            component.gameObject.SetActive(active);
+        }
+    }
+
+    private static void SetChildActiveIfPresent(Transform parent, string childName, bool active)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+
+        Transform child = parent.Find(childName);
+        if (child != null)
+        {
+            child.gameObject.SetActive(active);
+        }
     }
 }

@@ -18,10 +18,10 @@ public static class BattleActionDelayResolver
     public const int NormalCardDelay = 100;
     public const int ClearCardDelay = 60;
     public const int HighCapacityCardDelay = 130;
-    public const int GigaCardDelay = 180;
+    public const int GigaCardDelay = 240;
     public const int HealCardDelay = 90;
     public const int SwapDelay = 70;
-    public const int WaitDelay = 50;
+    public const int WaitDelay = 60;
     public const int EnemyAttackDelay = 100;
     public const int BossActionDelay = 130;
 

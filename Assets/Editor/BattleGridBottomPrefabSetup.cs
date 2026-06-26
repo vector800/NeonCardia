@@ -22,7 +22,7 @@ public static class BattleGridBottomPrefabSetup
     private const float ColliderCornerTrim = 0.12f;
     private static readonly Vector3 AnchorOffset = new Vector3(0f, 0.30f, -0.05f);
     private static readonly Vector3 AllyKnightScale = new Vector3(2.01f, 2.01f, 1f);
-    private static readonly Vector3 AllyWolfScale = new Vector3(1.71f, 1.71f, 1f);
+    private static readonly Vector3 AllyWolfScale = new Vector3(1.86f, 1.86f, 1f);
     private static readonly Vector3 AllyFairyScale = new Vector3(1.65f, 1.65f, 1f);
     private static readonly Vector3 EnemyDrillMoleScale = new Vector3(1.447f, 1.447f, 1f);
     private static readonly Vector3 EnemyElecGeckoScale = new Vector3(1.853f, 1.853f, 1f);

@@ -13,18 +13,31 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 {
     private const int HandSize = 5;
     private const int MaxQueuedActions = 3;
-    private const int TimelinePreviewCount = 8;
+    private const int TimelinePreviewCount = 15;
     private const float PrefabTimelineMoveSeconds = 0.22f;
     private const float PrefabTimelineFadeShift = 0.070f;
-    private const int PrefabTimelineBlankCardMinVisible = 2;
-    private const int PrefabTimelineBlankCardStepTicks = 60;
-    private const int PrefabTimelineBlankCardMaxPerGap = 2;
+    private const int PrefabTimelineBlankCardStepTicks = 40;
+    private const float TimelineAutoProcessDelaySeconds = 0.28f;
     private const int BattleScenePrototypeAttackCount = 3;
-    private const int BattleScenePrototypeAttackRangeStartColumn = 0;
+    private const int BattleSceneCommandCardCount = 3;
+    private const float BattleSceneEscapeSuccessChance = 0.65f;
+    private const int BattleSceneAllyCommandColumn = 1;
+    private const int BattleSceneAllyMinColumn = 0;
+    private const int BattleSceneAllyMaxColumn = BattleGridAllyCols - 1;
+    private const float BattleSceneAllyFootNormalizedY = 0.25f;
+    private const float BattleSceneAllyFallbackFootOffsetY = -0.615f;
+    private const float BattleSceneEnemyVisualFootNormalizedY = 0.25f;
     private const int WeaponPower = 10;
     private const int EchoShotPower = 20;
+    private static readonly string[] BattleSceneTemporaryCommandCardIds =
+    {
+        "AquaShot",
+        "BurnerBreath",
+        "PierceShot"
+    };
     private const int EchoSkillPower = 10;
     private const int EchoSkillInsertDelay = 45;
+    private const int BattleCommandMaxSkillOptions = 6;
     private const float FrontOutgoingDamageMultiplier = 1.2f;
     private const float FrontIncomingDamageMultiplier = 1.2f;
     private const float MiddleModifierMultiplier = 1f;
@@ -35,6 +48,42 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const string BattleBackgroundAssetPath = "Assets/Art/Backgrounds/Battle/CyberBattleBackground.png";
     private const string BattleUiFrameAssetPath = "Assets/Art/UI/Battle/BattleUIFrame.png";
     private const string CardFrameAssetPath = "Assets/Art/Cards/Frames/CardFrame_Base.png";
+    private const string BattleCommandGeneratedAssetFolder = "Assets/_Generated/UI/BattleCommand/";
+    private const string BattleCommandSimpleGeneratedAssetFolder = "Assets/_Generated/UI/BattleCommandSimple/";
+    private const string BattleCommandSimpleAttributeIconFolder = BattleCommandSimpleGeneratedAssetFolder + "Attributes/";
+    private const string BattleCommandSimpleButtonNormalPath = BattleCommandSimpleGeneratedAssetFolder + "BC_SimpleButton_Normal.png";
+    private const string BattleCommandSimpleButtonSelectedPath = BattleCommandSimpleGeneratedAssetFolder + "BC_SimpleButton_Selected.png";
+    private const string BattleCommandSimpleButtonShadowPath = BattleCommandSimpleGeneratedAssetFolder + "BC_SimpleButton_Shadow.png";
+    private const string BattleCommandCardRowNormalPath = BattleCommandGeneratedAssetFolder + "BC_CardRow_Normal.png";
+    private const string BattleCommandCardRowSelectedPath = BattleCommandGeneratedAssetFolder + "BC_CardRow_Selected.png";
+    private const string BattleCommandCardOverlayPath = BattleCommandGeneratedAssetFolder + "BC_CardOverlay_Circuit.png";
+    private const string BattleCommandLeftIconFramePath = BattleCommandGeneratedAssetFolder + "BC_LeftIconFrame.png";
+    private const string BattleCommandSkillsNormalPath = BattleCommandGeneratedAssetFolder + "BC_Skills_Normal.png";
+    private const string BattleCommandSkillsSelectedPath = BattleCommandGeneratedAssetFolder + "BC_Skills_Selected.png";
+    private const string BattleCommandChangeNormalPath = BattleCommandGeneratedAssetFolder + "BC_Change_Normal.png";
+    private const string BattleCommandChangeSelectedPath = BattleCommandGeneratedAssetFolder + "BC_Change_Selected.png";
+    private const string BattleCommandRunNormalPath = BattleCommandGeneratedAssetFolder + "BC_Run_Normal.png";
+    private const string BattleCommandRunSelectedPath = BattleCommandGeneratedAssetFolder + "BC_Run_Selected.png";
+    private const string BattleCommandInfoOuterFramePath = BattleCommandGeneratedAssetFolder + "BC_InfoPanel_OuterFrame.png";
+    private const string BattleCommandInfoInnerBackgroundPath = BattleCommandGeneratedAssetFolder + "BC_InfoPanel_InnerBackground.png";
+    private const string BattleCommandInfoDividersPath = BattleCommandGeneratedAssetFolder + "BC_InfoPanel_Dividers.png";
+    private const string BattleCommandAccentRailTopPath = BattleCommandGeneratedAssetFolder + "BC_AccentRail_Top.png";
+    private const string BattleCommandAccentRailBottomPath = BattleCommandGeneratedAssetFolder + "BC_AccentRail_Bottom.png";
+    private const string BattleCommandCornerCapsPath = BattleCommandGeneratedAssetFolder + "BC_CornerCaps.png";
+    private const string BattleCommandSkillsDescription = "\u30b9\u30ad\u30eb\u3092\u4f7f\u7528\u3057\u307e\u3059";
+    private const string BattleCommandSkillAlreadySelectedDescription = "\u3053\u306e\u30bf\u30fc\u30f3\u306f\u65e2\u306b\u30b9\u30ad\u30eb\u3092\u9078\u629e\u3057\u307e\u3057\u305f";
+    private const string BattleCommandChangeDescription = "\u63a7\u3048\u30e1\u30f3\u30d0\u30fc\u3068\u4ea4\u4ee3\u3057\u307e\u3059";
+    private const string BattleCommandRunDescription = "\u30d0\u30c8\u30eb\u304b\u3089\u9003\u8d70\u3057\u307e\u3059";
+    private static readonly Color BattleCommandCardNormalTint = new Color32(35, 72, 90, 255);
+    private static readonly Color BattleCommandCardSelectedTint = new Color32(95, 199, 232, 255);
+    private static readonly Color BattleCommandSkillNormalTint = new Color32(46, 93, 59, 255);
+    private static readonly Color BattleCommandSkillSelectedTint = new Color32(139, 214, 109, 255);
+    private static readonly Color BattleCommandChangeNormalTint = new Color32(107, 82, 32, 255);
+    private static readonly Color BattleCommandChangeSelectedTint = new Color32(231, 184, 73, 255);
+    private static readonly Color BattleCommandRunNormalTint = new Color32(102, 49, 76, 255);
+    private static readonly Color BattleCommandRunSelectedTint = new Color32(214, 106, 154, 255);
+    private const string BattlePartyStatusHudPrefabPath = "Assets/Prefabs/UI/BattlePartyStatusHUD.prefab";
+    private const string BattlePartyStatusPanelPrefabPath = "Assets/Prefabs/UI/BattlePartyStatusPanel.prefab";
     private const string TimelineIconsAssetPath = "Assets/Art/UI/Battle/Timeline/TimelineIconSheet.png";
     private static readonly string[] TimelineFaceIconAssetPaths =
     {
@@ -44,6 +93,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_01.png",
         "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_02.png",
         "Assets/Art/UI/Battle/Timeline/FaceIcons/EnemyFaceIcon_03.png"
+    };
+    private static readonly string[] PartyStatusHudFaceIconAssetPaths =
+    {
+        "Assets/Art/UI/Battle/PartyStatusHUD/UI_BattlePartyHUD_FaceClean_Wolf.png",
+        "Assets/Art/UI/Battle/PartyStatusHUD/UI_BattlePartyHUD_FaceClean_Mech.png",
+        "Assets/Art/UI/Battle/PartyStatusHUD/UI_BattlePartyHUD_FaceClean_Girl.png"
     };
     private const string AllyPortraitFramesAssetPath = "Assets/Art/UI/Party/AllyPortraitFramesSheet.png";
     private const string EnemyGridPanelsAssetPath = "Assets/Art/UI/Grid/EnemyGridPanelsSheet.png";
@@ -115,7 +170,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private const float BattleSceneHudMinY = 0.872f;
     private const float BattleSceneHudMaxY = 0.982f;
     private static readonly Vector2 BattleSceneCommandPanelMin = new Vector2(0.012f, 0.225f);
-    private static readonly Vector2 BattleSceneCommandPanelMax = new Vector2(0.265f, 0.695f);
+    private static readonly Vector2 BattleSceneCommandPanelMax = new Vector2(0.265f, 0.580f);
+    private static readonly Vector2 BattlePartyStatusHudMin = new Vector2(0.027f, 0.650f);
+    private static readonly Vector2 BattlePartyStatusHudMax = new Vector2(0.210f, 0.875f);
+    private static readonly Vector2 BattlePartyStatusPanelMin = new Vector2(0.022f, 0.590f);
+    private static readonly Vector2 BattlePartyStatusPanelMax = new Vector2(0.214f, 0.865f);
     private const float BattleSpriteScaleRowDelta = 0.13f;
     private const float BattleSpriteYOffsetRowDelta = -0.035f;
     private const string BattleSceneEnemyHpTextName = "HPText";
@@ -194,6 +253,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private readonly Dictionary<string, AllySpriteDefinition> allySpriteDefinitions = new Dictionary<string, AllySpriteDefinition>();
     private readonly Dictionary<string, EnemySpriteDefinition> enemySpriteDefinitions = new Dictionary<string, EnemySpriteDefinition>();
     private readonly Dictionary<string, SpriteRenderer> sceneBattleGridUnitRenderers = new Dictionary<string, SpriteRenderer>();
+    private readonly Dictionary<string, GameObject> sceneBattleGridUnitRoots = new Dictionary<string, GameObject>();
     private readonly Dictionary<string, TextMeshPro> battleSceneEnemyHpTexts = new Dictionary<string, TextMeshPro>();
     private readonly Dictionary<string, SceneUnitSpriteAnimation> sceneBattleGridUnitAnimations = new Dictionary<string, SceneUnitSpriteAnimation>();
     private readonly Dictionary<PartyPosition, bool> allyPanelHoverStates = new Dictionary<PartyPosition, bool>();
@@ -212,6 +272,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private readonly List<CardButtonView> handViews = new List<CardButtonView>();
     private readonly List<Text> chipQueueSlotTexts = new List<Text>();
     private readonly List<PrototypeAttackButtonView> prototypeAttackViews = new List<PrototypeAttackButtonView>();
+    private readonly List<Vector2Int> battleCommandCardRangePreviewCells = new List<Vector2Int>(BattleSceneCommandCardCount);
+    private readonly List<EnemyUnit> battleCommandSkillEnemyTargets = new List<EnemyUnit>(BattleGridRows);
+    private readonly List<AllyUnit> battleCommandSkillAllyTargets = new List<AllyUnit>(BattleGridRows);
 
     private Font uiFont;
     private Text turnText;
@@ -230,14 +293,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Text enemyLabelText;
     private Text handLabelText;
     private Text playerHpText;
-    private Text currentHpValueText;
     private RectTransform battleSceneTimelineRoot;
     private RectTransform battleSceneEnemyHpOverlayRoot;
     private RectTransform battleSceneAttackRangeOverlayRoot;
     private RectTransform selectedCommandNameRoot;
     private BattleTimelineHudView battleTimelineHudView;
+    private BattlePartyStatusHUD battlePartyStatusHud;
+    private BattlePartyStatusPanelController battlePartyStatusPanel;
     private string prefabTimelineSignature = string.Empty;
     private Coroutine prefabTimelineAnimationRoutine;
+    private Coroutine timelineAutoProcessRoutine;
+    private bool timelineAutoProcessInProgress;
     private Material battleSceneAttackRangeFillMaterial;
     private Material battleSceneAttackRangeGlowMaterial;
     private Material battleSceneAttackRangeOutlineMaterial;
@@ -248,6 +314,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Button swapFrontMiddleButton;
     private Button swapMiddleBackButton;
     private GameObject battleSceneCommandRoot;
+    private BattleCommandSelectionUI battleCommandSelectionUi;
+    private BattleCommandSubmenuUI battleCommandSubmenuUi;
     private Text battleSceneCommandActorText;
     private Text battleSceneCommandTargetText;
     private Text battleSceneCommandSelectedText;
@@ -266,8 +334,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private Sprite battleBackgroundSprite;
     private Sprite battleUiFrameSprite;
     private Sprite cardFrameSprite;
+    private BattleCommandSpriteSet battleCommandSprites;
+    private readonly Dictionary<CardAttribute, Sprite> battleCommandAttributeIcons = new Dictionary<CardAttribute, Sprite>();
     private TimelineSpriteSet timelineSprites;
     private Sprite[] timelineFaceIconSprites = new Sprite[0];
+    private Sprite[] partyStatusHudFaceIconSprites = new Sprite[0];
     private AllyUiSpriteSet allySprites;
     private EnemyGridSpriteSet enemyGridSprites;
     private EnemySpriteSet enemySprites;
@@ -278,6 +349,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     [SerializeField] private bool mainBattleSceneMode;
     [SerializeField] private bool usePrefabActionOrderHud;
     [SerializeField] private BattleTimelineHudView battleTimelineHudPrefab;
+    [SerializeField] private BattlePartyStatusHUD battlePartyStatusHudPrefab;
+    [SerializeField] private BattlePartyStatusPanelController battlePartyStatusPanelPrefab;
     [SerializeField] private BattlePanelVisualSet battlePanelVisualSet;
     [SerializeField] private float allyIdleFrameSeconds = 0.20f;
     [SerializeField] private float enemyIdleFrameSeconds = 0.14f;
@@ -306,6 +379,25 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private bool loadedSavedDeck;
     private bool battleEnded;
     private bool cardSelectOpen;
+    private bool battleCommandTransitioning;
+    private bool battleCommandCardRangePreviewActive;
+    private bool battleCommandSkillTargetSelectionActive;
+    private bool battleSceneActionAnimationLocked;
+    private PrototypeCard battleCommandPreviewCard;
+    private AllyUnit battleCommandPreviewCaster;
+    private int battleCommandPreviewHandIndex = -1;
+    private BattleCommandSkillOption pendingBattleCommandSkill;
+    private BattleCommandSkillOption battleCommandTargetSkill;
+    private AllyUnit battleCommandTargetCaster;
+    private int battleCommandTargetSkillListIndex = -1;
+    private int battleCommandSkillTargetIndex;
+    private float battleCommandSkillNextTargetMoveTime;
+    private Coroutine battleCommandSkillEffectRoutine;
+    private PartyPosition pendingBattleCommandSwapTarget;
+    private bool pendingBattleCommandSwapTargetSet;
+    private bool skillSelectedThisTurn;
+    private AllyUnit skillSelectedThisTurnActor;
+    private int skillSelectedThisTurnReadyTick = int.MinValue;
     private int selectedHandIndex;
     private int selectedPrototypeAttackIndex = 1;
     private int hoveredPrototypeAttackIndex = -1;
@@ -347,6 +439,30 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RowToEnemyEdge
     }
 
+    private enum BattleCommandCardRangePattern
+    {
+        None,
+        ForwardLine
+    }
+
+    private enum BattleCommandSkillTargetType
+    {
+        None,
+        EnemySingle,
+        AllySingle,
+        Self,
+        EnemyAll,
+        AllyAll
+    }
+
+    private enum BattleCommandSkillEffectType
+    {
+        None,
+        Damage,
+        AttackBuff,
+        Heal
+    }
+
     private enum BattleSceneAttackRangeOverlayMode
     {
         AlignedPanelSprites,
@@ -371,15 +487,25 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         public bool AddsEchoSkillEntry;
     }
 
+    private sealed class BattleCommandCardRangeDefinition
+    {
+        public BattleCommandCardRangePattern Pattern;
+        public int Distance;
+        public string TargetText;
+        public string Description;
+    }
+
     private sealed class AllyUnit
     {
         public string Name;
         public int Hp;
         public int MaxHp;
         public PartyPosition Position;
+        public int BattleSceneColumn = BattleSceneAllyCommandColumn;
         public int Speed;
         public string Status;
         public int NextReadyTick;
+        public int AttackPowerBonus;
 
         public bool IsAlive
         {
@@ -419,6 +545,29 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         public bool IsAlive = true;
         public Color DisplayColor;
         public string Status;
+    }
+
+    private sealed class BattleCommandSkillOption
+    {
+        public string Name;
+        public string Description;
+        public int Power;
+        public int Delay;
+        public string AttributeText;
+        public string TargetText;
+        public BattleCommandSkillTargetType TargetType;
+        public BattleCommandSkillEffectType EffectType;
+        public int BuffAmount;
+    }
+
+    private sealed class BattleCommandReserveMemberOption
+    {
+        public string Name;
+        public int Hp;
+        public int MaxHp;
+        public CardAttribute Attribute;
+        public Sprite FaceIcon;
+        public string TargetText;
     }
 
     private sealed class TimelineUnit
@@ -747,6 +896,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         LoadTimelineFaceIconSprites();
+        LoadBattleCommandSpriteSet();
+        LoadPartyStatusHudFaceIconSprites();
         LoadAllyCharacterSprites();
         LoadEnemyCharacterSprites();
         LoadSceneBattleGridUnitAnimations();
@@ -769,10 +920,50 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
     }
 
+    protected void ConfigurePartyStatusHud(BattlePartyStatusHUD prefab)
+    {
+        if (prefab != null)
+        {
+            battlePartyStatusHudPrefab = prefab;
+        }
+    }
+
+    protected void ConfigurePartyStatusPanel(BattlePartyStatusPanelController prefab)
+    {
+        if (prefab != null)
+        {
+            battlePartyStatusPanelPrefab = prefab;
+        }
+    }
+
     protected virtual void Update()
     {
         UpdateAllyIdleAnimation();
         UpdateEnemyIdleAnimation();
+
+        if (mainBattleSceneMode && battleCommandCardRangePreviewActive)
+        {
+            HandleBattleCommandCardRangePreviewInput();
+            return;
+        }
+
+        if (mainBattleSceneMode && battleCommandSkillTargetSelectionActive)
+        {
+            HandleBattleCommandSkillTargetSelectionInput();
+            return;
+        }
+
+        bool commandSelectionOpen = battleCommandSelectionUi != null && battleCommandSelectionUi.IsOpenOrFading;
+        bool commandSubmenuOpen = battleCommandSubmenuUi != null && battleCommandSubmenuUi.IsOpenOrFading;
+        if (mainBattleSceneMode && commandSelectionOpen && HandleBattleSceneCommandMovementInput())
+        {
+            return;
+        }
+
+        if (mainBattleSceneMode && (battleCommandTransitioning || commandSelectionOpen || commandSubmenuOpen))
+        {
+            return;
+        }
 
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null)
@@ -835,6 +1026,85 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 QueueCardFromHand(4);
             }
         }
+    }
+
+    private bool HandleBattleSceneCommandMovementInput()
+    {
+        if (!CanMoveBattleSceneActiveAllyFromCommand())
+        {
+            return false;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            return false;
+        }
+
+        if (keyboard.aKey.wasPressedThisFrame)
+        {
+            return TryMoveBattleSceneActiveAllyColumn(-1);
+        }
+
+        if (keyboard.dKey.wasPressedThisFrame)
+        {
+            return TryMoveBattleSceneActiveAllyColumn(1);
+        }
+
+        return false;
+    }
+
+    private bool CanMoveBattleSceneActiveAllyFromCommand()
+    {
+        if (!mainBattleSceneMode
+            || battleEnded
+            || battleCommandTransitioning
+            || battleCommandCardRangePreviewActive
+            || battleCommandSkillTargetSelectionActive
+            || battleCommandSkillEffectRoutine != null
+            || timelineAutoProcessRoutine != null
+            || timelineAutoProcessInProgress
+            || battleSceneActionAnimationLocked
+            || battleCommandSelectionUi == null
+            || (battleCommandSubmenuUi != null && battleCommandSubmenuUi.IsOpenOrFading)
+            || !battleCommandSelectionUi.IsAcceptingInput)
+        {
+            return false;
+        }
+
+        activeUnit = GetTimelineHeadActiveUnit();
+        return IsPlayerTurn()
+            && activeUnit != null
+            && activeUnit.IsAlly
+            && activeUnit.Ally != null
+            && activeUnit.Ally.IsAlive;
+    }
+
+    private bool TryMoveBattleSceneActiveAllyColumn(int direction)
+    {
+        AllyUnit actor = activeUnit != null ? activeUnit.Ally : null;
+        if (actor == null)
+        {
+            return false;
+        }
+
+        int currentColumn = GetBattleSceneAllyColumn(actor);
+        int move = direction >= 0 ? 1 : -1;
+        int nextColumn = ClampBattleSceneAllyColumn(currentColumn + move);
+        if (nextColumn == currentColumn)
+        {
+            if (statusText != null)
+            {
+                statusText.text = move > 0 ? "Cannot move into enemy area." : "Already at the left edge.";
+            }
+
+            return true;
+        }
+
+        actor.BattleSceneColumn = nextColumn;
+        selectedAlly = actor;
+        RefreshAll(actor.Name + " moved to " + GetBattleSceneColumnLabel(nextColumn) + " panel.");
+        return true;
     }
 
     protected virtual void LateUpdate()
@@ -958,6 +1228,18 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         loadedSavedDeck = false;
         battleEnded = false;
         cardSelectOpen = false;
+        battleCommandTransitioning = false;
+        battleCommandSkillTargetSelectionActive = false;
+        battleSceneActionAnimationLocked = false;
+        battleCommandTargetSkill = null;
+        battleCommandTargetCaster = null;
+        battleCommandTargetSkillListIndex = -1;
+        battleCommandSkillTargetIndex = 0;
+        battleCommandSkillEnemyTargets.Clear();
+        battleCommandSkillAllyTargets.Clear();
+        skillSelectedThisTurn = false;
+        skillSelectedThisTurnActor = null;
+        skillSelectedThisTurnReadyTick = int.MinValue;
         selectedHandIndex = 0;
         selectedPrototypeAttackIndex = 1;
         hoveredPrototypeAttackIndex = -1;
@@ -976,7 +1258,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         BuildTimelineDeck();
         DrawToHand();
-        activeUnit = GetCurrentActiveUnit();
+        activeUnit = GetTimelineHeadActiveUnit();
     }
 
     private void BuildTimelineDeck()
@@ -1175,7 +1457,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280f, 720f);
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight = 0.5f;
 
         RectTransform root = CreateRect(mainBattleSceneMode ? "BattleSceneTimelineRoot" : "BattleTimelinePrototypeRoot", canvasObject.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -1192,6 +1474,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
         BuildHeader(root);
         BuildTimeline(root);
+        BuildBattlePartyStatusPanel(root);
         BuildSelectedCommandName(root);
         BuildImage2BattleFieldArt(root);
         RectTransform battleFieldRoot = mainBattleSceneMode ? CreateBattleFieldRoot(root) : root;
@@ -1234,6 +1517,79 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         for (int i = 0; i < TimelineFaceIconAssetPaths.Length; i++)
         {
             timelineFaceIconSprites[i] = LoadOptionalSprite(TimelineFaceIconAssetPaths[i]);
+        }
+    }
+
+    private void LoadBattleCommandSpriteSet()
+    {
+        Sprite simpleNormal = LoadOptionalSprite(BattleCommandSimpleButtonNormalPath);
+        Sprite simpleSelected = LoadOptionalSprite(BattleCommandSimpleButtonSelectedPath);
+        Sprite simpleShadow = LoadOptionalSprite(BattleCommandSimpleButtonShadowPath);
+        LoadBattleCommandAttributeIconSprites();
+
+        battleCommandSprites = new BattleCommandSpriteSet
+        {
+            CardRowNormal = simpleNormal != null ? simpleNormal : LoadOptionalSprite(BattleCommandCardRowNormalPath),
+            CardRowSelected = simpleSelected != null ? simpleSelected : LoadOptionalSprite(BattleCommandCardRowSelectedPath),
+            CardOverlay = simpleShadow != null ? simpleShadow : LoadOptionalSprite(BattleCommandCardOverlayPath),
+            LeftIconFrame = null,
+            SkillsNormal = simpleNormal != null ? simpleNormal : LoadOptionalSprite(BattleCommandSkillsNormalPath),
+            SkillsSelected = simpleSelected != null ? simpleSelected : LoadOptionalSprite(BattleCommandSkillsSelectedPath),
+            ChangeNormal = simpleNormal != null ? simpleNormal : LoadOptionalSprite(BattleCommandChangeNormalPath),
+            ChangeSelected = simpleSelected != null ? simpleSelected : LoadOptionalSprite(BattleCommandChangeSelectedPath),
+            RunNormal = simpleNormal != null ? simpleNormal : LoadOptionalSprite(BattleCommandRunNormalPath),
+            RunSelected = simpleSelected != null ? simpleSelected : LoadOptionalSprite(BattleCommandRunSelectedPath),
+            InfoPanelOuterFrame = LoadOptionalSprite(BattleCommandInfoOuterFramePath),
+            InfoPanelInnerBackground = LoadOptionalSprite(BattleCommandInfoInnerBackgroundPath),
+            InfoPanelDividers = LoadOptionalSprite(BattleCommandInfoDividersPath),
+            AccentRailTop = LoadOptionalSprite(BattleCommandAccentRailTopPath),
+            AccentRailBottom = LoadOptionalSprite(BattleCommandAccentRailBottomPath),
+            CornerCaps = LoadOptionalSprite(BattleCommandCornerCapsPath)
+        };
+    }
+
+    private void LoadBattleCommandAttributeIconSprites()
+    {
+        battleCommandAttributeIcons.Clear();
+        Array values = Enum.GetValues(typeof(CardAttribute));
+        for (int i = 0; i < values.Length; i++)
+        {
+            CardAttribute attribute = (CardAttribute)values.GetValue(i);
+            Sprite icon = LoadOptionalSprite(GetBattleCommandAttributeIconPath(attribute));
+            if (icon != null)
+            {
+                battleCommandAttributeIcons[attribute] = icon;
+            }
+        }
+    }
+
+    private static string GetBattleCommandAttributeIconPath(CardAttribute attribute)
+    {
+        return BattleCommandSimpleAttributeIconFolder + "BC_Attr_" + attribute + ".png";
+    }
+
+    private Sprite GetBattleCommandAttributeIcon(CardAttribute attribute)
+    {
+        Sprite icon;
+        if (battleCommandAttributeIcons.TryGetValue(attribute, out icon) && icon != null)
+        {
+            return icon;
+        }
+
+        if (battleCommandAttributeIcons.TryGetValue(CardAttribute.Neutral, out icon))
+        {
+            return icon;
+        }
+
+        return null;
+    }
+
+    private void LoadPartyStatusHudFaceIconSprites()
+    {
+        partyStatusHudFaceIconSprites = new Sprite[PartyStatusHudFaceIconAssetPaths.Length];
+        for (int i = 0; i < PartyStatusHudFaceIconAssetPaths.Length; i++)
+        {
+            partyStatusHudFaceIconSprites[i] = LoadOptionalSprite(PartyStatusHudFaceIconAssetPaths[i]);
         }
     }
 
@@ -1789,6 +2145,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             hudRect.localScale = Vector3.one;
         }
 
+        EnsurePrefabTimelineSlotCapacity(battleTimelineHudView, TimelinePreviewCount);
         battleTimelineHudView.CacheReferences();
         ApplyPrefabTimelineHudLayout(battleTimelineHudView);
         if (battleTimelineHudView.ActionOrderText != null)
@@ -1796,12 +2153,128 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             HideText(battleTimelineHudView.ActionOrderText);
         }
 
-        if (battleTimelineHudView.CurrentHpLabel != null)
-        {
-            HideText(battleTimelineHudView.CurrentHpLabel);
-        }
+        battleTimelineHudView.HideCurrentHpDisplay();
 
         return true;
+    }
+
+    private void BuildBattlePartyStatusPanel(Transform parent)
+    {
+        if (!mainBattleSceneMode)
+        {
+            return;
+        }
+
+        if (BuildBattlePartyStatusHud(parent))
+        {
+            return;
+        }
+
+        BattlePartyStatusPanelController prefab = battlePartyStatusPanelPrefab;
+#if UNITY_EDITOR
+        if (prefab == null)
+        {
+            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<BattlePartyStatusPanelController>(BattlePartyStatusPanelPrefabPath);
+        }
+#endif
+
+        if (prefab == null)
+        {
+            return;
+        }
+
+        battlePartyStatusPanel = Instantiate(prefab, parent, false);
+        battlePartyStatusPanel.name = "BattlePartyStatusPanel";
+        RectTransform panelRect = battlePartyStatusPanel.transform as RectTransform;
+        if (panelRect != null)
+        {
+            panelRect.anchorMin = BattlePartyStatusPanelMin;
+            panelRect.anchorMax = BattlePartyStatusPanelMax;
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+            panelRect.localScale = Vector3.one;
+        }
+
+        battlePartyStatusPanel.CacheReferences();
+        battlePartyStatusPanel.RefreshReserveMembers();
+    }
+
+    private bool BuildBattlePartyStatusHud(Transform parent)
+    {
+        BattlePartyStatusHUD prefab = battlePartyStatusHudPrefab;
+#if UNITY_EDITOR
+        if (prefab == null)
+        {
+            GameObject prefabObject = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(BattlePartyStatusHudPrefabPath);
+            prefab = prefabObject != null ? prefabObject.GetComponent<BattlePartyStatusHUD>() : null;
+        }
+#endif
+
+        if (prefab == null)
+        {
+            return false;
+        }
+
+        battlePartyStatusHud = Instantiate(prefab, parent, false);
+        battlePartyStatusHud.name = "BattlePartyStatusHUD";
+        RectTransform hudRect = battlePartyStatusHud.transform as RectTransform;
+        if (hudRect != null)
+        {
+            hudRect.anchorMin = BattlePartyStatusHudMin;
+            hudRect.anchorMax = BattlePartyStatusHudMax;
+            hudRect.pivot = new Vector2(0f, 1f);
+            hudRect.offsetMin = Vector2.zero;
+            hudRect.offsetMax = Vector2.zero;
+            hudRect.sizeDelta = Vector2.zero;
+            hudRect.localScale = Vector3.one;
+        }
+
+        battlePartyStatusHud.CacheReferences();
+        battlePartyStatusHud.RefreshPreviewMembers();
+        RefreshPartyStatusHudReserveMembers();
+        return true;
+    }
+
+    private static void EnsurePrefabTimelineSlotCapacity(BattleTimelineHudView hudView, int targetCount)
+    {
+        if (hudView == null || targetCount <= 0)
+        {
+            return;
+        }
+
+        hudView.CacheReferences();
+        RectTransform slotsRoot = hudView.SlotsRoot;
+        BattleTimelineSlotView[] existingSlots = hudView.Slots;
+        int existingCount = existingSlots != null ? existingSlots.Length : 0;
+        if (slotsRoot == null || existingCount >= targetCount)
+        {
+            return;
+        }
+
+        BattleTimelineSlotView template = null;
+        for (int i = existingCount - 1; i >= 0; i--)
+        {
+            if (existingSlots[i] != null)
+            {
+                template = existingSlots[i];
+                break;
+            }
+        }
+
+        if (template == null)
+        {
+            return;
+        }
+
+        for (int i = existingCount; i < targetCount; i++)
+        {
+            BattleTimelineSlotView clone = UnityEngine.Object.Instantiate(template, slotsRoot, false);
+            clone.name = "Slot_" + (i + 1).ToString("00");
+            clone.CacheReferences();
+            clone.Clear();
+        }
+
+        hudView.CacheReferences();
     }
 
     private static void ApplyPrefabTimelineHudLayout(BattleTimelineHudView hudView)
@@ -1815,9 +2288,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         SetAnchors(hudRect, BattleSceneHudMinX, BattleSceneHudMinY, BattleSceneHudMaxX, BattleSceneHudMaxY);
         SetImageType(hudRect, Image.Type.Sliced);
 
-        SetAnchors(hudView.LeftPanel, 0.024f, 0.245f, 0.140f, 0.755f);
-        SetImageEnabled(hudView.LeftPanel, true);
-        SetImageType(hudView.LeftPanel, Image.Type.Sliced);
+        SetAnchors(hudView.LeftPanel, 0.000f, 0.245f, 0.001f, 0.755f);
+        SetImageEnabled(hudView.LeftPanel, false);
         if (hudView.ActionOrderText != null)
         {
             HideText(hudView.ActionOrderText);
@@ -1830,13 +2302,14 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         if (hudView.CurrentHpValue != null)
         {
-            SetAnchors(hudView.CurrentHpValue.rectTransform, 0.175f, 0.170f, 0.855f, 0.830f);
+            HideText(hudView.CurrentHpValue);
         }
 
-        SetTextStyle(hudView.CurrentHpValue, 22, TextAnchor.MiddleCenter, Color.white);
+        hudView.HideCurrentHpDisplay();
         SetChildActiveIfPresent(hudView.LeftPanel, "CurrentHpGaugeBack", false);
+        SetChildActiveIfPresent(hudView.LeftPanel, "CurrentHpPanelImage", false);
 
-        SetAnchors(hudView.SlotsRoot, 0.150f, 0.115f, 0.934f, 0.885f);
+        SetAnchors(hudView.SlotsRoot, 0.024f, 0.115f, 0.934f, 0.885f);
 
         BattleTimelineSlotView[] slots = hudView.Slots;
         if (slots != null)
@@ -2085,41 +2558,19 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             panelGlow.effectColor = new Color(0.04f, 0.60f, 1f, 0.58f);
             panelGlow.effectDistance = new Vector2(0f, -5f);
 
-            CreateImage("Action Order Outer Top Line", panel, new Vector2(0.205f, 0.965f), new Vector2(0.992f, 0.976f), Vector2.zero, Vector2.zero, new Color(0.14f, 0.94f, 1f, 0.48f)).raycastTarget = false;
-            CreateImage("Action Order Outer Bottom Line", panel, new Vector2(0.205f, 0.021f), new Vector2(0.988f, 0.032f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.70f, 1f, 0.38f)).raycastTarget = false;
+            CreateImage("Action Order Outer Top Line", panel, new Vector2(0.035f, 0.965f), new Vector2(0.992f, 0.976f), Vector2.zero, Vector2.zero, new Color(0.14f, 0.94f, 1f, 0.48f)).raycastTarget = false;
+            CreateImage("Action Order Outer Bottom Line", panel, new Vector2(0.035f, 0.021f), new Vector2(0.988f, 0.032f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.70f, 1f, 0.38f)).raycastTarget = false;
             CreateImage("Action Order Outer Left Line", panel, new Vector2(0.008f, 0.060f), new Vector2(0.016f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
             CreateImage("Action Order Outer Right Line", panel, new Vector2(0.984f, 0.060f), new Vector2(0.992f, 0.960f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.34f)).raycastTarget = false;
-            CreateImage("Action Order Top Neon", panel, new Vector2(0.205f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
-            CreateImage("Action Order Bottom Neon", panel, new Vector2(0.205f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
-            CreateImage("Action Order Card Rail", panel, new Vector2(0.165f, 0.455f), new Vector2(0.935f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
-            CreateImage("Action Order Progress Line Glow", panel, new Vector2(0.212f, 0.041f), new Vector2(0.908f, 0.064f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.72f, 1f, 0.18f)).raycastTarget = false;
-            CreateImage("Action Order Progress Line Core", panel, new Vector2(0.216f, 0.050f), new Vector2(0.904f, 0.056f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.92f, 1f, 0.72f)).raycastTarget = false;
+            CreateImage("Action Order Top Neon", panel, new Vector2(0.035f, 0.91f), new Vector2(0.986f, 0.942f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.78f)).raycastTarget = false;
+            CreateImage("Action Order Bottom Neon", panel, new Vector2(0.035f, 0.055f), new Vector2(0.982f, 0.085f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.58f, 1f, 0.50f)).raycastTarget = false;
+            CreateImage("Action Order Card Rail", panel, new Vector2(0.040f, 0.455f), new Vector2(0.935f, 0.492f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.86f, 1f, 0.30f)).raycastTarget = false;
+            CreateImage("Action Order Progress Line Glow", panel, new Vector2(0.050f, 0.041f), new Vector2(0.908f, 0.064f), Vector2.zero, Vector2.zero, new Color(0.04f, 0.72f, 1f, 0.18f)).raycastTarget = false;
+            CreateImage("Action Order Progress Line Core", panel, new Vector2(0.054f, 0.050f), new Vector2(0.904f, 0.056f), Vector2.zero, Vector2.zero, new Color(0.12f, 0.92f, 1f, 0.72f)).raycastTarget = false;
             CreateImage("Action Order Left Brace", panel, new Vector2(0.010f, 0.16f), new Vector2(0.026f, 0.88f), Vector2.zero, Vector2.zero, new Color(0.95f, 0.38f, 0.10f, 0.72f)).raycastTarget = false;
             CreateImage("Action Order Right Brace", panel, new Vector2(0.975f, 0.18f), new Vector2(0.990f, 0.86f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.66f)).raycastTarget = false;
 
-            RectTransform infoPanel = CreatePanel("Action Order Info Panel", panel, new Vector2(0.024f, 0.22f), new Vector2(0.176f, 0.800f), new Color(0.012f, 0.032f, 0.048f, 0.96f));
-            Outline infoOutline = infoPanel.gameObject.AddComponent<Outline>();
-            infoOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.62f);
-            infoOutline.effectDistance = new Vector2(2f, -2f);
-            CreateImage("Action Order Info Hot Edge", infoPanel, new Vector2(0f, 0f), new Vector2(0.020f, 1f), Vector2.zero, Vector2.zero, new Color(1f, 0.58f, 0.14f, 0.84f)).raycastTarget = false;
-            CreateImage("Action Order Info Top Edge", infoPanel, new Vector2(0.060f, 0.805f), new Vector2(0.940f, 0.850f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.56f)).raycastTarget = false;
-            CreateImage("Action Order Info Bottom Trace", infoPanel, new Vector2(0.145f, 0.140f), new Vector2(0.820f, 0.158f), Vector2.zero, Vector2.zero, new Color(0.10f, 0.88f, 1f, 0.28f)).raycastTarget = false;
-
-            RectTransform hpReserve = CreatePanel("Current HP Reserved Area", infoPanel, new Vector2(0.080f, 0.260f), new Vector2(0.920f, 0.740f), new Color(0.004f, 0.012f, 0.020f, 0.84f));
-            Outline hpOutline = hpReserve.gameObject.AddComponent<Outline>();
-            hpOutline.effectColor = new Color(0.12f, 0.88f, 1f, 0.32f);
-            hpOutline.effectDistance = new Vector2(1f, -1f);
-
-            currentHpValueText = CreateText("Current HP Value", hpReserve, new Vector2(0.040f, 0.050f), new Vector2(0.960f, 0.950f), Vector2.zero, Vector2.zero, "--", 24, TextAnchor.MiddleCenter, Color.white);
-            currentHpValueText.resizeTextMinSize = 16;
-            currentHpValueText.resizeTextMaxSize = 24;
-            currentHpValueText.horizontalOverflow = HorizontalWrapMode.Overflow;
-            currentHpValueText.verticalOverflow = VerticalWrapMode.Overflow;
-            Outline hpValueOutline = currentHpValueText.gameObject.AddComponent<Outline>();
-            hpValueOutline.effectColor = new Color(0f, 0f, 0f, 0.82f);
-            hpValueOutline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.165f, 0.865f), new Vector2(0.935f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
+            timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.040f, 0.865f), new Vector2(0.935f, 0.975f), Vector2.zero, Vector2.zero, "Left card acts now. Cards loop back by Delay.", 11, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
             Text directionText = CreateText("Action Order Direction", panel, new Vector2(0.928f, 0.024f), new Vector2(0.980f, 0.100f), Vector2.zero, Vector2.zero, ">>>", 13, TextAnchor.MiddleRight, new Color(0.46f, 0.96f, 1f, 0.92f));
             directionText.resizeTextMinSize = 9;
             directionText.resizeTextMaxSize = 13;
@@ -2134,7 +2585,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             timelineHintText = CreateText("Timeline Hint", panel, new Vector2(0.24f, 0.77f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero, "Speed controls how quickly each unit returns after acting. Leftmost unit is active.", 14, TextAnchor.MiddleRight, new Color(0.68f, 0.84f, 0.9f));
         }
 
-        float cardCursorX = mainBattleSceneMode ? 0.165f : 0f;
+        float cardCursorX = mainBattleSceneMode ? 0.040f : 0f;
         float battleSceneCardGap = 0.007f;
         for (int i = 0; i < TimelinePreviewCount; i++)
         {
@@ -2428,6 +2879,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RegisterHoverEvents(root.gameObject, isHovering =>
         {
             allyPanelHoverStates[capturedPosition] = isHovering;
+            if (isHovering && battleCommandSkillTargetSelectionActive)
+            {
+                AllyUnit hoveredAlly = GetAllyAtPosition(capturedPosition);
+                TrySelectBattleCommandSkillAllyTarget(hoveredAlly);
+            }
+
             RefreshAllies();
         });
 
@@ -2560,6 +3017,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 RegisterHoverEvents(cell.gameObject, isHovering =>
                 {
                     enemyPanelHoverStates[capturedRow, capturedColumn] = isHovering;
+                    if (isHovering && battleCommandSkillTargetSelectionActive)
+                    {
+                        EnemyUnit hoveredEnemy = GetEnemyAt(capturedRow, capturedColumn);
+                        TrySelectBattleCommandSkillEnemyTarget(hoveredEnemy);
+                    }
+
                     RefreshEnemies();
                 });
                 Image hoverOverlay = CreateImage("Enemy Hover Overlay " + row + "-" + column, cell, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Color.clear);
@@ -2613,7 +3076,6 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         if (useSceneBattleGridPrefabVisuals)
         {
             BuildSceneBattleGridAttackRangeOverlays();
-            return;
         }
 
         battleSceneAttackRangeOverlayRoot = CreateRect("BattleSceneAttackRangeOverlayRoot", parent, BattleGridAnchor, BattleGridAnchor, BattleFieldOffsetMin, BattleFieldOffsetMax);
@@ -2664,7 +3126,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 }
                 break;
             case BattleSceneAttackRangeOverlayMode.RowSprites:
-                if (BuildSceneBattleGridAttackRangeRowOverlays(grid))
+                BuildSceneBattleGridAttackRangeRowOverlays(grid);
+                if (BuildSceneBattleGridAttackRangeAlignedPanelOverlays(grid))
                 {
                     return;
                 }
@@ -3080,7 +3543,32 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        BuildBattleScenePrototypeCommandPanel(parent);
+        BuildBattleSceneCommandSelectionUi(parent);
+    }
+
+    private void BuildBattleSceneCommandSelectionUi(Transform parent)
+    {
+        GameObject root = new GameObject("BattleCommandHudRoot", typeof(RectTransform), typeof(CanvasGroup), typeof(BattleCommandSelectionUI));
+        root.transform.SetParent(parent, false);
+        battleCommandSelectionUi = root.GetComponent<BattleCommandSelectionUI>();
+        battleCommandSelectionUi.BuildRuntimeUi();
+        battleCommandSelectionUi.SetSpriteSet(battleCommandSprites);
+        battleCommandSelectionUi.CardSubmitted += SubmitBattleCommandCard;
+        battleCommandSelectionUi.SkillsRequested += RequestBattleCommandSkills;
+        battleCommandSelectionUi.ChangeRequested += RequestBattleCommandChange;
+        battleCommandSelectionUi.RunRequested += RequestBattleCommandRun;
+        battleCommandSelectionUi.CancelRequested += ResetSelection;
+        battleCommandSelectionUi.SetOptions(BuildBattleCommandDisplayOptions());
+        battleCommandSelectionUi.SetVisible(false);
+
+        GameObject submenuRoot = new GameObject("BattleCommandSubmenuRoot", typeof(RectTransform), typeof(CanvasGroup), typeof(BattleCommandSubmenuUI));
+        submenuRoot.transform.SetParent(parent, false);
+        battleCommandSubmenuUi = submenuRoot.GetComponent<BattleCommandSubmenuUI>();
+        battleCommandSubmenuUi.BuildRuntimeUi();
+        battleCommandSubmenuUi.SetSpriteSet(battleCommandSprites);
+        battleCommandSubmenuUi.Submitted += SubmitBattleCommandSubmenu;
+        battleCommandSubmenuUi.CancelRequested += CancelBattleCommandSubmenu;
+        battleCommandSubmenuUi.SetVisible(false);
     }
 
     private void BuildBattleScenePrototypeCommandPanel(Transform parent)
@@ -3304,9 +3792,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             case 0:
                 return new PrototypeAttackDefinition { Name = "Quick Attack", Damage = 20, Delay = 60, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
             case 2:
-                return new PrototypeAttackDefinition { Name = "Heavy Attack", Damage = 55, Delay = 150, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+                return new PrototypeAttackDefinition { Name = "Heavy Attack", Damage = 55, Delay = 180, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
             default:
-                return new PrototypeAttackDefinition { Name = "Standard Attack", Damage = 35, Delay = 100, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
+                return new PrototypeAttackDefinition { Name = "Standard Attack", Damage = 35, Delay = 80, Attribute = CardAttribute.Neutral, RangePattern = PrototypeAttackRangePattern.RowToEnemyEdge };
         }
     }
 
@@ -3384,14 +3872,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        string enemySummary = ResolveEnemyTurnsUntilPlayerTurn();
-        if (battleEnded)
-        {
-            return;
-        }
-
         playerActionTurnCount++;
-        RefreshAll(actor.Name + " used " + attack.Name + ". Delay " + attack.Delay + "." + enemySummary);
+        RefreshAll(actor.Name + " used " + attack.Name + ". Delay " + attack.Delay + ".");
     }
 
     private EnemyUnit ResolvePrototypeAttackTarget(AllyUnit actor, PrototypeAttackDefinition attack)
@@ -3490,6 +3972,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         PrototypeAttackDefinition attack = request != null ? request.Attack : null;
         EnemyUnit target = request != null ? request.Target : null;
         int baseDamage = attack != null ? Mathf.Max(0, attack.Damage) : 0;
+        baseDamage += GetAttackPowerBonus(request != null ? request.Attacker : null);
         CardAttribute attribute = attack != null ? attack.Attribute : CardAttribute.Neutral;
         bool weaknessHit = target != null
             && attribute != CardAttribute.Neutral
@@ -3628,60 +4111,29 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        activeUnit = GetCurrentActiveUnit();
+        if (timelineAutoProcessInProgress || timelineAutoProcessRoutine != null)
+        {
+            RefreshAll("Timeline is advancing.");
+            return;
+        }
+
+        activeUnit = GetTimelineHeadActiveUnit();
         if (activeUnit == null)
         {
-            RefreshAll("Battle is over.");
+            RefreshAll("Timeline is advancing through an empty interval.");
             return;
         }
 
         currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
 
-        if (activeUnit.IsSkill)
+        if (activeUnit.IsSkill || !activeUnit.IsAlly)
         {
-            string skillName = activeUnit.SkillAction != null ? activeUnit.SkillAction.DisplayName : "Skill";
-            int defeatedCount = ResolveSkillTurn(activeUnit.SkillAction);
-            if (defeatedCount > maxSimultaneousDefeatCount)
+            string autoMessage;
+            if (ProcessTimelineHeadIfAutomatic(out autoMessage))
             {
-                maxSimultaneousDefeatCount = defeatedCount;
+                RefreshAll(autoMessage);
             }
 
-            ConsumeSkillTimelineAction(activeUnit.SkillAction);
-            ClearQueuedActions();
-            if (TryShowVictory(playerActionTurnCount))
-            {
-                return;
-            }
-
-            string skillChainSummary = ResolveEnemyTurnsUntilPlayerTurn();
-            if (battleEnded)
-            {
-                return;
-            }
-
-            RefreshAll(skillName + " resolved and left the Action Bar." + skillChainSummary);
-            return;
-        }
-
-        if (!activeUnit.IsAlly)
-        {
-            int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(activeUnit.Enemy != null && activeUnit.Enemy.IsBoss);
-            string actedEnemyName = activeUnit.Enemy != null ? activeUnit.Enemy.Name : "Enemy";
-            ResolveEnemyTurn(activeUnit.Enemy);
-            ClearQueuedActions();
-            AdvanceActiveUnit(activeUnit, enemyDelay);
-            if (TryShowDefeat())
-            {
-                return;
-            }
-
-            string enemyChainSummary = ResolveEnemyTurnsUntilPlayerTurn();
-            if (battleEnded)
-            {
-                return;
-            }
-
-            RefreshAll(actedEnemyName + " acted and returned to the timeline. Delay " + enemyDelay + "." + enemyChainSummary);
             return;
         }
 
@@ -3697,14 +4149,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             string waitedName = activeUnit.Ally != null ? activeUnit.Ally.Name : "Ally";
             CloseCardSelect();
             AdvanceActiveUnit(activeUnit, waitDelay);
-            string waitEnemySummary = ResolveEnemyTurnsUntilPlayerTurn();
-            if (battleEnded)
-            {
-                return;
-            }
 
             playerActionTurnCount++;
-            RefreshAll(waitedName + " waited. Delay " + waitDelay + "." + waitEnemySummary);
+            RefreshAll(waitedName + " waited. Delay " + waitDelay + ".");
             return;
         }
 
@@ -3722,14 +4169,8 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        string enemySummary = ResolveEnemyTurnsUntilPlayerTurn();
-        if (battleEnded)
-        {
-            return;
-        }
-
         playerActionTurnCount++;
-        RefreshAll(summary + " Delay " + actionDelay + "." + enemySummary);
+        RefreshAll(summary + " Delay " + actionDelay + ".");
     }
 
     private void RetryBattle()
@@ -3794,58 +4235,6 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         battleEnded = true;
         RefreshAll("Defeat. Return to menu or retry from the scene.");
         return true;
-    }
-
-    private string ResolveEnemyTurnsUntilPlayerTurn()
-    {
-        string summary = string.Empty;
-        int safety = 0;
-        activeUnit = GetCurrentActiveUnit();
-
-        while (!battleEnded
-            && activeUnit != null
-            && !activeUnit.IsAlly
-            && GetFirstAliveEnemy() != null
-            && GetFirstAliveAlly() != null
-            && safety < 16)
-        {
-            currentTick = Mathf.Max(currentTick, activeUnit.ReadyTick);
-            if (activeUnit.IsSkill)
-            {
-                string skillName = activeUnit.SkillAction != null ? activeUnit.SkillAction.DisplayName : "Skill";
-                int defeatedCount = ResolveSkillTurn(activeUnit.SkillAction);
-                if (defeatedCount > maxSimultaneousDefeatCount)
-                {
-                    maxSimultaneousDefeatCount = defeatedCount;
-                }
-
-                ConsumeSkillTimelineAction(activeUnit.SkillAction);
-                summary += " " + skillName + " auto resolved.";
-                if (TryShowVictory(playerActionTurnCount))
-                {
-                    break;
-                }
-            }
-            else
-            {
-                int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(activeUnit.Enemy != null && activeUnit.Enemy.IsBoss);
-                string actedEnemyName = activeUnit.Enemy != null ? activeUnit.Enemy.Name : "Enemy";
-                ResolveEnemyTurn(activeUnit.Enemy);
-                AdvanceActiveUnit(activeUnit, enemyDelay);
-                summary += " " + actedEnemyName + " auto acted D" + enemyDelay + ".";
-
-                if (TryShowDefeat())
-                {
-                    break;
-                }
-            }
-
-            safety++;
-
-            activeUnit = GetCurrentActiveUnit();
-        }
-
-        return summary;
     }
 
     private string SelectRewardCardName()
@@ -4052,7 +4441,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         skillAction.IsAlive = false;
         skillTimelineActions.Remove(skillAction);
         activeUnitSequence++;
-        activeUnit = GetCurrentActiveUnit();
+        activeUnit = GetTimelineHeadActiveUnit();
         if (activeUnit != null && activeUnit.IsAlly)
         {
             selectedAlly = activeUnit.Ally;
@@ -4185,7 +4574,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         activeUnitSequence++;
-        activeUnit = GetCurrentActiveUnit();
+        activeUnit = GetTimelineHeadActiveUnit();
         if (activeUnit != null && activeUnit.IsAlly)
         {
             selectedAlly = activeUnit.Ally;
@@ -4195,9 +4584,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private static int ResolveReadyDelay(TimelineUnit unit, int actionDelay)
     {
         int safeActionDelay = Mathf.Max(1, actionDelay);
-        int speed = unit != null ? Mathf.Max(0, unit.Speed) : 0;
-        int speedReduction = Mathf.Clamp(Mathf.RoundToInt(speed * 0.30f), 0, Mathf.Max(0, safeActionDelay - 1));
-        return Mathf.Max(1, safeActionDelay - speedReduction);
+        int speed = unit != null ? unit.Speed : 100;
+        float speedRate = 100f / Mathf.Max(speed, 1);
+        return Mathf.Max(30, Mathf.RoundToInt(safeActionDelay * speedRate));
     }
 
     private void EnsureUniquePartyPositions()
@@ -4238,12 +4627,23 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private int ApplyOutgoingDamageModifier(AllyUnit attacker, int amount)
     {
+        return CalculateOutgoingDamageAmount(attacker, amount);
+    }
+
+    private int CalculateOutgoingDamageAmount(AllyUnit attacker, int amount)
+    {
+        int baseAmount = Mathf.Max(0, amount) + GetAttackPowerBonus(attacker);
         if (attacker == null)
         {
-            return Mathf.Max(0, amount);
+            return baseAmount;
         }
 
-        return Mathf.Max(0, Mathf.RoundToInt(amount * GetOutgoingDamageMultiplier(attacker.Position)));
+        return Mathf.Max(0, Mathf.RoundToInt(baseAmount * GetOutgoingDamageMultiplier(attacker.Position)));
+    }
+
+    private static int GetAttackPowerBonus(AllyUnit attacker)
+    {
+        return attacker != null ? Mathf.Max(0, attacker.AttackPowerBonus) : 0;
     }
 
     private int ApplyIncomingDamageModifier(AllyUnit target, int amount)
@@ -4329,6 +4729,16 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private void ResetSelection()
     {
+        if (battleCommandCardRangePreviewActive)
+        {
+            ClearBattleCommandCardRangePreview();
+        }
+
+        if (battleCommandSkillTargetSelectionActive)
+        {
+            ClearBattleCommandSkillTargetSelection();
+        }
+
         ClearQueuedActions();
         CloseCardSelect();
         RefreshAll("Selection reset.");
@@ -4374,6 +4784,62 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             drawPile.RemoveAt(0);
             hand.Add(card);
         }
+
+        ApplyTemporaryBattleSceneCommandCards();
+    }
+
+    private void ApplyTemporaryBattleSceneCommandCards()
+    {
+        if (!mainBattleSceneMode)
+        {
+            return;
+        }
+
+        for (int i = 0; i < BattleSceneCommandCardCount && i < BattleSceneTemporaryCommandCardIds.Length; i++)
+        {
+            PrototypeCard card = CreateTemporaryBattleSceneCommandCard(BattleSceneTemporaryCommandCardIds[i]);
+            if (card == null)
+            {
+                continue;
+            }
+
+            while (hand.Count < i)
+            {
+                hand.Add(null);
+            }
+
+            if (i < hand.Count)
+            {
+                hand[i] = card;
+            }
+            else if (hand.Count < HandSize)
+            {
+                hand.Add(card);
+            }
+        }
+
+        selectedHandIndex = Mathf.Clamp(selectedHandIndex, 0, Mathf.Max(0, hand.Count - 1));
+    }
+
+    private PrototypeCard CreateTemporaryBattleSceneCommandCard(string cardId)
+    {
+        CardData cardData = Resources.Load<CardData>("Cards/" + cardId);
+        if (cardData != null)
+        {
+            return CreatePrototypeCard(TimelineCardActionAdapter.Resolve(cardData));
+        }
+
+        switch (cardId)
+        {
+            case "AquaShot":
+                return CreatePrototypeCard("AquaShot", "\u30a2\u30af\u30a2\u30b7\u30e7\u30c3\u30c8", PrototypeCardEffect.SingleDamage, PrototypeTargetKind.Enemy, 40, CardAttribute.Water);
+            case "BurnerBreath":
+                return CreatePrototypeCard("BurnerBreath", "\u30d0\u30fc\u30ca\u30fc\u30d6\u30ec\u30b9", PrototypeCardEffect.RowDamage, PrototypeTargetKind.Enemy, 60, CardAttribute.Fire);
+            case "PierceShot":
+                return CreatePrototypeCard("PierceShot", "\u30d4\u30a2\u30fc\u30b9\u30b7\u30e7\u30c3\u30c8", PrototypeCardEffect.RowDamage, PrototypeTargetKind.Enemy, 30, CardAttribute.Electric);
+            default:
+                return null;
+        }
     }
 
     private void Shuffle(List<PrototypeCard> cards)
@@ -4392,6 +4858,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         AllyUnit ally = GetAllyAtPosition(position);
         if (ally != null)
         {
+            if (battleCommandSkillTargetSelectionActive && TrySelectBattleCommandSkillAllyTarget(ally))
+            {
+                ConfirmBattleCommandSkillTargetSelection();
+                return;
+            }
+
             selectedAlly = ally;
             if (mainBattleSceneMode && IsPlayerTurn())
             {
@@ -4426,6 +4898,18 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         EnemyUnit enemy = GetEnemyAt(row, column);
         if (enemy != null && enemy.IsAlive)
         {
+            if (battleCommandCardRangePreviewActive && TrySelectBattleCommandCardPreviewEnemyTarget(enemy))
+            {
+                ConfirmBattleCommandCardRangePreview();
+                return;
+            }
+
+            if (battleCommandSkillTargetSelectionActive && TrySelectBattleCommandSkillEnemyTarget(enemy))
+            {
+                ConfirmBattleCommandSkillTargetSelection();
+                return;
+            }
+
             selectedEnemy = enemy;
             RefreshAll("Selected enemy target: " + enemy.Name + ".");
         }
@@ -4433,9 +4917,10 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private void RefreshAll(string message)
     {
-        activeUnit = GetCurrentActiveUnit();
+        activeUnit = GetTimelineHeadActiveUnit();
         RefreshTimeline();
         RefreshAllies();
+        RefreshPartyStatusPanel();
         RefreshEnemies();
         RefreshHand();
         RefreshCommands();
@@ -4445,6 +4930,285 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         {
             statusText.text = message;
         }
+
+        ScheduleTimelineAutoProcessIfNeeded();
+    }
+
+    private void RefreshPartyStatusPanel()
+    {
+        if (battlePartyStatusHud == null && battlePartyStatusPanel == null)
+        {
+            return;
+        }
+
+        SetPartyStatusActiveMember(0, GetAllyAtPosition(PartyPosition.Middle));
+        SetPartyStatusActiveMember(1, GetAllyAtPosition(PartyPosition.Front));
+        SetPartyStatusActiveMember(2, GetAllyAtPosition(PartyPosition.Back));
+
+        RefreshPartyStatusHudReserveMembers();
+
+        if (battlePartyStatusPanel != null)
+        {
+            battlePartyStatusPanel.RefreshReserveMembers();
+        }
+    }
+
+    private void RefreshPartyStatusHudReserveMembers()
+    {
+        if (battlePartyStatusHud == null)
+        {
+            return;
+        }
+
+        BattlePartyStatusPanelController reserveSource = GetPartyStatusReserveSource();
+        if (reserveSource == null)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                battlePartyStatusHud.ClearReserveMember(i);
+            }
+
+            return;
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            string displayName;
+            Sprite faceIcon;
+            int hp;
+            int maxHp;
+            if (reserveSource.TryGetReserveMember(i, out displayName, out faceIcon, out hp, out maxHp))
+            {
+                battlePartyStatusHud.SetReserveMember(i, displayName, faceIcon, hp, maxHp, 0, 0);
+            }
+            else
+            {
+                battlePartyStatusHud.ClearReserveMember(i);
+            }
+        }
+    }
+
+    private BattlePartyStatusPanelController GetPartyStatusReserveSource()
+    {
+        if (battlePartyStatusPanel != null)
+        {
+            return battlePartyStatusPanel;
+        }
+
+        BattlePartyStatusPanelController prefab = battlePartyStatusPanelPrefab;
+#if UNITY_EDITOR
+        if (prefab == null)
+        {
+            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<BattlePartyStatusPanelController>(BattlePartyStatusPanelPrefabPath);
+        }
+#endif
+
+        return prefab;
+    }
+
+    private void SetPartyStatusActiveMember(int index, AllyUnit ally)
+    {
+        if (battlePartyStatusHud == null && battlePartyStatusPanel == null)
+        {
+            return;
+        }
+
+        string displayName = GetPartyStatusDisplayName(ally);
+        Sprite faceIcon = GetPartyStatusFaceIcon(ally);
+        Sprite hudFaceIcon = GetPartyStatusHudFaceIcon(ally);
+        int hp = ally != null ? ally.Hp : 0;
+        int maxHp = ally != null ? ally.MaxHp : 0;
+
+        if (battlePartyStatusHud != null)
+        {
+            int mp = GetPartyStatusMp(ally);
+            int maxMp = GetPartyStatusMaxMp(ally);
+            bool selected = ally != null && selectedAlly == ally;
+            battlePartyStatusHud.SetMember(index, displayName, hudFaceIcon != null ? hudFaceIcon : faceIcon, hp, maxHp, mp, maxMp, selected);
+        }
+
+        if (battlePartyStatusPanel != null)
+        {
+            battlePartyStatusPanel.SetActiveMember(index, displayName, faceIcon, hp, maxHp);
+        }
+    }
+
+    private string GetPartyStatusDisplayName(AllyUnit ally)
+    {
+        if (ally == null)
+        {
+            return "Empty";
+        }
+
+        if (ally.Name == "AllyMiddle")
+        {
+            return "Cyber Wolf";
+        }
+
+        if (ally.Name == "AllyFront")
+        {
+            return "Armor Ally";
+        }
+
+        if (ally.Name == "AllyBack")
+        {
+            return "Blue Girl";
+        }
+
+        return GetAllyDisplayName(ally);
+    }
+
+    private Sprite GetPartyStatusFaceIcon(AllyUnit ally)
+    {
+        if (ally == null)
+        {
+            return null;
+        }
+
+        int allyIndex = allies.IndexOf(ally);
+        Sprite faceIcon = GetTimelineFaceIconSprite(true, allyIndex);
+        if (faceIcon != null)
+        {
+            return faceIcon;
+        }
+
+        return GetAllyIdleSprite(GetAllySpriteDefinition(ally));
+    }
+
+    private Sprite GetPartyStatusHudFaceIcon(AllyUnit ally)
+    {
+        if (ally == null || partyStatusHudFaceIconSprites == null)
+        {
+            return null;
+        }
+
+        int spriteIndex = -1;
+        if (ally.Name == "AllyMiddle")
+        {
+            spriteIndex = 0;
+        }
+        else if (ally.Name == "AllyFront")
+        {
+            spriteIndex = 1;
+        }
+        else if (ally.Name == "AllyBack")
+        {
+            spriteIndex = 2;
+        }
+
+        if (spriteIndex < 0 || spriteIndex >= partyStatusHudFaceIconSprites.Length)
+        {
+            return null;
+        }
+
+        return partyStatusHudFaceIconSprites[spriteIndex];
+    }
+
+    private int GetPartyStatusMp(AllyUnit ally)
+    {
+        return ally != null ? Mathf.Clamp(ally.Speed, 0, GetPartyStatusMaxMp(ally)) : 0;
+    }
+
+    private int GetPartyStatusMaxMp(AllyUnit ally)
+    {
+        return ally != null ? 100 : 0;
+    }
+
+    private void ScheduleTimelineAutoProcessIfNeeded()
+    {
+        if (battleEnded || timelineAutoProcessInProgress || timelineAutoProcessRoutine != null)
+        {
+            return;
+        }
+
+        int blankAdvanceTicks;
+        if (TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
+        {
+            timelineAutoProcessRoutine = StartCoroutine(AutoProcessTimelineHeadRoutine());
+            return;
+        }
+
+        TimelineUnit headUnit = GetCurrentActiveUnit();
+        if (headUnit != null && (headUnit.IsSkill || !headUnit.IsAlly))
+        {
+            timelineAutoProcessRoutine = StartCoroutine(AutoProcessTimelineHeadRoutine());
+        }
+    }
+
+    private IEnumerator AutoProcessTimelineHeadRoutine()
+    {
+        timelineAutoProcessInProgress = true;
+        yield return new WaitForSecondsRealtime(TimelineAutoProcessDelaySeconds);
+
+        string message;
+        if (ProcessTimelineHeadIfAutomatic(out message))
+        {
+            timelineAutoProcessInProgress = false;
+            timelineAutoProcessRoutine = null;
+            RefreshAll(message);
+            yield break;
+        }
+
+        timelineAutoProcessInProgress = false;
+        timelineAutoProcessRoutine = null;
+    }
+
+    private bool ProcessTimelineHeadIfAutomatic(out string message)
+    {
+        message = string.Empty;
+        if (battleEnded)
+        {
+            return false;
+        }
+
+        int blankAdvanceTicks;
+        if (TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
+        {
+            currentTick += blankAdvanceTicks;
+            activeUnitSequence++;
+            message = "Timeline flowed through an empty interval. +" + blankAdvanceTicks + " ticks.";
+            return true;
+        }
+
+        TimelineUnit headUnit = GetCurrentActiveUnit();
+        if (headUnit == null || headUnit.IsAlly)
+        {
+            return false;
+        }
+
+        currentTick = Mathf.Max(currentTick, headUnit.ReadyTick);
+        if (headUnit.IsSkill)
+        {
+            string skillName = headUnit.SkillAction != null ? headUnit.SkillAction.DisplayName : "Skill";
+            int defeatedCount = ResolveSkillTurn(headUnit.SkillAction);
+            if (defeatedCount > maxSimultaneousDefeatCount)
+            {
+                maxSimultaneousDefeatCount = defeatedCount;
+            }
+
+            ConsumeSkillTimelineAction(headUnit.SkillAction);
+            ClearQueuedActions();
+            if (TryShowVictory(playerActionTurnCount))
+            {
+                return false;
+            }
+
+            message = skillName + " resolved and left the timeline.";
+            return true;
+        }
+
+        int enemyDelay = BattleActionDelayResolver.ResolveEnemyActionDelay(headUnit.Enemy != null && headUnit.Enemy.IsBoss);
+        string actedEnemyName = headUnit.Enemy != null ? headUnit.Enemy.Name : "Enemy";
+        ResolveEnemyTurn(headUnit.Enemy);
+        ClearQueuedActions();
+        AdvanceActiveUnit(headUnit, enemyDelay);
+        if (TryShowDefeat())
+        {
+            return false;
+        }
+
+        message = actedEnemyName + " acted and returned to the timeline. Delay " + enemyDelay + ".";
+        return true;
     }
 
     private void RefreshHeader()
@@ -4453,6 +5217,13 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             ? activeUnit.IsSkill ? ShortSkillName(activeUnit.SkillAction) : activeUnit.IsAlly ? GetAllyDisplayName(activeUnit.Ally) : ShortEnemyName(activeUnit.Enemy)
             : "None";
         string side = activeUnit != null && activeUnit.IsAlly ? "PLAYER TURN" : activeUnit != null && activeUnit.IsSkill ? "SKILL TURN" : "ENEMY TURN";
+        int blankAdvanceTicks;
+        if (!battleEnded && TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
+        {
+            side = "TIMELINE";
+            activeName = "Empty +" + blankAdvanceTicks;
+        }
+
         if (battleEnded && GetFirstAliveEnemy() == null)
         {
             side = "RESULT";
@@ -4603,51 +5374,17 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         Dictionary<string, int> occurrences = new Dictionary<string, int>();
-        List<TimelinePreview> unitPreviews = new List<TimelinePreview>();
-        for (int i = 0; i < previews.Count; i++)
-        {
-            if (previews[i].Unit != null)
-            {
-                unitPreviews.Add(previews[i]);
-            }
-        }
-
-        if (unitPreviews.Count == 0)
-        {
-            return states;
-        }
-
         int blankCount = 0;
-        AddPrefabTimelineUnitDisplayState(states, occurrences, unitPreviews[0], 0);
-        AddPrefabTimelineBlankDisplayState(states, ref blankCount, unitPreviews[0].DeltaTick + PrefabTimelineBlankCardStepTicks, slotCount);
-
-        for (int i = 1; i < unitPreviews.Count && states.Count < slotCount; i++)
+        for (int i = 0; i < previews.Count && states.Count < slotCount; i++)
         {
-            TimelinePreview previousPreview = unitPreviews[i - 1];
-            TimelinePreview preview = unitPreviews[i];
-            int gap = Mathf.Max(0, preview.DeltaTick - previousPreview.DeltaTick);
-            int gapBlankCount = Mathf.Clamp(gap / PrefabTimelineBlankCardStepTicks, 0, PrefabTimelineBlankCardMaxPerGap);
-            for (int gapIndex = 0; gapIndex < gapBlankCount && states.Count < slotCount; gapIndex++)
+            TimelinePreview preview = previews[i];
+            if (preview.Unit == null)
             {
-                int blankDelta = previousPreview.DeltaTick + PrefabTimelineBlankCardStepTicks * (gapIndex + 1);
-                AddPrefabTimelineBlankDisplayState(states, ref blankCount, blankDelta, slotCount);
-            }
-
-            if (states.Count >= slotCount)
-            {
-                break;
+                AddPrefabTimelineBlankDisplayState(states, ref blankCount, preview.DeltaTick, slotCount);
+                continue;
             }
 
             AddPrefabTimelineUnitDisplayState(states, occurrences, preview, i);
-            if (blankCount < PrefabTimelineBlankCardMinVisible && states.Count < slotCount && i % 2 == 1)
-            {
-                AddPrefabTimelineBlankDisplayState(states, ref blankCount, preview.DeltaTick + PrefabTimelineBlankCardStepTicks, slotCount);
-            }
-        }
-
-        while (blankCount < PrefabTimelineBlankCardMinVisible && states.Count < slotCount)
-        {
-            AddPrefabTimelineBlankDisplayState(states, ref blankCount, PrefabTimelineBlankCardStepTicks * (blankCount + 1), slotCount);
         }
 
         return states;
@@ -5017,7 +5754,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         TimelinePreview preview = state.Preview;
-        bool active = state.LogicalIndex == 0;
+        bool active = state.DisplayIndex == 0;
         bool skill = preview.Unit.IsSkill;
         bool ally = preview.Unit.IsAlly;
         bool selected = skill ? false : ally
@@ -5173,6 +5910,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             TimelinePreview preview = previews[i];
             view.Panel.gameObject.SetActive(true);
             bool active = i == 0;
+            if (preview.Unit == null)
+            {
+                ApplyTimelineBlankSlotVisual(view, active, preview.DeltaTick);
+                continue;
+            }
+
             bool ally = preview.Unit.IsAlly;
             bool skill = preview.Unit.IsSkill;
             bool selected = skill ? false : ally
@@ -5307,29 +6050,92 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         RefreshCurrentHpPanel();
     }
 
-    private void RefreshCurrentHpPanel()
+    private void ApplyTimelineBlankSlotVisual(TimelineSlotView view, bool active, int deltaTick)
     {
-        int hp;
-        int maxHp;
-        bool hasHp = TryGetCurrentUnitHp(out hp, out maxHp);
-        int safeMaxHp = Mathf.Max(0, maxHp);
-        int safeHp = hasHp ? Mathf.Clamp(hp, 0, safeMaxHp) : 0;
-        if (currentHpValueText != null)
+        if (view == null || view.Panel == null)
         {
-            currentHpValueText.text = hasHp ? safeHp.ToString() : "--";
-            currentHpValueText.color = hasHp ? Color.white : new Color(0.58f, 0.72f, 0.78f, 0.86f);
+            return;
         }
 
+        Color blankColor = active
+            ? new Color(0.22f, 0.23f, 0.30f, 0.74f)
+            : new Color(0.08f, 0.10f, 0.16f, 0.56f);
+        Color lineColor = active
+            ? new Color(0.74f, 0.78f, 0.96f, 0.48f)
+            : new Color(0.48f, 0.56f, 0.74f, 0.30f);
+
+        view.Panel.sprite = null;
+        view.Panel.color = blankColor;
+        if (view.Glow != null)
+        {
+            view.Glow.color = active ? new Color(0.72f, 0.76f, 1f, 0.12f) : Color.clear;
+        }
+
+        SetImageColorIfPresent(view.InnerPanel, new Color(0.012f, 0.016f, 0.030f, active ? 0.70f : 0.46f));
+        SetImageColorIfPresent(view.IconPlate, new Color(0.018f, 0.022f, 0.035f, active ? 0.55f : 0.32f));
+        SetImageColorIfPresent(view.NumberPlate, new Color(0.014f, 0.018f, 0.030f, active ? 0.58f : 0.34f));
+        SetImageColorIfPresent(view.TopEdge, lineColor);
+        SetImageColorIfPresent(view.BottomEdge, new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.72f));
+        SetImageColorIfPresent(view.LeftEdge, new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.46f));
+        SetImageColorIfPresent(view.RightEdge, new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.46f));
+        SetImageColorIfPresent(view.TopCut, Color.clear);
+        SetImageColorIfPresent(view.BottomCut, Color.clear);
+
+        if (view.Accent != null)
+        {
+            view.Accent.color = lineColor;
+        }
+
+        if (view.ProgressSegment != null)
+        {
+            view.ProgressSegment.gameObject.SetActive(true);
+            view.ProgressSegment.color = new Color(lineColor.r, lineColor.g, lineColor.b, active ? 0.42f : 0.22f);
+        }
+
+        if (view.ProgressDot != null)
+        {
+            view.ProgressDot.gameObject.SetActive(true);
+            view.ProgressDot.fontSize = active ? 13 : 10;
+            view.ProgressDot.color = new Color(0.72f, 0.78f, 0.92f, active ? 0.72f : 0.46f);
+        }
+
+        if (view.CurrentMarker != null)
+        {
+            view.CurrentMarker.gameObject.SetActive(false);
+        }
+
+        if (view.UnitIcon != null)
+        {
+            view.UnitIcon.sprite = null;
+            view.UnitIcon.color = Color.clear;
+            view.UnitIcon.rectTransform.localScale = Vector3.one;
+        }
+
+        if (view.Cursor != null)
+        {
+            view.Cursor.gameObject.SetActive(false);
+        }
+
+        if (view.NameText != null)
+        {
+            view.NameText.text = active ? "--" : string.Empty;
+            view.NameText.color = new Color(0.74f, 0.80f, 0.92f, active ? 0.86f : 0.58f);
+        }
+
+        if (view.DetailText != null)
+        {
+            bool showTimelineDetail = mainBattleSceneMode || showDebugLabels;
+            view.DetailText.gameObject.SetActive(showTimelineDetail);
+            view.DetailText.text = showTimelineDetail ? (active ? "WAIT" : "T+" + deltaTick) : string.Empty;
+            view.DetailText.color = new Color(0.72f, 0.78f, 0.94f, active ? 0.80f : 0.54f);
+        }
+    }
+
+    private void RefreshCurrentHpPanel()
+    {
         if (battleTimelineHudView != null)
         {
-            if (hasHp)
-            {
-                battleTimelineHudView.SetCurrentHp(safeHp, safeMaxHp);
-            }
-            else
-            {
-                battleTimelineHudView.SetCurrentHpUnavailable();
-            }
+            battleTimelineHudView.HideCurrentHpDisplay();
         }
     }
 
@@ -5378,13 +6184,13 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         if (mainBattleSceneMode)
         {
             List<TimelinePreview> previews = BuildTimelinePreview();
-            if (previews.Count > 0 && previews[0].Unit != null)
+            if (previews.Count > 0)
             {
                 return previews[0].Unit;
             }
         }
 
-        return activeUnit != null ? activeUnit : GetCurrentActiveUnit();
+        return activeUnit;
     }
 
     private List<TimelinePreview> BuildTimelinePreview()
@@ -5416,9 +6222,25 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         List<TimelinePreview> previews = new List<TimelinePreview>();
-        for (int i = 0; i < TimelinePreviewCount && simulatedUnits.Count > 0; i++)
+        int previewTick = currentTick;
+        int safety = 0;
+        while (previews.Count < TimelinePreviewCount && simulatedUnits.Count > 0 && safety < TimelinePreviewCount * 12)
         {
             TimelineUnit next = GetEarliestUnit(simulatedUnits);
+            if (next == null)
+            {
+                break;
+            }
+
+            int gap = next.ReadyTick - previewTick;
+            if (gap > 0)
+            {
+                previews.Add(new TimelinePreview { Unit = null, DeltaTick = Mathf.Max(0, previewTick - currentTick) });
+                previewTick += Mathf.Clamp(PrefabTimelineBlankCardStepTicks, 1, gap);
+                safety++;
+                continue;
+            }
+
             previews.Add(new TimelinePreview { Unit = next, DeltaTick = Mathf.Max(0, next.ReadyTick - currentTick) });
             if (next.IsSkill)
             {
@@ -5426,9 +6248,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             }
             else
             {
-                next.ReadyTick += GetPreviewReadyDelay(next);
+                next.ReadyTick = Mathf.Max(previewTick, next.ReadyTick) + GetPreviewReadyDelay(next);
                 next.Sequence += 10;
             }
+
+            safety++;
         }
 
         return previews;
@@ -5527,7 +6351,12 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             PartyPosition position = pair.Key;
             AllyView view = pair.Value;
             AllyUnit ally = GetAllyAtPosition(position);
+            ApplyBattleSceneAllyViewGridCell(view, ally, position);
             bool selected = ally != null && selectedAlly == ally;
+            if (battleCommandSkillTargetSelectionActive && IsBattleCommandSkillAllyTargetSelection())
+            {
+                selected = ally != null && ally == GetCurrentBattleCommandSkillAllyTarget();
+            }
             bool active = activeUnit != null && activeUnit.IsAlly && activeUnit.Ally == ally;
             view.Panel.sprite = mainBattleSceneMode ? null : GetAllyFrameSprite(position);
             view.Panel.color = view.Panel.sprite != null ? Color.white
@@ -5539,7 +6368,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             view.Accent.color = GetPositionColor(position);
             view.SelectedHighlight.gameObject.SetActive(selected);
             view.ActiveHighlight.gameObject.SetActive(active);
-            bool targetable = IsAllyPanelTargetable(ally);
+            bool targetable = battleCommandSkillTargetSelectionActive
+                ? IsBattleCommandSkillAllyCandidate(ally)
+                : IsAllyPanelTargetable(ally);
             bool danger = ally != null && activeUnit != null && !activeUnit.IsAlly && GetPreferredEnemyAttackTarget() == ally;
             bool hover = allyPanelHoverStates.ContainsKey(position) && allyPanelHoverStates[position];
             bool disabled = ally == null || !ally.IsAlive;
@@ -5572,6 +6403,80 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 ? "HP " + ally.Hp + "/" + ally.MaxHp + "   SPD " + ally.Speed + "   " + FormatPositionModifier(position) + "   " + ally.Status
                 : "Empty";
             ApplyAllySprite(view, ally, position);
+        }
+
+        RefreshSceneBattleGridAllyPositions();
+    }
+
+    private void ApplyBattleSceneAllyViewGridCell(AllyView view, AllyUnit ally, PartyPosition slotPosition)
+    {
+        if (!mainBattleSceneMode || view == null || view.Panel == null)
+        {
+            return;
+        }
+
+        int row = GetAllyGridRow(slotPosition);
+        int column = ally != null ? GetBattleSceneAllyColumn(ally) : BattleSceneAllyCommandColumn;
+        Vector2 anchorMin;
+        Vector2 anchorMax;
+        GetGridCellAnchors(row, column, true, out anchorMin, out anchorMax);
+
+        RectTransform rect = view.Panel.rectTransform;
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+    }
+
+    private void RefreshSceneBattleGridAllyPositions()
+    {
+        if (!mainBattleSceneMode || !useSceneBattleGridPrefabVisuals)
+        {
+            return;
+        }
+
+        GameObject grid = FindBattleSceneGridRoot();
+        Transform units = grid != null ? grid.transform.Find("Units") : null;
+        if (grid == null || units == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < allies.Count; i++)
+        {
+            AllyUnit ally = allies[i];
+            string unitName = GetSceneAllyUnitName(ally);
+            if (string.IsNullOrEmpty(unitName))
+            {
+                continue;
+            }
+
+            RepositionBattleSceneUnifiedAllyRootUnit(
+                grid.transform,
+                units,
+                unitName,
+                GetAllyGridRow(ally.Position),
+                GetBattleSceneAllyColumn(ally));
+        }
+    }
+
+    private static string GetSceneAllyUnitName(AllyUnit ally)
+    {
+        if (ally == null)
+        {
+            return null;
+        }
+
+        switch (ally.Name)
+        {
+            case "AllyFront":
+                return "Ally_Front_CyberKnight";
+            case "AllyMiddle":
+                return "Ally_Middle_CyberWolf";
+            case "AllyBack":
+                return "Ally_Back_DigitalFairy";
+            default:
+                return null;
         }
     }
 
@@ -5760,12 +6665,35 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
-        RepositionBattleSceneUnifiedRootUnit(grid, units, "Ally_Front_CyberKnight", 1, 1, new Vector3(0f, 0.27f, 0f));
-        RepositionBattleSceneUnifiedRootUnit(grid, units, "Ally_Middle_CyberWolf", 0, 1, new Vector3(0f, 0.19f, 0f));
-        RepositionBattleSceneUnifiedRootUnit(grid, units, "Ally_Back_DigitalFairy", 2, 1, new Vector3(0f, 0.22f, 0f));
-        RepositionBattleSceneUnifiedVisualUnit(grid, units, "Enemy_DrillMole", 1, BattleGridAllyCols + 1, new Vector3(0f, 0.28f, 0f));
-        RepositionBattleSceneUnifiedVisualUnit(grid, units, "Enemy_ElecGecko", 0, BattleGridAllyCols + 2, new Vector3(-0.06f, 0.25f, 0f));
-        RepositionBattleSceneUnifiedVisualUnit(grid, units, "Enemy_BladeBug", 2, BattleGridAllyCols + 2, new Vector3(0f, 0.42f, 0f));
+        RepositionBattleSceneUnifiedAllyRootUnit(grid, units, "Ally_Front_CyberKnight", 1, 1);
+        RepositionBattleSceneUnifiedAllyRootUnit(grid, units, "Ally_Middle_CyberWolf", 0, 1);
+        RepositionBattleSceneUnifiedAllyRootUnit(grid, units, "Ally_Back_DigitalFairy", 2, 1);
+        RepositionBattleSceneUnifiedEnemyVisualUnit(grid, units, "Enemy_DrillMole", 1, BattleGridAllyCols + 1, new Vector3(0f, 0.28f, 0f));
+        RepositionBattleSceneUnifiedEnemyVisualUnit(grid, units, "Enemy_ElecGecko", 0, BattleGridAllyCols + 2, new Vector3(-0.06f, 0.25f, 0f));
+        RepositionBattleSceneUnifiedEnemyVisualUnit(grid, units, "Enemy_BladeBug", 2, BattleGridAllyCols + 2, new Vector3(0f, 0.42f, 0f));
+    }
+
+    private static void RepositionBattleSceneUnifiedAllyRootUnit(Transform grid, Transform units, string unitName, int row, int globalColumn)
+    {
+        Transform unit = units != null ? units.Find(unitName) : null;
+        if (unit == null)
+        {
+            return;
+        }
+
+        Bounds cellBounds;
+        if (!TryGetBattleSceneUnifiedCellBounds(grid, row, globalColumn, out cellBounds))
+        {
+            RepositionBattleSceneUnifiedRootUnit(grid, units, unitName, row, globalColumn, new Vector3(0f, BattleSceneAllyFallbackFootOffsetY, 0f));
+            return;
+        }
+
+        Transform anchor = FindBattleSceneUnifiedUnitAnchor(grid, row, globalColumn);
+        float z = anchor != null ? anchor.position.z : unit.position.z;
+        float footY = cellBounds.min.y + cellBounds.size.y * BattleSceneAllyFootNormalizedY;
+        Vector3 footWorldPosition = new Vector3(cellBounds.center.x, footY, z);
+        unit.localPosition = units.InverseTransformPoint(footWorldPosition);
+        unit.localRotation = Quaternion.identity;
     }
 
     private static void RepositionBattleSceneUnifiedRootUnit(Transform grid, Transform units, string unitName, int row, int globalColumn, Vector3 displayOffset)
@@ -5779,6 +6707,43 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         unit.localPosition = units.InverseTransformPoint(anchor.position) + displayOffset;
         unit.localRotation = Quaternion.identity;
+    }
+
+    private static void RepositionBattleSceneUnifiedEnemyVisualUnit(Transform grid, Transform units, string unitName, int row, int globalColumn, Vector3 visualBaseOffset)
+    {
+        Transform unit = units != null ? units.Find(unitName) : null;
+        Transform anchor = FindBattleSceneUnifiedUnitAnchor(grid, row, globalColumn);
+        if (unit == null || anchor == null)
+        {
+            return;
+        }
+
+        unit.localPosition = units.InverseTransformPoint(anchor.position);
+        unit.localRotation = Quaternion.identity;
+
+        Transform visual = unit.Find("Visual");
+        if (visual == null)
+        {
+            RepositionBattleSceneUnifiedVisualUnit(grid, units, unitName, row, globalColumn, visualBaseOffset);
+            return;
+        }
+
+        visual.localPosition = visualBaseOffset;
+        visual.localRotation = Quaternion.identity;
+
+        Bounds cellBounds;
+        Bounds visualBounds;
+        if (!TryGetBattleSceneUnifiedCellBounds(grid, row, globalColumn, out cellBounds) ||
+            !TryGetBattleSceneUnifiedVisualSpriteBounds(visual, out visualBounds))
+        {
+            return;
+        }
+
+        float targetMinY = cellBounds.min.y + cellBounds.size.y * BattleSceneEnemyVisualFootNormalizedY;
+        float deltaY = targetMinY - visualBounds.min.y;
+        Vector3 visualWorldPosition = visual.position;
+        visualWorldPosition.y += deltaY;
+        visual.position = visualWorldPosition;
     }
 
     private static void RepositionBattleSceneUnifiedVisualUnit(Transform grid, Transform units, string unitName, int row, int globalColumn, Vector3 displayOffset)
@@ -5806,9 +6771,60 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private static Transform FindBattleSceneUnifiedUnitAnchor(Transform grid, int row, int globalColumn)
     {
-        Transform collidersRoot = grid != null ? grid.Find("GridColliders") : null;
-        Transform cell = collidersRoot != null ? collidersRoot.Find(GetBattleScenePanelCellName(row, globalColumn)) : null;
+        Transform cell = FindBattleSceneUnifiedCell(grid, row, globalColumn);
         return cell != null ? cell.Find("UnitAnchor") : null;
+    }
+
+    private static bool TryGetBattleSceneUnifiedCellBounds(Transform grid, int row, int globalColumn, out Bounds bounds)
+    {
+        bounds = default;
+        Transform cell = FindBattleSceneUnifiedCell(grid, row, globalColumn);
+        Collider2D collider = cell != null ? cell.GetComponent<Collider2D>() : null;
+        if (collider == null || collider.bounds.size.y <= Mathf.Epsilon)
+        {
+            return false;
+        }
+
+        bounds = collider.bounds;
+        return true;
+    }
+
+    private static bool TryGetBattleSceneUnifiedVisualSpriteBounds(Transform visual, out Bounds bounds)
+    {
+        bounds = default;
+        if (visual == null)
+        {
+            return false;
+        }
+
+        SpriteRenderer[] renderers = visual.GetComponentsInChildren<SpriteRenderer>(false);
+        bool hasBounds = false;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            SpriteRenderer renderer = renderers[i];
+            if (renderer == null || !renderer.enabled || renderer.sprite == null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        return hasBounds;
+    }
+
+    private static Transform FindBattleSceneUnifiedCell(Transform grid, int row, int globalColumn)
+    {
+        Transform collidersRoot = grid != null ? grid.Find("GridColliders") : null;
+        return collidersRoot != null ? collidersRoot.Find(GetBattleScenePanelCellName(row, globalColumn)) : null;
     }
 
     private static Vector2[] BuildBattleSceneUnifiedPanelLocalPoints(int row, int globalColumn, out Vector2 center)
@@ -5961,6 +6977,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
     private void CacheSceneBattleGridUnitRenderers()
     {
         sceneBattleGridUnitRenderers.Clear();
+        sceneBattleGridUnitRoots.Clear();
         battleSceneEnemyHpTexts.Clear();
         if (!useSceneBattleGridPrefabVisuals)
         {
@@ -5985,13 +7002,49 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
     private void CacheSceneBattleGridUnitRenderer(Transform units, string unitName)
     {
-        Transform unit = units.Find(unitName);
+        Transform unit = FindSceneBattleGridUnitRoot(units, unitName);
         DisableLegacyBattleSceneEnemyHpTexts(unit);
         SpriteRenderer renderer = unit != null ? unit.GetComponentInChildren<SpriteRenderer>(true) : null;
+        GameObject root = unit != null ? unit.gameObject : renderer != null ? renderer.gameObject : null;
+        if (root != null)
+        {
+            sceneBattleGridUnitRoots[unitName] = root;
+        }
+
         if (renderer != null)
         {
             sceneBattleGridUnitRenderers[unitName] = renderer;
         }
+    }
+
+    private static Transform FindSceneBattleGridUnitRoot(Transform units, string unitName)
+    {
+        if (units == null || string.IsNullOrEmpty(unitName))
+        {
+            return null;
+        }
+
+        if (units.name == unitName)
+        {
+            return units;
+        }
+
+        Transform direct = units.Find(unitName);
+        if (direct != null)
+        {
+            return direct;
+        }
+
+        for (int i = 0; i < units.childCount; i++)
+        {
+            Transform match = FindSceneBattleGridUnitRoot(units.GetChild(i), unitName);
+            if (match != null)
+            {
+                return match;
+            }
+        }
+
+        return null;
     }
 
     private TextMeshPro EnsureBattleSceneEnemyHpText(Transform hpRoot, EnemyUnit enemy)
@@ -6280,6 +7333,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return false;
         }
 
+        if (battleCommandSkillTargetSelectionActive)
+        {
+            return IsBattleCommandSkillAllyCandidate(ally);
+        }
+
         PrototypeCard card = GetSelectedChipCard();
         return card != null && card.TargetKind == PrototypeTargetKind.Ally;
     }
@@ -6319,6 +7377,40 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             default:
                 return 2;
         }
+    }
+
+    private static int ClampBattleSceneAllyColumn(int column)
+    {
+        return Mathf.Clamp(column, BattleSceneAllyMinColumn, BattleSceneAllyMaxColumn);
+    }
+
+    private static int GetBattleSceneAllyColumn(AllyUnit ally)
+    {
+        if (ally == null)
+        {
+            return BattleSceneAllyCommandColumn;
+        }
+
+        ally.BattleSceneColumn = ClampBattleSceneAllyColumn(ally.BattleSceneColumn);
+        return ally.BattleSceneColumn;
+    }
+
+    private static string GetBattleSceneColumnLabel(int column)
+    {
+        switch (ClampBattleSceneAllyColumn(column))
+        {
+            case BattleSceneAllyMinColumn:
+                return "left";
+            case BattleSceneAllyMaxColumn:
+                return "right";
+            default:
+                return "center";
+        }
+    }
+
+    private static int GetBattleSceneForwardStartColumn(AllyUnit actor)
+    {
+        return Mathf.Clamp(GetBattleSceneAllyColumn(actor) + 1, 0, BattleGridTotalCols - 1);
     }
 
     private static Vector2 ScaleSpriteForBattleRow(Vector2 scale, int row)
@@ -6392,8 +7484,14 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 EnemyCellView view = enemyCellViews[row, column];
                 EnemyUnit enemy = GetEnemyAt(row, column);
                 bool selected = enemy != null && selectedEnemy == enemy;
+                if (battleCommandSkillTargetSelectionActive && IsBattleCommandSkillEnemyTargetSelection())
+                {
+                    selected = enemy != null && enemy == GetCurrentBattleCommandSkillEnemyTarget();
+                }
                 bool active = activeUnit != null && !activeUnit.IsAlly && activeUnit.Enemy == enemy;
-                bool targetable = IsPlayerTurn() && enemy != null && enemy.IsAlive && (!mainBattleSceneMode || IsEnemyInCurrentPrototypeAttackRange(enemy));
+                bool targetable = battleCommandSkillTargetSelectionActive
+                    ? IsBattleCommandSkillEnemyCandidate(enemy)
+                    : IsPlayerTurn() && enemy != null && enemy.IsAlive && (!mainBattleSceneMode || IsEnemyInCurrentPrototypeAttackRange(enemy));
                 if (enemy == null)
                 {
                     view.Panel.sprite = mainBattleSceneMode ? GetBattlePanelBaseSprite(false) : GetSpriteOrNull(enemyGridSprites, s => s.Empty);
@@ -6468,6 +7566,49 @@ public class BattleTimelinePrototypeController : MonoBehaviour
                 {
                     HideSceneGridOverlay(view);
                 }
+            }
+        }
+
+        RefreshSceneBattleGridEnemyVisibility();
+        if (mainBattleSceneMode && useSceneBattleGridPrefabVisuals)
+        {
+            UpdateSceneEnemyRootHpTexts();
+        }
+    }
+
+    private void RefreshSceneBattleGridEnemyVisibility()
+    {
+        if (!useSceneBattleGridPrefabVisuals)
+        {
+            return;
+        }
+
+        if (sceneBattleGridUnitRoots.Count == 0 && sceneBattleGridUnitRenderers.Count == 0)
+        {
+            CacheSceneBattleGridUnitRenderers();
+        }
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyUnit enemy = enemies[i];
+            string unitName = GetSceneEnemyUnitName(enemy);
+            if (string.IsNullOrEmpty(unitName))
+            {
+                continue;
+            }
+
+            bool visible = enemy != null && enemy.IsAlive;
+            GameObject root;
+            if (sceneBattleGridUnitRoots.TryGetValue(unitName, out root) && root != null)
+            {
+                root.SetActive(visible);
+                continue;
+            }
+
+            SpriteRenderer renderer;
+            if (sceneBattleGridUnitRenderers.TryGetValue(unitName, out renderer) && renderer != null)
+            {
+                renderer.enabled = visible;
             }
         }
     }
@@ -6955,11 +8096,11 @@ public class BattleTimelinePrototypeController : MonoBehaviour
 
         if (confirmButton != null)
         {
-            confirmButton.interactable = !battleEnded && activeUnit != null && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
+            confirmButton.interactable = timelineAutoProcessRoutine == null && !timelineAutoProcessInProgress && canAct;
             Text confirmLabel = confirmButton.GetComponentInChildren<Text>();
             if (confirmLabel != null)
             {
-                confirmLabel.text = IsPlayerTurn() ? "Confirm" : activeUnit != null && activeUnit.IsSkill ? "Skill Act" : "Enemy Act";
+                confirmLabel.text = canAct ? "Confirm" : activeUnit == null ? "Wait" : activeUnit.IsSkill ? "Skill Act" : "Enemy Act";
             }
         }
 
@@ -6977,10 +8118,1897 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             cardSelectRoot.SetActive(!mainBattleSceneMode && cardSelectOpen && canAct);
         }
 
+        RefreshBattleCommandSelectionUi();
         RefreshBattleSceneCommandPanel();
         RefreshSelectedCommandName();
         RefreshChipQueueSlots();
         RefreshChipDetail();
+    }
+
+    private void RefreshBattleCommandSelectionUi()
+    {
+        if (battleCommandSelectionUi == null)
+        {
+            return;
+        }
+
+        if (battleCommandCardRangePreviewActive)
+        {
+            battleCommandSelectionUi.SetVisible(true);
+            battleCommandSelectionUi.SetInputLocked(true);
+            return;
+        }
+
+        if (battleCommandSkillTargetSelectionActive)
+        {
+            battleCommandSelectionUi.SetInputLocked(true);
+            battleCommandSelectionUi.SetVisible(false);
+            return;
+        }
+
+        bool canAct = mainBattleSceneMode
+            && !battleEnded
+            && !battleCommandTransitioning
+            && timelineAutoProcessRoutine == null
+            && !timelineAutoProcessInProgress
+            && IsPlayerTurn();
+
+        if (canAct)
+        {
+            battleCommandSelectionUi.SetOptions(BuildBattleCommandDisplayOptions());
+        }
+
+        battleCommandSelectionUi.SetVisible(canAct);
+    }
+
+    private List<BattleCommandDisplayData> BuildBattleCommandDisplayOptions()
+    {
+        ResetSkillSelectedThisTurnIfNeeded();
+        bool skillAlreadySelected = IsSkillSelectedThisTurn();
+        List<BattleCommandDisplayData> displayOptions = new List<BattleCommandDisplayData>(6);
+        for (int i = 0; i < BattleSceneCommandCardCount; i++)
+        {
+            PrototypeCard card = i < hand.Count ? hand[i] : null;
+            displayOptions.Add(CreateBattleCommandCardDisplay(card, i));
+        }
+
+        displayOptions.Add(new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Skills,
+            Title = "SKILL",
+            Description = skillAlreadySelected ? BattleCommandSkillAlreadySelectedDescription : BattleCommandSkillsDescription,
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.SkillsNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.SkillsSelected : null,
+            Icon = null,
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = new Color(0.30f, 1f, 0.36f, 1f),
+            NormalBackgroundColor = BattleCommandSkillNormalTint,
+            SelectedBackgroundColor = BattleCommandSkillSelectedTint,
+            HasStats = false,
+            Interactable = !skillAlreadySelected
+        });
+
+        displayOptions.Add(new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Change,
+            Title = "CHANGE",
+            Description = BattleCommandChangeDescription,
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeSelected : null,
+            Icon = null,
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = new Color(1f, 0.70f, 0.12f, 1f),
+            NormalBackgroundColor = BattleCommandChangeNormalTint,
+            SelectedBackgroundColor = BattleCommandChangeSelectedTint,
+            HasStats = false,
+            Interactable = true
+        });
+
+        displayOptions.Add(new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Run,
+            Title = "RUN",
+            Description = BattleCommandRunDescription,
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.RunNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.RunSelected : null,
+            Icon = null,
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = new Color(1f, 0.18f, 0.58f, 1f),
+            NormalBackgroundColor = BattleCommandRunNormalTint,
+            SelectedBackgroundColor = BattleCommandRunSelectedTint,
+            HasStats = false,
+            Interactable = true
+        });
+
+        return displayOptions;
+    }
+
+    private BattleCommandDisplayData CreateBattleCommandCardDisplay(PrototypeCard card, int handIndex)
+    {
+        if (card == null)
+        {
+            return new BattleCommandDisplayData
+            {
+                OptionType = BattleCommandOptionType.Card,
+                SourceHandIndex = handIndex,
+                Title = "No Card",
+                Description = "No card is available.",
+                PowerText = "--",
+                AttributeText = "--",
+                TargetText = "--",
+                DelayText = "--",
+                NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.CardRowNormal : null,
+                SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.CardRowSelected : null,
+                Icon = null,
+                AttributeIcon = null,
+                BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+                AccentColor = new Color(0.24f, 0.30f, 0.36f, 1f),
+                NormalBackgroundColor = BattleCommandCardNormalTint,
+                SelectedBackgroundColor = BattleCommandCardSelectedTint,
+                HasStats = true,
+                Interactable = false
+            };
+        }
+
+        int attackBonus = activeUnit != null && activeUnit.IsAlly ? GetAttackPowerBonus(activeUnit.Ally) : 0;
+        int displayPower = card.Power > 0 ? card.Power + attackBonus : 0;
+        return new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Card,
+            SourceHandIndex = handIndex,
+            Title = GetCardDisplayName(card),
+            Description = GetBattleCommandCardDescription(card),
+            PowerText = displayPower > 0 ? displayPower.ToString() : "--",
+            AttributeText = card.Attribute.ToString(),
+            TargetText = GetBattleCommandTargetText(card),
+            DelayText = "D" + card.ActionDelay,
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.CardRowNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.CardRowSelected : null,
+            Icon = null,
+            AttributeIcon = GetBattleCommandAttributeIcon(card.Attribute),
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = GetBattleCommandAccentColor(card, handIndex),
+            NormalBackgroundColor = BattleCommandCardNormalTint,
+            SelectedBackgroundColor = BattleCommandCardSelectedTint,
+            HasStats = true,
+            Interactable = true
+        };
+    }
+
+    private static string GetBattleCommandCardDescription(PrototypeCard card)
+    {
+        if (card == null)
+        {
+            return string.Empty;
+        }
+
+        if (card.SourceCard != null && !string.IsNullOrEmpty(card.SourceCard.RulesText))
+        {
+            return card.SourceCard.RulesText;
+        }
+
+        switch (card.Effect)
+        {
+            case PrototypeCardEffect.RowDamage:
+                return "Hits enemies in a row.";
+            case PrototypeCardEffect.PushDamage:
+                return "Damages and pushes the target.";
+            case PrototypeCardEffect.DelayDamage:
+                return "Damages and delays the target.";
+            case PrototypeCardEffect.Heal:
+                return "Restores HP to an ally.";
+            case PrototypeCardEffect.EchoShot:
+                return "Attacks and queues an echo skill.";
+            case PrototypeCardEffect.Unsupported:
+                return string.IsNullOrEmpty(card.UnsupportedReason) ? "This card is not fully supported yet." : card.UnsupportedReason;
+            default:
+                return "Basic single-target attack.";
+        }
+    }
+
+    private static string GetBattleCommandTargetText(PrototypeCard card)
+    {
+        if (card == null)
+        {
+            return "--";
+        }
+
+        switch (card.TargetKind)
+        {
+            case PrototypeTargetKind.Ally:
+                return "1 Ally";
+            case PrototypeTargetKind.Enemy:
+                return card.Effect == PrototypeCardEffect.RowDamage ? "Enemy Row" : "1 Enemy";
+            default:
+                return "--";
+        }
+    }
+
+    private static Color GetBattleCommandAccentColor(PrototypeCard card, int index)
+    {
+        if (card == null)
+        {
+            return new Color(0.24f, 0.30f, 0.36f, 1f);
+        }
+
+        return Color.Lerp(new Color(0.08f, 0.66f, 1f, 1f), GetChipArtworkColor(card, index), 0.35f);
+    }
+
+    private void SubmitBattleCommandCard(int handIndex)
+    {
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetInputLocked(true);
+        }
+
+        if (!mainBattleSceneMode || battleEnded || !IsPlayerTurn())
+        {
+            UnlockBattleCommandInput("No player command is available.");
+            return;
+        }
+
+        if (handIndex < 0 || handIndex >= hand.Count || hand[handIndex] == null || activeUnit == null || !activeUnit.IsAlly)
+        {
+            UnlockBattleCommandInput("No card is available.");
+            return;
+        }
+
+        PrototypeCard card = hand[handIndex];
+        selectedHandIndex = handIndex;
+        BeginBattleCommandCardRangePreview(handIndex, card);
+    }
+
+    private void BeginBattleCommandCardRangePreview(int handIndex, PrototypeCard card)
+    {
+        AllyUnit caster = activeUnit != null ? activeUnit.Ally : null;
+        if (card == null || caster == null)
+        {
+            UnlockBattleCommandInput("No card preview is available.");
+            return;
+        }
+
+        BattleCommandCardRangeDefinition rangeDefinition = ResolveBattleCommandCardRange(card, caster);
+        if (rangeDefinition == null || rangeDefinition.Pattern == BattleCommandCardRangePattern.None)
+        {
+            UnlockBattleCommandInput(GetCardDisplayName(card) + " has no preview range.");
+            return;
+        }
+
+        battleCommandPreviewCard = card;
+        battleCommandPreviewCaster = caster;
+        battleCommandPreviewHandIndex = handIndex;
+        battleCommandCardRangePreviewActive = true;
+        battleCommandTransitioning = false;
+        battleCommandCardRangePreviewCells.Clear();
+        BuildBattleCommandCardRangeCells(caster, rangeDefinition, battleCommandCardRangePreviewCells);
+        ShowBattleCommandCardRangePreviewOverlay(card, battleCommandCardRangePreviewCells);
+
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetOptions(BuildBattleCommandRangePreviewDisplayOptions(handIndex, card, rangeDefinition));
+            battleCommandSelectionUi.SetInputLocked(true);
+            battleCommandSelectionUi.SetVisible(true);
+        }
+
+        if (statusText != null)
+        {
+            statusText.text = GetCardDisplayName(card) + " range preview. D: confirm / S: back.";
+        }
+    }
+
+    private void HandleBattleCommandCardRangePreviewInput()
+    {
+        if (battleCommandTransitioning)
+        {
+            return;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        Gamepad gamepad = Gamepad.current;
+        if (keyboard != null && (keyboard.sKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame))
+        {
+            CancelBattleCommandCardRangePreview();
+            return;
+        }
+
+        if (gamepad != null && gamepad.buttonEast.wasPressedThisFrame)
+        {
+            CancelBattleCommandCardRangePreview();
+            return;
+        }
+
+        if (keyboard != null && (keyboard.dKey.wasPressedThisFrame
+            || keyboard.enterKey.wasPressedThisFrame
+            || keyboard.numpadEnterKey.wasPressedThisFrame
+            || keyboard.spaceKey.wasPressedThisFrame))
+        {
+            ConfirmBattleCommandCardRangePreview();
+            return;
+        }
+
+        if (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
+        {
+            ConfirmBattleCommandCardRangePreview();
+        }
+    }
+
+    private void ConfirmBattleCommandCardRangePreview()
+    {
+        if (!battleCommandCardRangePreviewActive)
+        {
+            return;
+        }
+
+        string cardName = GetCardDisplayName(battleCommandPreviewCard);
+        string casterName = battleCommandPreviewCaster != null ? battleCommandPreviewCaster.Name : "--";
+        string cells = FormatBattleCommandCardRangePreviewCells();
+        Debug.Log("[Battle] Attack preview confirmed: " + cardName + " / caster " + casterName + " / cells " + cells);
+
+        ResolveBattleCommandPreviewCard();
+    }
+
+    private void CancelBattleCommandCardRangePreview()
+    {
+        if (!battleCommandCardRangePreviewActive)
+        {
+            return;
+        }
+
+        int returnSelectedIndex = battleCommandPreviewHandIndex;
+        ClearBattleCommandCardRangePreview();
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetOptions(BuildBattleCommandDisplayOptions());
+            battleCommandSelectionUi.RestoreSelection(returnSelectedIndex);
+            battleCommandSelectionUi.SuppressInputUntilSKeyRelease(2);
+            battleCommandSelectionUi.SetInputLocked(false);
+            battleCommandSelectionUi.SetVisible(true);
+        }
+
+        if (statusText != null)
+        {
+            statusText.text = "Command selection.";
+        }
+    }
+
+    private void ResolveBattleCommandPreviewCard()
+    {
+        PrototypeCard card = battleCommandPreviewCard;
+        AllyUnit caster = battleCommandPreviewCaster;
+        int returnSelectedIndex = battleCommandPreviewHandIndex;
+        EnemyUnit target = ResolveBattleCommandPreviewEnemyTarget();
+
+        ClearBattleCommandCardRangePreview();
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetInputLocked(false);
+        }
+
+        if (card == null || caster == null)
+        {
+            ReturnToBattleCommandSelectionAfterPreview(returnSelectedIndex, "No card preview is available.");
+            return;
+        }
+
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!mainBattleSceneMode || battleEnded || !IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly || activeUnit.Ally != caster)
+        {
+            ReturnToBattleCommandSelectionAfterPreview(returnSelectedIndex, "No player command is available.");
+            return;
+        }
+
+        if (target == null)
+        {
+            ReturnToBattleCommandSelectionAfterPreview(returnSelectedIndex, "No enemy is inside " + GetCardDisplayName(card) + "'s range.");
+            return;
+        }
+
+        QueuedAction action = new QueuedAction
+        {
+            Kind = ActionKind.Card,
+            Card = card,
+            HandIndex = returnSelectedIndex,
+            Actor = caster,
+            AllyTarget = selectedAlly != null && selectedAlly.IsAlive ? selectedAlly : caster,
+            EnemyTarget = target,
+            ConsumesAction = !card.IsClearCard,
+            Label = GetCardDisplayName(card)
+        };
+
+        int resolvedPlayerTurn = playerActionTurnCount;
+        int defeatedCount = ResolveCard(action);
+        if (defeatedCount > maxSimultaneousDefeatCount)
+        {
+            maxSimultaneousDefeatCount = defeatedCount;
+        }
+
+        DiscardBattleCommandPreviewCard(returnSelectedIndex, card);
+        DrawToHand();
+        ClearQueuedActions();
+        CloseCardSelect();
+        AdvanceActiveUnit(activeUnit, ResolveQueuedActionDelay(action));
+        if (TryShowVictory(resolvedPlayerTurn))
+        {
+            return;
+        }
+
+        playerActionTurnCount++;
+        RefreshAll(caster.Name + " used " + action.Label + ". Delay " + ResolveQueuedActionDelay(action) + ".");
+    }
+
+    private void ReturnToBattleCommandSelectionAfterPreview(int selectedIndex, string message)
+    {
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetOptions(BuildBattleCommandDisplayOptions());
+            battleCommandSelectionUi.RestoreSelection(selectedIndex);
+            battleCommandSelectionUi.SetVisible(true);
+            battleCommandSelectionUi.SetInputLocked(false);
+        }
+
+        RefreshAll(message);
+    }
+
+    private EnemyUnit ResolveBattleCommandPreviewEnemyTarget()
+    {
+        if (selectedEnemy != null && selectedEnemy.IsAlive && IsEnemyInBattleCommandCardPreviewRange(selectedEnemy))
+        {
+            return selectedEnemy;
+        }
+
+        EnemyUnit firstTarget = null;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            EnemyUnit enemy = enemies[i];
+            if (enemy == null || !enemy.IsAlive || !IsEnemyInBattleCommandCardPreviewRange(enemy))
+            {
+                continue;
+            }
+
+            if (firstTarget == null || enemy.GridPosition.y < firstTarget.GridPosition.y)
+            {
+                firstTarget = enemy;
+            }
+        }
+
+        return firstTarget;
+    }
+
+    private bool TrySelectBattleCommandCardPreviewEnemyTarget(EnemyUnit enemy)
+    {
+        if (!IsEnemyInBattleCommandCardPreviewRange(enemy))
+        {
+            return false;
+        }
+
+        selectedEnemy = enemy;
+        return true;
+    }
+
+    private bool IsEnemyInBattleCommandCardPreviewRange(EnemyUnit enemy)
+    {
+        if (!battleCommandCardRangePreviewActive || enemy == null || !enemy.IsAlive)
+        {
+            return false;
+        }
+
+        Vector2Int enemyCell = new Vector2Int(enemy.GridPosition.x, BattleGridAllyCols + enemy.GridPosition.y);
+        return battleCommandCardRangePreviewCells.Contains(enemyCell);
+    }
+
+    private void DiscardBattleCommandPreviewCard(int handIndex, PrototypeCard card)
+    {
+        if (card == null)
+        {
+            return;
+        }
+
+        discardPile.Add(card);
+        if (handIndex >= 0 && handIndex < hand.Count && hand[handIndex] == card)
+        {
+            hand.RemoveAt(handIndex);
+        }
+    }
+
+    private void ClearBattleCommandCardRangePreview()
+    {
+        battleCommandCardRangePreviewActive = false;
+        battleCommandPreviewCard = null;
+        battleCommandPreviewCaster = null;
+        battleCommandPreviewHandIndex = -1;
+        battleCommandCardRangePreviewCells.Clear();
+        HideBattleSceneAttackRangeOverlay();
+    }
+
+    private BattleCommandCardRangeDefinition ResolveBattleCommandCardRange(PrototypeCard card, AllyUnit caster)
+    {
+        if (card == null)
+        {
+            return null;
+        }
+
+        CardTargetPattern targetPattern = card.SourceCard != null ? card.SourceCard.TargetPattern : CardTargetPattern.None;
+        if (targetPattern == CardTargetPattern.ForwardLine3 || ContainsText(card.CardId, "BurnerBreath") || ContainsText(card.Name, "\u30d0\u30fc\u30ca\u30fc\u30d6\u30ec\u30b9"))
+        {
+            return CreateForwardLineRangeDefinition(3, "\u524d\u65b93\u30de\u30b9");
+        }
+
+        if (targetPattern == CardTargetPattern.ForwardSingle || targetPattern == CardTargetPattern.ForwardOnePanel)
+        {
+            return CreateForwardLineRangeDefinition(1, "\u524d\u65b91\u30de\u30b9");
+        }
+
+        if (targetPattern == CardTargetPattern.ForwardExactly3)
+        {
+            return CreateForwardLineRangeDefinition(3, "\u524d\u65b93\u30de\u30b9");
+        }
+
+        if (targetPattern == CardTargetPattern.Row || card.Effect == PrototypeCardEffect.RowDamage)
+        {
+            return CreateForwardLineRangeDefinition(BattleGridTotalCols - GetBattleSceneAllyColumn(caster) - 1, "Forward row");
+        }
+
+        if (card.TargetKind == PrototypeTargetKind.Enemy)
+        {
+            return CreateForwardLineRangeDefinition(1, "\u524d\u65b91\u30de\u30b9");
+        }
+
+        return null;
+    }
+
+    private static BattleCommandCardRangeDefinition CreateForwardLineRangeDefinition(int distance, string targetText)
+    {
+        int safeDistance = Mathf.Max(1, distance);
+        return new BattleCommandCardRangeDefinition
+        {
+            Pattern = BattleCommandCardRangePattern.ForwardLine,
+            Distance = safeDistance,
+            TargetText = targetText,
+            Description = targetText + "\u3092\u653b\u6483\u7bc4\u56f2\u3068\u3057\u3066\u8868\u793a\u4e2d\nD: \u6c7a\u5b9a / S: \u623b\u308b"
+        };
+    }
+
+    private void BuildBattleCommandCardRangeCells(AllyUnit caster, BattleCommandCardRangeDefinition rangeDefinition, List<Vector2Int> output)
+    {
+        if (output == null)
+        {
+            return;
+        }
+
+        output.Clear();
+        if (caster == null || rangeDefinition == null)
+        {
+            return;
+        }
+
+        Vector2Int casterCell = GetBattleCommandCasterGridCell(caster);
+        switch (rangeDefinition.Pattern)
+        {
+            case BattleCommandCardRangePattern.ForwardLine:
+                int forward = GetBattleCommandForwardDirection(caster);
+                for (int i = 1; i <= rangeDefinition.Distance; i++)
+                {
+                    int column = casterCell.y + forward * i;
+                    if (IsBattleGridCellInside(casterCell.x, column))
+                    {
+                        output.Add(new Vector2Int(casterCell.x, column));
+                    }
+                }
+                break;
+        }
+    }
+
+    private Vector2Int GetBattleCommandCasterGridCell(AllyUnit caster)
+    {
+        int row = caster != null ? GetAllyGridRow(caster.Position) : 1;
+        return new Vector2Int(row, GetBattleSceneAllyColumn(caster));
+    }
+
+    private int GetBattleCommandForwardDirection(AllyUnit caster)
+    {
+        return 1;
+    }
+
+    private static bool IsBattleGridCellInside(int row, int column)
+    {
+        return row >= 0 && row < BattleGridRows && column >= 0 && column < BattleGridTotalCols;
+    }
+
+    private void ShowBattleCommandCardRangePreviewOverlay(PrototypeCard card, IList<Vector2Int> cells)
+    {
+        HideBattleSceneAttackRangeCells();
+        if (!mainBattleSceneMode || cells == null)
+        {
+            return;
+        }
+
+        Color rangeColor = ResolveBattleCommandCardRangeColor(card);
+        for (int i = 0; i < cells.Count; i++)
+        {
+            Vector2Int cell = cells[i];
+            SetBattleSceneAttackRangeCell(cell.x, cell.y, true, rangeColor);
+        }
+
+        if (battleSceneAttackRangeOverlayRoot != null)
+        {
+            battleSceneAttackRangeOverlayRoot.gameObject.SetActive(cells.Count > 0);
+        }
+    }
+
+    private static Color ResolveBattleCommandCardRangeColor(PrototypeCard card)
+    {
+        if (card != null && card.Attribute == CardAttribute.Fire)
+        {
+            return new Color(1f, 1f, 1f, 0.64f);
+        }
+
+        return new Color(1f, 1f, 1f, 0.60f);
+    }
+
+    private List<BattleCommandDisplayData> BuildBattleCommandRangePreviewDisplayOptions(int handIndex, PrototypeCard previewCard, BattleCommandCardRangeDefinition rangeDefinition)
+    {
+        List<BattleCommandDisplayData> displayOptions = BuildBattleCommandDisplayOptions();
+        if (handIndex >= 0 && handIndex < displayOptions.Count && previewCard != null)
+        {
+            BattleCommandDisplayData previewDisplay = CreateBattleCommandCardDisplay(previewCard, handIndex);
+            previewDisplay.Description = rangeDefinition != null ? rangeDefinition.Description : "D: Confirm / S: Back";
+            previewDisplay.TargetText = rangeDefinition != null ? rangeDefinition.TargetText : previewDisplay.TargetText;
+            displayOptions[handIndex] = previewDisplay;
+        }
+
+        return displayOptions;
+    }
+
+    private string FormatBattleCommandCardRangePreviewCells()
+    {
+        if (battleCommandCardRangePreviewCells.Count == 0)
+        {
+            return "[]";
+        }
+
+        string[] parts = new string[battleCommandCardRangePreviewCells.Count];
+        for (int i = 0; i < battleCommandCardRangePreviewCells.Count; i++)
+        {
+            Vector2Int cell = battleCommandCardRangePreviewCells[i];
+            parts[i] = "(" + cell.x + "," + cell.y + ")";
+        }
+
+        return "[" + string.Join(", ", parts) + "]";
+    }
+
+    private void RequestBattleCommandSkills()
+    {
+        ResetSkillSelectedThisTurnIfNeeded();
+        if (IsSkillSelectedThisTurn())
+        {
+            RefreshAll(BattleCommandSkillAlreadySelectedDescription);
+            return;
+        }
+
+        if (!BeginBattleCommandTransition("SKILL"))
+        {
+            return;
+        }
+
+        battleCommandSelectionUi.FadeOutThen(ShowBattleCommandSkillSelection);
+    }
+
+    private void RequestBattleCommandChange()
+    {
+        if (!BeginBattleCommandTransition("CHANGE"))
+        {
+            return;
+        }
+
+        battleCommandSelectionUi.FadeOutThen(ShowBattleCommandChangeSelection);
+    }
+
+    private void RequestBattleCommandRun()
+    {
+        if (!BeginBattleCommandTransition("RUN"))
+        {
+            return;
+        }
+
+        battleCommandSelectionUi.FadeOutThen(ResolveBattleCommandRun);
+    }
+
+    private void ShowBattleCommandSkillSelection()
+    {
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
+        {
+            battleCommandTransitioning = false;
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        pendingBattleCommandSkill = null;
+        pendingBattleCommandSwapTargetSet = false;
+        ResetSkillSelectedThisTurnIfNeeded();
+        if (IsSkillSelectedThisTurn())
+        {
+            battleCommandTransitioning = false;
+            RefreshAll(BattleCommandSkillAlreadySelectedDescription);
+            return;
+        }
+
+        if (battleCommandSubmenuUi == null)
+        {
+            pendingBattleCommandSkill = CreateEchoBattleCommandSkillOption();
+            battleCommandTargetSkillListIndex = 0;
+            BeginBattleCommandPendingSkillTargetSelection();
+            return;
+        }
+
+        battleCommandSubmenuUi.SetSpriteSet(battleCommandSprites);
+        battleCommandSubmenuUi.SetSBackKeyEnabled(true);
+        battleCommandSubmenuUi.SetReserveCardLayout(false);
+        battleCommandSubmenuUi.SetItems(CreateBattleCommandSkillItems(activeUnit.Ally));
+        battleCommandSubmenuUi.SetVisible(true);
+        RefreshAll("Select SKILL.");
+    }
+
+    private void ShowBattleCommandChangeSelection()
+    {
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
+        {
+            battleCommandTransitioning = false;
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        pendingBattleCommandSkill = null;
+        pendingBattleCommandSwapTargetSet = false;
+        if (battleCommandSubmenuUi == null)
+        {
+            ResolveBattleCommandChange();
+            return;
+        }
+
+        battleCommandSubmenuUi.SetSpriteSet(battleCommandSprites);
+        battleCommandSubmenuUi.SetSBackKeyEnabled(true);
+        battleCommandSubmenuUi.SetReserveCardLayout(true);
+        battleCommandSubmenuUi.SetItems(CreateBattleCommandChangeItems(activeUnit.Ally));
+        battleCommandSubmenuUi.SetVisible(true);
+        RefreshAll("Select CHANGE target.");
+    }
+
+    private List<BattleCommandSubmenuItem> CreateBattleCommandSkillItems(AllyUnit actor)
+    {
+        List<BattleCommandSubmenuItem> submenuItems = new List<BattleCommandSubmenuItem>(BattleCommandMaxSkillOptions);
+        List<BattleCommandSkillOption> skillOptions = GetBattleCommandSkillOptions(actor);
+        for (int i = 0; i < skillOptions.Count && i < BattleCommandMaxSkillOptions; i++)
+        {
+            BattleCommandSkillOption skillOption = skillOptions[i];
+            submenuItems.Add(new BattleCommandSubmenuItem
+            {
+                DisplayData = CreateBattleCommandSkillDisplay(skillOption),
+                Payload = skillOption
+            });
+        }
+
+        return submenuItems;
+    }
+
+    private List<BattleCommandSkillOption> GetBattleCommandSkillOptions(AllyUnit actor)
+    {
+        List<BattleCommandSkillOption> skillOptions = new List<BattleCommandSkillOption>(BattleCommandMaxSkillOptions);
+        if (actor == null || !actor.IsAlive)
+        {
+            return skillOptions;
+        }
+
+        skillOptions.Add(CreateEchoBattleCommandSkillOption());
+        skillOptions.Add(CreatePowerBoostBattleCommandSkillOption());
+        return skillOptions;
+    }
+
+    private List<BattleCommandSubmenuItem> CreateBattleCommandChangeItems(AllyUnit actor)
+    {
+        List<BattleCommandSubmenuItem> submenuItems = new List<BattleCommandSubmenuItem>(3);
+        List<BattleCommandReserveMemberOption> reserveOptions = GetBattleCommandReserveMemberOptions(actor);
+        for (int i = 0; i < reserveOptions.Count && i < 3; i++)
+        {
+            BattleCommandReserveMemberOption reserveOption = reserveOptions[i];
+            submenuItems.Add(new BattleCommandSubmenuItem
+            {
+                DisplayData = CreateBattleCommandReserveMemberDisplay(reserveOption),
+                Payload = reserveOption
+            });
+        }
+
+        if (submenuItems.Count == 0)
+        {
+            submenuItems.Add(new BattleCommandSubmenuItem
+            {
+                DisplayData = new BattleCommandDisplayData
+                {
+                    OptionType = BattleCommandOptionType.Change,
+                    Title = "No Swap Target",
+                    Description = "No reserve member can change right now.",
+                    NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeNormal : null,
+                    SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeSelected : null,
+                    Icon = null,
+                    BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+                    AccentColor = new Color(0.46f, 0.40f, 0.32f, 1f),
+                    NormalBackgroundColor = BattleCommandChangeNormalTint,
+                    SelectedBackgroundColor = BattleCommandChangeSelectedTint,
+                    HasStats = false,
+                    Interactable = false
+                },
+                Payload = null
+            });
+        }
+
+        return submenuItems;
+    }
+
+    private List<BattleCommandReserveMemberOption> GetBattleCommandReserveMemberOptions(AllyUnit actor)
+    {
+        List<BattleCommandReserveMemberOption> reserveOptions = new List<BattleCommandReserveMemberOption>(3);
+        string targetText = actor != null ? ShortPosition(actor.Position) : "--";
+        BattlePartyStatusPanelController reserveSource = GetPartyStatusReserveSource();
+        for (int i = 0; i < 3; i++)
+        {
+            string displayName;
+            Sprite faceIcon;
+            int hp;
+            int maxHp;
+            if (reserveSource == null || !reserveSource.TryGetReserveMember(i, out displayName, out faceIcon, out hp, out maxHp))
+            {
+                displayName = GetFallbackReserveMemberName(i);
+                faceIcon = null;
+                hp = GetFallbackReserveMemberHp(i);
+                maxHp = hp;
+            }
+
+            CardAttribute attribute = CardAttribute.Neutral;
+            reserveOptions.Add(new BattleCommandReserveMemberOption
+            {
+                Name = string.IsNullOrWhiteSpace(displayName) ? GetFallbackReserveMemberName(i) : displayName,
+                Hp = hp,
+                MaxHp = maxHp > 0 ? maxHp : hp,
+                Attribute = attribute,
+                FaceIcon = faceIcon != null ? faceIcon : GetFallbackReserveMemberFaceIcon(i),
+                TargetText = targetText
+            });
+        }
+
+        return reserveOptions;
+    }
+
+    private BattleCommandDisplayData CreateBattleCommandReserveMemberDisplay(BattleCommandReserveMemberOption reserveOption)
+    {
+        CardAttribute attribute = reserveOption != null ? reserveOption.Attribute : CardAttribute.Neutral;
+        int hp = reserveOption != null ? reserveOption.Hp : 0;
+        return new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Change,
+            Title = reserveOption != null ? reserveOption.Name : "Reserve Ally",
+            Description = "Reserve member candidate. Change processing is not implemented yet.",
+            PowerText = "--",
+            HpText = "HP " + Mathf.Max(0, hp),
+            AttributeText = attribute.ToString(),
+            TargetText = reserveOption != null ? reserveOption.TargetText : "--",
+            DelayText = "--",
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeSelected : null,
+            Icon = null,
+            FaceIcon = reserveOption != null ? reserveOption.FaceIcon : null,
+            AttributeIcon = GetBattleCommandAttributeIcon(attribute),
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = GetAttributeColor(attribute),
+            NormalBackgroundColor = new Color32(42, 54, 75, 235),
+            SelectedBackgroundColor = new Color32(231, 184, 73, 245),
+            HasStats = true,
+            Interactable = true
+        };
+    }
+
+    private static string GetFallbackReserveMemberName(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                return "Reserve Ally A";
+            case 1:
+                return "Reserve Ally B";
+            default:
+                return "Reserve Ally C";
+        }
+    }
+
+    private static int GetFallbackReserveMemberHp(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                return 110;
+            case 1:
+                return 104;
+            default:
+                return 116;
+        }
+    }
+
+    private Sprite GetFallbackReserveMemberFaceIcon(int index)
+    {
+        if (partyStatusHudFaceIconSprites != null && index >= 0 && index < partyStatusHudFaceIconSprites.Length && partyStatusHudFaceIconSprites[index] != null)
+        {
+            return partyStatusHudFaceIconSprites[index];
+        }
+
+        Sprite faceIcon = GetTimelineFaceIconSprite(true, index);
+        if (faceIcon != null)
+        {
+            return faceIcon;
+        }
+
+        return null;
+    }
+
+    private BattleCommandSkillOption CreateEchoBattleCommandSkillOption()
+    {
+        return new BattleCommandSkillOption
+        {
+            Name = "Echo Strike",
+            Description = "敵1体に仮ダメージを与える",
+            Power = 30,
+            Delay = 0,
+            AttributeText = "Neutral",
+            TargetText = "1 Enemy",
+            TargetType = BattleCommandSkillTargetType.EnemySingle,
+            EffectType = BattleCommandSkillEffectType.Damage
+        };
+    }
+
+    private BattleCommandSkillOption CreatePowerBoostBattleCommandSkillOption()
+    {
+        return new BattleCommandSkillOption
+        {
+            Name = "Power Boost",
+            Description = "味方1体のカード・スキル攻撃力を+10する",
+            Power = 0,
+            Delay = 0,
+            AttributeText = "Neutral",
+            TargetText = "1 Ally",
+            TargetType = BattleCommandSkillTargetType.AllySingle,
+            EffectType = BattleCommandSkillEffectType.AttackBuff,
+            BuffAmount = 10
+        };
+    }
+
+    private BattleCommandDisplayData CreateBattleCommandSkillDisplay(BattleCommandSkillOption skillOption)
+    {
+        int attackBonus = activeUnit != null && activeUnit.IsAlly ? GetAttackPowerBonus(activeUnit.Ally) : 0;
+        int displayPower = skillOption != null && skillOption.Power > 0
+            ? skillOption.Power + attackBonus
+            : 0;
+        return new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Skills,
+            Title = skillOption != null ? skillOption.Name : "Skill",
+            Description = skillOption != null ? skillOption.Description : BattleCommandSkillsDescription,
+            PowerText = displayPower > 0 ? displayPower.ToString() : "--",
+            AttributeText = skillOption != null ? skillOption.AttributeText : "Neutral",
+            TargetText = skillOption != null ? skillOption.TargetText : "1 Enemy",
+            DelayText = skillOption != null && skillOption.Delay > 0 ? "D" + skillOption.Delay : "--",
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.SkillsNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.SkillsSelected : null,
+            Icon = null,
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = new Color(0.30f, 1f, 0.36f, 1f),
+            NormalBackgroundColor = BattleCommandSkillNormalTint,
+            SelectedBackgroundColor = BattleCommandSkillSelectedTint,
+            HasStats = true,
+            Interactable = true
+        };
+    }
+
+    private bool IsSkillSelectedThisTurn()
+    {
+        ResetSkillSelectedThisTurnIfNeeded();
+        return skillSelectedThisTurn
+            && activeUnit != null
+            && activeUnit.IsAlly
+            && skillSelectedThisTurnActor == activeUnit.Ally
+            && skillSelectedThisTurnReadyTick == activeUnit.ReadyTick;
+    }
+
+    private void MarkSkillSelectedThisTurn(AllyUnit actor)
+    {
+        if (actor == null)
+        {
+            return;
+        }
+
+        skillSelectedThisTurn = true;
+        skillSelectedThisTurnActor = actor;
+        skillSelectedThisTurnReadyTick = activeUnit != null && activeUnit.IsAlly && activeUnit.Ally == actor
+            ? activeUnit.ReadyTick
+            : actor.NextReadyTick;
+    }
+
+    private void ResetSkillSelectedThisTurnIfNeeded()
+    {
+        if (!skillSelectedThisTurn)
+        {
+            return;
+        }
+
+        if (activeUnit == null || !activeUnit.IsAlly)
+        {
+            return;
+        }
+
+        if (skillSelectedThisTurnActor != activeUnit.Ally || skillSelectedThisTurnReadyTick != activeUnit.ReadyTick)
+        {
+            ClearSkillSelectedThisTurn();
+        }
+    }
+
+    private void ClearSkillSelectedThisTurn()
+    {
+        skillSelectedThisTurn = false;
+        skillSelectedThisTurnActor = null;
+        skillSelectedThisTurnReadyTick = int.MinValue;
+    }
+
+    private BattleCommandDisplayData CreateBattleCommandChangeDisplay(AllyUnit actor, AllyUnit target, int swapDelay)
+    {
+        string targetPosition = target != null ? ShortPosition(target.Position) : "--";
+        string actorPosition = actor != null ? ShortPosition(actor.Position) : "--";
+        return new BattleCommandDisplayData
+        {
+            OptionType = BattleCommandOptionType.Change,
+            Title = target != null ? target.Name : "CHANGE",
+            Description = "Swap " + actorPosition + " with " + targetPosition + ".",
+            PowerText = "--",
+            AttributeText = targetPosition,
+            TargetText = target != null ? target.Name : "--",
+            DelayText = "D" + swapDelay,
+            NormalBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeNormal : null,
+            SelectedBackgroundSprite = battleCommandSprites != null ? battleCommandSprites.ChangeSelected : null,
+            Icon = null,
+            BackgroundDesignSprite = battleCommandSprites != null ? battleCommandSprites.CardOverlay : null,
+            AccentColor = new Color(1f, 0.70f, 0.12f, 1f),
+            NormalBackgroundColor = BattleCommandChangeNormalTint,
+            SelectedBackgroundColor = BattleCommandChangeSelectedTint,
+            HasStats = true,
+            Interactable = target != null
+        };
+    }
+
+    private void SubmitBattleCommandSubmenu(int index, object payload)
+    {
+        BattleCommandSkillOption skillOption = payload as BattleCommandSkillOption;
+        if (skillOption != null)
+        {
+            ResetSkillSelectedThisTurnIfNeeded();
+            if (IsSkillSelectedThisTurn())
+            {
+                ReturnToBattleCommandSelection();
+                RefreshAll(BattleCommandSkillAlreadySelectedDescription);
+                return;
+            }
+
+            pendingBattleCommandSkill = skillOption;
+            battleCommandTargetSkillListIndex = index;
+            if (battleCommandSubmenuUi != null)
+            {
+                battleCommandSubmenuUi.SetInputLocked(true);
+            }
+
+            BeginBattleCommandPendingSkillTargetSelection();
+
+            return;
+        }
+
+        BattleCommandReserveMemberOption reserveOption = payload as BattleCommandReserveMemberOption;
+        if (reserveOption != null)
+        {
+            if (battleCommandSubmenuUi != null)
+            {
+                battleCommandSubmenuUi.SetInputLocked(false);
+            }
+
+            RefreshAll("CHANGE preview only. Reserve member swapping is not implemented yet.");
+            return;
+        }
+
+        if (payload is PartyPosition)
+        {
+            pendingBattleCommandSwapTarget = (PartyPosition)payload;
+            pendingBattleCommandSwapTargetSet = true;
+            if (battleCommandSubmenuUi != null)
+            {
+                battleCommandSubmenuUi.FadeOutThen(ResolveBattleCommandSelectedChange);
+            }
+            else
+            {
+                ResolveBattleCommandSelectedChange();
+            }
+
+            return;
+        }
+
+        CancelBattleCommandSubmenu();
+    }
+
+    private void CancelBattleCommandSubmenu()
+    {
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.FadeOutThen(ReturnToBattleCommandSelection);
+        }
+        else
+        {
+            ReturnToBattleCommandSelection();
+        }
+    }
+
+    private void ReturnToBattleCommandSelection()
+    {
+        if (battleCommandSkillTargetSelectionActive)
+        {
+            ClearBattleCommandSkillTargetSelection();
+        }
+
+        pendingBattleCommandSkill = null;
+        pendingBattleCommandSwapTargetSet = false;
+        battleCommandTransitioning = false;
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetSBackKeyEnabled(false);
+            battleCommandSubmenuUi.SetReserveCardLayout(false);
+            battleCommandSubmenuUi.SetVisible(false);
+            battleCommandSubmenuUi.SetInputLocked(false);
+        }
+
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetOptions(BuildBattleCommandDisplayOptions());
+            battleCommandSelectionUi.SetInputLocked(false);
+        }
+
+        RefreshAll("Command selection.");
+    }
+
+    private void ReturnToBattleCommandSkillSelection(AllyUnit actor, int selectedSkillIndex, string message, bool suppressSInput)
+    {
+        pendingBattleCommandSkill = null;
+        pendingBattleCommandSwapTargetSet = false;
+        battleCommandTransitioning = true;
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetVisible(false);
+            battleCommandSelectionUi.SetInputLocked(true);
+        }
+
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetSpriteSet(battleCommandSprites);
+            battleCommandSubmenuUi.SetSBackKeyEnabled(true);
+            battleCommandSubmenuUi.SetReserveCardLayout(false);
+            battleCommandSubmenuUi.SetItems(CreateBattleCommandSkillItems(actor));
+            battleCommandSubmenuUi.RestoreSelection(selectedSkillIndex);
+            battleCommandSubmenuUi.SetVisible(true);
+            battleCommandSubmenuUi.SetInputLocked(false);
+            if (suppressSInput)
+            {
+                battleCommandSubmenuUi.SuppressInputUntilSKeyRelease(2);
+            }
+        }
+
+        RefreshAll(message);
+    }
+
+    private bool BeginBattleCommandTransition(string commandName)
+    {
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetInputLocked(true);
+        }
+
+        if (!mainBattleSceneMode || battleEnded || !IsPlayerTurn())
+        {
+            UnlockBattleCommandInput("No player command is available.");
+            return false;
+        }
+
+        battleCommandTransitioning = true;
+        RefreshAll("Selected " + commandName + ".");
+        return true;
+    }
+
+    private void BeginBattleCommandPendingSkillTargetSelection()
+    {
+        BattleCommandSkillOption skillOption = pendingBattleCommandSkill != null
+            ? pendingBattleCommandSkill
+            : CreateEchoBattleCommandSkillOption();
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly || activeUnit.Ally == null)
+        {
+            pendingBattleCommandSkill = null;
+            battleCommandTransitioning = false;
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        ResetSkillSelectedThisTurnIfNeeded();
+        if (IsSkillSelectedThisTurn())
+        {
+            pendingBattleCommandSkill = null;
+            ReturnToBattleCommandSelection();
+            RefreshAll(BattleCommandSkillAlreadySelectedDescription);
+            return;
+        }
+
+        battleCommandTargetSkill = skillOption;
+        battleCommandTargetCaster = activeUnit.Ally;
+        battleCommandSkillTargetIndex = 0;
+        battleCommandSkillEnemyTargets.Clear();
+        battleCommandSkillAllyTargets.Clear();
+        battleCommandTransitioning = false;
+
+        BuildBattleCommandSkillTargetCandidates(skillOption);
+        if (!HasBattleCommandSkillTargetCandidates())
+        {
+            AllyUnit actor = battleCommandTargetCaster;
+            int skillIndex = battleCommandTargetSkillListIndex;
+            pendingBattleCommandSkill = null;
+            ClearBattleCommandSkillTargetSelection();
+            ReturnToBattleCommandSkillSelection(actor, skillIndex, "No valid target for " + skillOption.Name + ".", false);
+            return;
+        }
+
+        battleCommandSkillTargetSelectionActive = true;
+        SelectInitialBattleCommandSkillTarget();
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetSpriteSet(battleCommandSprites);
+            battleCommandSubmenuUi.SetSBackKeyEnabled(false);
+            battleCommandSubmenuUi.SetReserveCardLayout(false);
+            battleCommandSubmenuUi.SetPassiveInfo(CreateBattleCommandSkillTargetDisplay());
+        }
+
+        RefreshAll(skillOption.Name + ": select target. S: back.");
+        ShowBattleCommandSkillTargetOverlay();
+    }
+
+    private void BuildBattleCommandSkillTargetCandidates(BattleCommandSkillOption skillOption)
+    {
+        if (skillOption == null)
+        {
+            return;
+        }
+
+        switch (skillOption.TargetType)
+        {
+            case BattleCommandSkillTargetType.EnemySingle:
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    EnemyUnit enemy = enemies[i];
+                    if (enemy != null && enemy.IsAlive)
+                    {
+                        battleCommandSkillEnemyTargets.Add(enemy);
+                    }
+                }
+                break;
+            case BattleCommandSkillTargetType.AllySingle:
+            case BattleCommandSkillTargetType.Self:
+                for (int i = 0; i < allies.Count; i++)
+                {
+                    AllyUnit ally = allies[i];
+                    if (ally != null && ally.IsAlive)
+                    {
+                        battleCommandSkillAllyTargets.Add(ally);
+                    }
+                }
+                break;
+        }
+    }
+
+    private bool HasBattleCommandSkillTargetCandidates()
+    {
+        return battleCommandSkillEnemyTargets.Count > 0 || battleCommandSkillAllyTargets.Count > 0;
+    }
+
+    private void SelectInitialBattleCommandSkillTarget()
+    {
+        if (IsBattleCommandSkillEnemyTargetSelection())
+        {
+            int selected = selectedEnemy != null ? battleCommandSkillEnemyTargets.IndexOf(selectedEnemy) : -1;
+            battleCommandSkillTargetIndex = Mathf.Clamp(selected >= 0 ? selected : 0, 0, battleCommandSkillEnemyTargets.Count - 1);
+            selectedEnemy = battleCommandSkillEnemyTargets[battleCommandSkillTargetIndex];
+            return;
+        }
+
+        if (IsBattleCommandSkillAllyTargetSelection())
+        {
+            int selected = selectedAlly != null ? battleCommandSkillAllyTargets.IndexOf(selectedAlly) : -1;
+            if (selected < 0 && battleCommandTargetCaster != null)
+            {
+                selected = battleCommandSkillAllyTargets.IndexOf(battleCommandTargetCaster);
+            }
+
+            battleCommandSkillTargetIndex = Mathf.Clamp(selected >= 0 ? selected : 0, 0, battleCommandSkillAllyTargets.Count - 1);
+            selectedAlly = battleCommandSkillAllyTargets[battleCommandSkillTargetIndex];
+        }
+    }
+
+    private void HandleBattleCommandSkillTargetSelectionInput()
+    {
+        if (battleCommandSkillEffectRoutine != null)
+        {
+            return;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        Gamepad gamepad = Gamepad.current;
+        if (keyboard != null && (keyboard.sKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame || keyboard.backspaceKey.wasPressedThisFrame))
+        {
+            CancelBattleCommandSkillTargetSelection();
+            return;
+        }
+
+        if (gamepad != null && gamepad.buttonEast.wasPressedThisFrame)
+        {
+            CancelBattleCommandSkillTargetSelection();
+            return;
+        }
+
+        if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
+        {
+            ConfirmBattleCommandSkillTargetSelection();
+            return;
+        }
+
+        if (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
+        {
+            ConfirmBattleCommandSkillTargetSelection();
+            return;
+        }
+
+        int moveDirection = 0;
+        if (keyboard != null)
+        {
+            if (keyboard.leftArrowKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame || keyboard.wKey.wasPressedThisFrame)
+            {
+                moveDirection = -1;
+            }
+            else if (keyboard.rightArrowKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame)
+            {
+                moveDirection = 1;
+            }
+        }
+
+        if (moveDirection == 0 && gamepad != null)
+        {
+            if (gamepad.dpad.left.wasPressedThisFrame || gamepad.dpad.up.wasPressedThisFrame)
+            {
+                moveDirection = -1;
+            }
+            else if (gamepad.dpad.right.wasPressedThisFrame || gamepad.dpad.down.wasPressedThisFrame)
+            {
+                moveDirection = 1;
+            }
+            else
+            {
+                Vector2 stick = gamepad.leftStick.ReadValue();
+                float axis = Mathf.Abs(stick.x) >= Mathf.Abs(stick.y) ? stick.x : stick.y;
+                if (Mathf.Abs(axis) > 0.55f && Time.unscaledTime >= battleCommandSkillNextTargetMoveTime)
+                {
+                    moveDirection = axis > 0f ? 1 : -1;
+                    battleCommandSkillNextTargetMoveTime = Time.unscaledTime + 0.18f;
+                }
+            }
+        }
+
+        if (moveDirection != 0)
+        {
+            MoveBattleCommandSkillTargetSelection(moveDirection);
+        }
+    }
+
+    private void MoveBattleCommandSkillTargetSelection(int direction)
+    {
+        int count = IsBattleCommandSkillEnemyTargetSelection()
+            ? battleCommandSkillEnemyTargets.Count
+            : battleCommandSkillAllyTargets.Count;
+        if (count <= 0)
+        {
+            return;
+        }
+
+        int nextIndex = battleCommandSkillTargetIndex + (direction >= 0 ? 1 : -1);
+        battleCommandSkillTargetIndex = (nextIndex % count + count) % count;
+        ApplyBattleCommandSkillTargetSelection();
+    }
+
+    private void ApplyBattleCommandSkillTargetSelection()
+    {
+        if (IsBattleCommandSkillEnemyTargetSelection())
+        {
+            EnemyUnit enemy = GetCurrentBattleCommandSkillEnemyTarget();
+            if (enemy != null)
+            {
+                selectedEnemy = enemy;
+            }
+        }
+        else if (IsBattleCommandSkillAllyTargetSelection())
+        {
+            AllyUnit ally = GetCurrentBattleCommandSkillAllyTarget();
+            if (ally != null)
+            {
+                selectedAlly = ally;
+            }
+        }
+
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetPassiveInfo(CreateBattleCommandSkillTargetDisplay());
+        }
+
+        RefreshAll("Select target: " + GetCurrentBattleCommandSkillTargetName() + ". S: back.");
+        ShowBattleCommandSkillTargetOverlay();
+    }
+
+    private void CancelBattleCommandSkillTargetSelection()
+    {
+        if (!battleCommandSkillTargetSelectionActive)
+        {
+            return;
+        }
+
+        AllyUnit actor = battleCommandTargetCaster != null ? battleCommandTargetCaster : activeUnit != null ? activeUnit.Ally : null;
+        int skillIndex = battleCommandTargetSkillListIndex;
+        ClearBattleCommandSkillTargetSelection();
+        ReturnToBattleCommandSkillSelection(actor, skillIndex, "Select SKILL.", true);
+    }
+
+    private void ConfirmBattleCommandSkillTargetSelection()
+    {
+        if (!battleCommandSkillTargetSelectionActive || battleCommandTargetSkill == null || battleCommandTargetCaster == null)
+        {
+            return;
+        }
+
+        ResetSkillSelectedThisTurnIfNeeded();
+        if (IsSkillSelectedThisTurn())
+        {
+            ClearBattleCommandSkillTargetSelection();
+            ReturnToBattleCommandSelection();
+            RefreshAll(BattleCommandSkillAlreadySelectedDescription);
+            return;
+        }
+
+        EnemyUnit enemyTarget = IsBattleCommandSkillEnemyTargetSelection() ? GetCurrentBattleCommandSkillEnemyTarget() : null;
+        AllyUnit allyTarget = IsBattleCommandSkillAllyTargetSelection() ? GetCurrentBattleCommandSkillAllyTarget() : null;
+        if (enemyTarget == null && allyTarget == null)
+        {
+            RefreshAll("No valid target for " + battleCommandTargetSkill.Name + ".");
+            ShowBattleCommandSkillTargetOverlay();
+            return;
+        }
+
+        MarkSkillSelectedThisTurn(battleCommandTargetCaster);
+        battleCommandTransitioning = true;
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetInputLocked(true);
+        }
+
+        battleCommandSkillEffectRoutine = StartCoroutine(PlayBattleCommandSkillEffect(battleCommandTargetSkill, battleCommandTargetCaster, enemyTarget, allyTarget));
+    }
+
+    private IEnumerator PlayBattleCommandSkillEffect(BattleCommandSkillOption skillOption, AllyUnit caster, EnemyUnit enemyTarget, AllyUnit allyTarget)
+    {
+        string targetName = enemyTarget != null ? enemyTarget.Name : allyTarget != null ? allyTarget.Name : "--";
+        Debug.Log("[Skill] " + skillOption.Name + " used by " + (caster != null ? caster.Name : "--") + " on " + targetName);
+        ShowBattleCommandSkillTargetOverlay(new Color(1f, 1f, 1f, 0.74f));
+        yield return new WaitForSecondsRealtime(0.16f);
+        ShowBattleCommandSkillTargetOverlay();
+        yield return new WaitForSecondsRealtime(0.18f);
+
+        string resultMessage = ResolveBattleCommandSkillEffect(skillOption, caster, enemyTarget, allyTarget);
+        ClearBattleCommandSkillTargetSelection();
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetSBackKeyEnabled(false);
+            battleCommandSubmenuUi.SetReserveCardLayout(false);
+            battleCommandSubmenuUi.SetVisible(false);
+            battleCommandSubmenuUi.SetInputLocked(false);
+        }
+
+        battleCommandTransitioning = false;
+        battleCommandSkillEffectRoutine = null;
+        if (TryShowVictory(playerActionTurnCount))
+        {
+            yield break;
+        }
+
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetOptions(BuildBattleCommandDisplayOptions());
+            battleCommandSelectionUi.RestoreSelection(3);
+            battleCommandSelectionUi.SetVisible(true);
+            battleCommandSelectionUi.SetInputLocked(false);
+        }
+
+        RefreshAll(resultMessage);
+    }
+
+    private string ResolveBattleCommandSkillEffect(BattleCommandSkillOption skillOption, AllyUnit caster, EnemyUnit enemyTarget, AllyUnit allyTarget)
+    {
+        if (skillOption == null)
+        {
+            return "SKILL failed.";
+        }
+
+        switch (skillOption.EffectType)
+        {
+            case BattleCommandSkillEffectType.Damage:
+                if (enemyTarget == null)
+                {
+                    return skillOption.Name + " failed: no enemy target.";
+                }
+
+                int damage = CalculateOutgoingDamageAmount(caster, Mathf.Max(1, skillOption.Power));
+                int defeated = ApplyDamage(caster, enemyTarget, Mathf.Max(1, skillOption.Power), skillOption.Name);
+                if (defeated > maxSimultaneousDefeatCount)
+                {
+                    maxSimultaneousDefeatCount = defeated;
+                }
+
+                Debug.Log("[Skill] Damage " + damage + " applied");
+                return skillOption.Name + " dealt " + damage + " to " + enemyTarget.Name + ".";
+            case BattleCommandSkillEffectType.AttackBuff:
+                if (allyTarget == null)
+                {
+                    return skillOption.Name + " failed: no ally target.";
+                }
+
+                int buff = skillOption.BuffAmount != 0 ? skillOption.BuffAmount : 10;
+                allyTarget.AttackPowerBonus += buff;
+                allyTarget.Status = "ATK +" + allyTarget.AttackPowerBonus;
+                Debug.Log("[Skill] Attack buff +" + buff + " applied to " + allyTarget.Name);
+                return allyTarget.Name + " gained ATK +" + buff + ".";
+            case BattleCommandSkillEffectType.Heal:
+                if (allyTarget == null)
+                {
+                    return skillOption.Name + " failed: no ally target.";
+                }
+
+                HealAlly(allyTarget, Mathf.Max(0, skillOption.Power));
+                return skillOption.Name + " healed " + allyTarget.Name + ".";
+            default:
+                return skillOption.Name + " has no effect yet.";
+        }
+    }
+
+    private void ClearBattleCommandSkillTargetSelection()
+    {
+        battleCommandSkillTargetSelectionActive = false;
+        pendingBattleCommandSkill = null;
+        battleCommandTargetSkill = null;
+        battleCommandTargetCaster = null;
+        battleCommandSkillTargetIndex = 0;
+        battleCommandSkillEnemyTargets.Clear();
+        battleCommandSkillAllyTargets.Clear();
+        HideBattleSceneAttackRangeOverlay();
+    }
+
+    private bool TrySelectBattleCommandSkillEnemyTarget(EnemyUnit enemy)
+    {
+        if (!IsBattleCommandSkillEnemyTargetSelection() || enemy == null)
+        {
+            return false;
+        }
+
+        int index = battleCommandSkillEnemyTargets.IndexOf(enemy);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        battleCommandSkillTargetIndex = index;
+        selectedEnemy = enemy;
+        ApplyBattleCommandSkillTargetSelection();
+        return true;
+    }
+
+    private bool TrySelectBattleCommandSkillAllyTarget(AllyUnit ally)
+    {
+        if (!IsBattleCommandSkillAllyTargetSelection() || ally == null)
+        {
+            return false;
+        }
+
+        int index = battleCommandSkillAllyTargets.IndexOf(ally);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        battleCommandSkillTargetIndex = index;
+        selectedAlly = ally;
+        ApplyBattleCommandSkillTargetSelection();
+        return true;
+    }
+
+    private void ShowBattleCommandSkillTargetOverlay()
+    {
+        Color color = IsBattleCommandSkillEnemyTargetSelection()
+            ? new Color(1f, 0.68f, 0.22f, 0.58f)
+            : new Color(0.50f, 1f, 0.64f, 0.52f);
+        ShowBattleCommandSkillTargetOverlay(color);
+    }
+
+    private void ShowBattleCommandSkillTargetOverlay(Color selectedColor)
+    {
+        HideBattleSceneAttackRangeCells();
+        if (!battleCommandSkillTargetSelectionActive)
+        {
+            return;
+        }
+
+        Color candidateColor = selectedColor;
+        candidateColor.a *= 0.45f;
+        if (IsBattleCommandSkillEnemyTargetSelection())
+        {
+            for (int i = 0; i < battleCommandSkillEnemyTargets.Count; i++)
+            {
+                EnemyUnit enemy = battleCommandSkillEnemyTargets[i];
+                if (enemy == null)
+                {
+                    continue;
+                }
+
+                int column = BattleGridAllyCols + enemy.GridPosition.y;
+                SetBattleSceneAttackRangeCell(enemy.GridPosition.x, column, true, i == battleCommandSkillTargetIndex ? selectedColor : candidateColor);
+            }
+        }
+        else if (IsBattleCommandSkillAllyTargetSelection())
+        {
+            for (int i = 0; i < battleCommandSkillAllyTargets.Count; i++)
+            {
+                AllyUnit ally = battleCommandSkillAllyTargets[i];
+                if (ally == null)
+                {
+                    continue;
+                }
+
+                SetBattleSceneAttackRangeCell(GetAllyGridRow(ally.Position), GetBattleSceneAllyColumn(ally), true, i == battleCommandSkillTargetIndex ? selectedColor : candidateColor);
+            }
+        }
+
+        if (battleSceneAttackRangeOverlayRoot != null)
+        {
+            battleSceneAttackRangeOverlayRoot.gameObject.SetActive(true);
+        }
+    }
+
+    private BattleCommandDisplayData CreateBattleCommandSkillTargetDisplay()
+    {
+        BattleCommandDisplayData display = CreateBattleCommandSkillDisplay(battleCommandTargetSkill);
+        display.Description = "対象を選択してください / S: 戻る";
+        display.TargetText = GetCurrentBattleCommandSkillTargetName();
+        display.Interactable = false;
+        return display;
+    }
+
+    private bool IsBattleCommandSkillEnemyTargetSelection()
+    {
+        return battleCommandSkillTargetSelectionActive
+            && battleCommandTargetSkill != null
+            && battleCommandTargetSkill.TargetType == BattleCommandSkillTargetType.EnemySingle;
+    }
+
+    private bool IsBattleCommandSkillAllyTargetSelection()
+    {
+        return battleCommandSkillTargetSelectionActive
+            && battleCommandTargetSkill != null
+            && (battleCommandTargetSkill.TargetType == BattleCommandSkillTargetType.AllySingle
+                || battleCommandTargetSkill.TargetType == BattleCommandSkillTargetType.Self);
+    }
+
+    private bool IsBattleCommandSkillEnemyCandidate(EnemyUnit enemy)
+    {
+        return IsBattleCommandSkillEnemyTargetSelection() && enemy != null && battleCommandSkillEnemyTargets.Contains(enemy);
+    }
+
+    private bool IsBattleCommandSkillAllyCandidate(AllyUnit ally)
+    {
+        return IsBattleCommandSkillAllyTargetSelection() && ally != null && battleCommandSkillAllyTargets.Contains(ally);
+    }
+
+    private EnemyUnit GetCurrentBattleCommandSkillEnemyTarget()
+    {
+        return battleCommandSkillTargetIndex >= 0 && battleCommandSkillTargetIndex < battleCommandSkillEnemyTargets.Count
+            ? battleCommandSkillEnemyTargets[battleCommandSkillTargetIndex]
+            : null;
+    }
+
+    private AllyUnit GetCurrentBattleCommandSkillAllyTarget()
+    {
+        return battleCommandSkillTargetIndex >= 0 && battleCommandSkillTargetIndex < battleCommandSkillAllyTargets.Count
+            ? battleCommandSkillAllyTargets[battleCommandSkillTargetIndex]
+            : null;
+    }
+
+    private string GetCurrentBattleCommandSkillTargetName()
+    {
+        EnemyUnit enemy = GetCurrentBattleCommandSkillEnemyTarget();
+        if (enemy != null)
+        {
+            return enemy.Name;
+        }
+
+        AllyUnit ally = GetCurrentBattleCommandSkillAllyTarget();
+        return ally != null ? ally.Name : "--";
+    }
+
+    private void ResolveBattleCommandSkills()
+    {
+        if (pendingBattleCommandSkill == null)
+        {
+            pendingBattleCommandSkill = CreateEchoBattleCommandSkillOption();
+        }
+
+        BeginBattleCommandPendingSkillTargetSelection();
+    }
+
+    private void ResolveBattleCommandSelectedSkill()
+    {
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetSBackKeyEnabled(false);
+            battleCommandSubmenuUi.SetReserveCardLayout(false);
+        }
+
+        BattleCommandSkillOption skillOption = pendingBattleCommandSkill != null
+            ? pendingBattleCommandSkill
+            : CreateEchoBattleCommandSkillOption();
+        pendingBattleCommandSkill = null;
+        battleCommandTransitioning = false;
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
+        {
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        AllyUnit actor = activeUnit.Ally;
+        if (!IsSkillSelectedThisTurn())
+        {
+            MarkSkillSelectedThisTurn(actor);
+        }
+
+        EnemyUnit target = selectedEnemy != null && selectedEnemy.IsAlive ? selectedEnemy : GetFirstAliveEnemy();
+        SkillTimelineAction skill = AddSkillEntry(skillOption.Name, actor, skillOption.Delay, skillOption.Power, target);
+        if (skill == null)
+        {
+            RefreshAll("No target is available for SKILL.");
+            return;
+        }
+
+        int actionDelay = BattleActionDelayResolver.Resolve(BattleActionDelayKind.ClearCard);
+        AdvanceActiveUnit(activeUnit, actionDelay);
+        playerActionTurnCount++;
+        RefreshAll(actor.Name + " used SKILL. " + skill.DisplayName + " queued.");
+    }
+
+    private void ResolveBattleCommandChange()
+    {
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (IsPlayerTurn() && activeUnit != null && activeUnit.IsAlly)
+        {
+            PartyPosition fallbackTarget;
+            if (TryGetBattleCommandChangeTarget(activeUnit.Ally.Position, out fallbackTarget))
+            {
+                pendingBattleCommandSwapTarget = fallbackTarget;
+                pendingBattleCommandSwapTargetSet = true;
+            }
+        }
+
+        ResolveBattleCommandSelectedChange();
+    }
+
+    private void ResolveBattleCommandSelectedChange()
+    {
+        if (battleCommandSubmenuUi != null)
+        {
+            battleCommandSubmenuUi.SetSBackKeyEnabled(false);
+            battleCommandSubmenuUi.SetReserveCardLayout(false);
+        }
+
+        battleCommandTransitioning = false;
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
+        {
+            pendingBattleCommandSwapTargetSet = false;
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        AllyUnit actor = activeUnit.Ally;
+        PartyPosition swapTarget = pendingBattleCommandSwapTarget;
+        if (!pendingBattleCommandSwapTargetSet && !TryGetBattleCommandChangeTarget(actor.Position, out swapTarget))
+        {
+            pendingBattleCommandSwapTargetSet = false;
+            RefreshAll("CHANGE failed because no ally can swap.");
+            return;
+        }
+
+        pendingBattleCommandSwapTargetSet = false;
+        AllyUnit targetAlly = GetAllyAtPosition(swapTarget);
+        if (targetAlly == null || !targetAlly.IsAlive || swapTarget == actor.Position)
+        {
+            RefreshAll("CHANGE failed because no ally can swap.");
+            return;
+        }
+
+        PartyPosition from = actor.Position;
+        ResolveSwap(from, swapTarget);
+        int actionDelay = BattleActionDelayResolver.Resolve(BattleActionDelayKind.Swap);
+        AdvanceActiveUnit(activeUnit, actionDelay);
+        playerActionTurnCount++;
+        RefreshAll(actor.Name + " changed position " + ShortPosition(from) + "/" + ShortPosition(swapTarget) + ".");
+    }
+
+    private void ResolveBattleCommandRun()
+    {
+        battleCommandTransitioning = false;
+        activeUnit = GetTimelineHeadActiveUnit();
+        if (!IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
+        {
+            RefreshAll("No player command is available.");
+            return;
+        }
+
+        AllyUnit actor = activeUnit.Ally;
+        bool escaped = random.NextDouble() <= BattleSceneEscapeSuccessChance;
+        if (escaped)
+        {
+            battleEnded = true;
+            HideBattleSceneAttackRangeOverlay();
+            RefreshAll(actor.Name + " escaped from battle.");
+            return;
+        }
+
+        int actionDelay = BattleActionDelayResolver.Resolve(BattleActionDelayKind.Wait);
+        AdvanceActiveUnit(activeUnit, actionDelay);
+        playerActionTurnCount++;
+        RefreshAll(actor.Name + " failed to run. Delay " + actionDelay + ".");
+    }
+
+    private bool TryGetBattleCommandChangeTarget(PartyPosition from, out PartyPosition target)
+    {
+        for (int i = 0; i < allies.Count; i++)
+        {
+            AllyUnit ally = allies[i];
+            if (ally != null && ally.IsAlive && ally.Position != from)
+            {
+                target = ally.Position;
+                return true;
+            }
+        }
+
+        target = from;
+        return false;
+    }
+
+    private void UnlockBattleCommandInput(string message)
+    {
+        if (battleCommandSelectionUi != null)
+        {
+            battleCommandSelectionUi.SetInputLocked(false);
+        }
+
+        RefreshAll(message);
     }
 
     private void RefreshBattleSceneCommandPanel()
@@ -7078,6 +10106,16 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
+        if (battleCommandCardRangePreviewActive)
+        {
+            return;
+        }
+
+        if (battleCommandSkillTargetSelectionActive)
+        {
+            return;
+        }
+
         HideBattleSceneAttackRangeCells();
         if (battleEnded || !IsPlayerTurn() || activeUnit == null || !activeUnit.IsAlly)
         {
@@ -7101,7 +10139,9 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         }
 
         PrototypeAttackDefinition attack = GetPrototypeAttackDefinition(attackIndex);
-        int row = GetAllyGridRow(activeUnit.Ally.Position);
+        AllyUnit actor = activeUnit.Ally;
+        int row = GetAllyGridRow(actor.Position);
+        int startColumn = GetBattleSceneForwardStartColumn(actor);
         Color rangeColor = hoveredPrototypeAttackIndex >= 0
             ? new Color(1f, 0.96f, 0.24f, 0.82f)
             : new Color(1f, 0.82f, 0.16f, 0.68f);
@@ -7109,12 +10149,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         switch (attack.RangePattern)
         {
             case PrototypeAttackRangePattern.RowToEnemyEdge:
-                if (SetBattleSceneAttackRangeRow(row, true))
-                {
-                    break;
-                }
-
-                for (int column = BattleScenePrototypeAttackRangeStartColumn; column < BattleGridTotalCols; column++)
+                for (int column = startColumn; column < BattleGridTotalCols; column++)
                 {
                     SetBattleSceneAttackRangeCell(row, column, true, rangeColor);
                 }
@@ -7177,21 +10212,24 @@ public class BattleTimelinePrototypeController : MonoBehaviour
             return;
         }
 
+        SpriteRenderer spriteRenderer = battleSceneAttackRangeSceneSpriteRenderers[row, column];
+        GameObject colliderOverlayRoot = battleSceneAttackRangeColliderOverlayRoots[row, column];
+        bool hasSceneCellOverlay = spriteRenderer != null || colliderOverlayRoot != null;
+
         Image cell = battleSceneAttackRangeCells[row, column];
         if (cell != null)
         {
-            cell.color = visible ? color : Color.clear;
-            cell.gameObject.SetActive(visible);
+            bool showUiFallback = visible && !hasSceneCellOverlay;
+            cell.color = showUiFallback ? color : Color.clear;
+            cell.gameObject.SetActive(showUiFallback);
         }
 
-        SpriteRenderer spriteRenderer = battleSceneAttackRangeSceneSpriteRenderers[row, column];
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = visible;
-            spriteRenderer.color = visible ? Color.white : Color.clear;
+            spriteRenderer.color = visible ? color : Color.clear;
         }
 
-        GameObject colliderOverlayRoot = battleSceneAttackRangeColliderOverlayRoots[row, column];
         if (colliderOverlayRoot != null)
         {
             colliderOverlayRoot.SetActive(visible);
@@ -7351,8 +10389,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         string commandName = string.Empty;
         if (mainBattleSceneMode && IsPlayerTurn())
         {
-            PrototypeAttackDefinition attack = GetSelectedPrototypeAttack();
-            commandName = attack != null ? attack.Name : string.Empty;
+            commandName = string.Empty;
         }
         else if (cardSelectOpen && IsPlayerTurn())
         {
@@ -7606,6 +10643,36 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         return !battleEnded && activeUnit != null && activeUnit.IsAlly && GetFirstAliveEnemy() != null && GetFirstAliveAlly() != null;
     }
 
+    private TimelineUnit GetTimelineHeadActiveUnit()
+    {
+        int blankAdvanceTicks;
+        if (TryGetTimelineBlankHeadAdvance(out blankAdvanceTicks))
+        {
+            return null;
+        }
+
+        return GetCurrentActiveUnit();
+    }
+
+    private bool TryGetTimelineBlankHeadAdvance(out int advanceTicks)
+    {
+        advanceTicks = 0;
+        TimelineUnit nextUnit = GetCurrentActiveUnit();
+        if (nextUnit == null)
+        {
+            return false;
+        }
+
+        int gap = nextUnit.ReadyTick - currentTick;
+        if (gap <= 0)
+        {
+            return false;
+        }
+
+        advanceTicks = Mathf.Clamp(PrefabTimelineBlankCardStepTicks, 1, gap);
+        return true;
+    }
+
     private TimelineUnit GetCurrentActiveUnit()
     {
         List<TimelineUnit> units = new List<TimelineUnit>();
@@ -7789,7 +10856,7 @@ public class BattleTimelinePrototypeController : MonoBehaviour
         for (int i = 0; i < enemies.Count; i++)
         {
             EnemyUnit enemy = enemies[i];
-            if (enemy.GridPosition.x == row && enemy.GridPosition.y == column)
+            if (enemy != null && enemy.IsAlive && enemy.GridPosition.x == row && enemy.GridPosition.y == column)
             {
                 return enemy;
             }

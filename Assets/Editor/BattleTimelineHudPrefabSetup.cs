@@ -79,6 +79,7 @@ public static class BattleTimelineHudPrefabSetup
             if (hudView != null)
             {
                 hudView.CacheReferences();
+                hudView.HideCurrentHpDisplay();
                 EditorUtility.SetDirty(hudView);
             }
 
