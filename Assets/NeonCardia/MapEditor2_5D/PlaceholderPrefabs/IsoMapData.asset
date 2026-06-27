@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8eb79ee5207a7b45b32ebb80476f761, type: 3}
+  m_Name: IsoMapData
+  m_EditorClassIdentifier: Assembly-CSharp::IsoMapData
+  mapId: new_iso_map
+  displayName: New Iso Map
+  width: 12
+  depth: 12
+  cellSize: 1
+  maxLevel: 3
+  defaultSpawnCell: {x: 0, y: 0, z: 0}
+  tileInstances: []
+  propInstances: []
+  encounterAreas: []
+  transitions: []
