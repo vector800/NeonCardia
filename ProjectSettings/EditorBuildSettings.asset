@@ -20,5 +20,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MapBattleConnectionTest.unity
     guid: 6ccc2d95e9a04fe9b707826826d71813
+  - enabled: 1
+    path: Assets/Scenes/IsoMapRuntimeTest.unity
+    guid: 85d68a36b4ed4034ba8d193fc50206b4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

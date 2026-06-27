@@ -1,0 +1,162 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8eb79ee5207a7b45b32ebb80476f761, type: 3}
+  m_Name: SF_Floating_Test
+  m_EditorClassIdentifier: Assembly-CSharp::IsoMapData
+  mapId: SF_Floating_Test
+  displayName: SF Floating Test
+  width: 8
+  depth: 8
+  cellSize: 1
+  maxLevel: 1
+  defaultSpawnCell: {x: 3, y: 0, z: 3}
+  tileInstances:
+  - instanceId: PlatformTile_1x1_sample_00
+    prefabId: PlatformTile_1x1
+    cell: {x: 2, y: 0, z: 2}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_01
+    prefabId: PlatformTile_1x1
+    cell: {x: 3, y: 0, z: 2}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_02
+    prefabId: PlatformTile_1x1
+    cell: {x: 4, y: 0, z: 2}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_03
+    prefabId: PlatformTile_1x1
+    cell: {x: 2, y: 0, z: 3}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_04
+    prefabId: PlatformTile_1x1
+    cell: {x: 3, y: 0, z: 3}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_05
+    prefabId: PlatformTile_1x1
+    cell: {x: 4, y: 0, z: 3}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_06
+    prefabId: PlatformTile_1x1
+    cell: {x: 2, y: 0, z: 4}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_07
+    prefabId: PlatformTile_1x1
+    cell: {x: 3, y: 0, z: 4}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: Stair_Up_sample_08
+    prefabId: Stair_Up
+    cell: {x: 4, y: 0, z: 4}
+    rotationY: 90
+    walkable: 1
+    areaId: 
+  - instanceId: Bridge_1x1_sample_09
+    prefabId: Bridge_1x1
+    cell: {x: 1, y: 0, z: 3}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: Bridge_1x1_sample_10
+    prefabId: Bridge_1x1
+    cell: {x: 5, y: 0, z: 3}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: Bridge_1x1_sample_11
+    prefabId: Bridge_1x1
+    cell: {x: 6, y: 0, z: 3}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_12
+    prefabId: PlatformTile_1x1
+    cell: {x: 5, y: 1, z: 4}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  - instanceId: PlatformTile_1x1_sample_13
+    prefabId: PlatformTile_1x1
+    cell: {x: 6, y: 1, z: 4}
+    rotationY: 0
+    walkable: 1
+    areaId: 
+  propInstances:
+  - instanceId: SpawnMarker_sample_14
+    prefabId: SpawnMarker
+    cell: {x: 3, y: 0, z: 3}
+    offset: {x: 0, y: 0.08, z: 0}
+    rotationY: 0
+    blocksMovement: 0
+  - instanceId: TransitionMarker_sample_15
+    prefabId: TransitionMarker
+    cell: {x: 6, y: 1, z: 4}
+    offset: {x: 0, y: 0.08, z: 0}
+    rotationY: 0
+    blocksMovement: 0
+  - instanceId: Railing_sample_16
+    prefabId: Railing
+    cell: {x: 2, y: 0, z: 2}
+    offset: {x: 0, y: 0, z: 0}
+    rotationY: 0
+    blocksMovement: 1
+  - instanceId: Railing_sample_17
+    prefabId: Railing
+    cell: {x: 4, y: 0, z: 2}
+    offset: {x: 0, y: 0, z: 0}
+    rotationY: 0
+    blocksMovement: 1
+  - instanceId: Wall_sample_18
+    prefabId: Wall
+    cell: {x: 2, y: 0, z: 5}
+    offset: {x: 0, y: 0, z: 0}
+    rotationY: 0
+    blocksMovement: 1
+  - instanceId: Wall_sample_19
+    prefabId: Wall
+    cell: {x: 5, y: 1, z: 5}
+    offset: {x: 0, y: 0, z: 0}
+    rotationY: 0
+    blocksMovement: 1
+  encounterAreas:
+  - encounterAreaId: sf_float_patrol_01
+    cells:
+    - {x: 5, y: 0, z: 3}
+    - {x: 6, y: 0, z: 3}
+    - {x: 5, y: 1, z: 4}
+    - {x: 6, y: 1, z: 4}
+    enemyGroupTableId: sf_floating_test_group
+    battleBackgroundId: sf_floating_test_bg
+    battleBgmId: sf_floating_test_bgm
+    minStepsBeforeEncounter: 2
+    encounterChancePerStep: 0.35
+    cooldownStepsAfterBattle: 5
+  transitions:
+  - transitionId: sample_transition_stub
+    cell: {x: 6, y: 1, z: 4}
+    targetMapId: UNASSIGNED
+    targetSpawnId: default
+    requiredFlag: 

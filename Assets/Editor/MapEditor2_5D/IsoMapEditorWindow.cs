@@ -23,6 +23,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
     private int placementZ;
     private int placementLevel;
     private int rotationY;
+    private int selectedEncounterAreaIndex = -1;
     private List<string> validationMessages = new List<string>();
 
     [MenuItem("Tools/NeonCardia/2.5D Map Editor", false, 41080)]
@@ -63,6 +64,8 @@ public sealed class IsoMapEditorWindow : EditorWindow
         EditorGUILayout.Space(6f);
         DrawPlacementSection();
         EditorGUILayout.Space(6f);
+        DrawEncounterAreaSection();
+        EditorGUILayout.Space(6f);
         DrawPreviewSection();
         EditorGUILayout.Space(6f);
         DrawInstanceSection();
@@ -88,6 +91,15 @@ public sealed class IsoMapEditorWindow : EditorWindow
         if (GUILayout.Button("New IsoMapData", GUILayout.Height(24f)))
         {
             CreateNewMapData();
+        }
+
+        if (GUILayout.Button("Create Sample SF Floating Map", GUILayout.Height(24f)))
+        {
+            mapData = IsoMapSampleMapBuilder.CreateOrUpdateSampleSfFloatingMap();
+            selectedInstanceId = null;
+            selectedEncounterAreaIndex = mapData != null && mapData.EncounterAreas.Count > 0 ? 0 : -1;
+            ClampPlacementCell();
+            RepaintSceneViews();
         }
 
         EditorGUI.BeginDisabledGroup(mapData == null);
@@ -246,6 +258,133 @@ public sealed class IsoMapEditorWindow : EditorWindow
         EditorGUI.EndDisabledGroup();
         EditorGUI.EndDisabledGroup();
         EditorGUILayout.EndVertical();
+    }
+
+    private void DrawEncounterAreaSection()
+    {
+        EditorGUILayout.LabelField("Encounter Areas", EditorStyles.boldLabel);
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        if (mapData == null)
+        {
+            EditorGUILayout.HelpBox("Assign or create an IsoMapData asset.", MessageType.Info);
+            EditorGUILayout.EndVertical();
+            return;
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Add EncounterArea", GUILayout.Height(24f)))
+        {
+            AddEncounterArea();
+        }
+
+        EditorGUI.BeginDisabledGroup(GetSelectedEncounterArea() == null);
+        if (GUILayout.Button("Delete Selected Area", GUILayout.Height(24f)))
+        {
+            DeleteSelectedEncounterArea();
+        }
+        EditorGUI.EndDisabledGroup();
+        EditorGUILayout.EndHorizontal();
+
+        if (mapData.EncounterAreas.Count == 0)
+        {
+            EditorGUILayout.HelpBox("No EncounterArea. Add one, then add selected cells.", MessageType.Info);
+            EditorGUILayout.EndVertical();
+            return;
+        }
+
+        selectedEncounterAreaIndex = Mathf.Clamp(selectedEncounterAreaIndex, 0, mapData.EncounterAreas.Count - 1);
+        DrawEncounterAreaList();
+        EditorGUILayout.Space(4f);
+        DrawSelectedEncounterAreaEditor();
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawEncounterAreaList()
+    {
+        for (int i = 0; i < mapData.EncounterAreas.Count; i++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[i];
+            if (area == null)
+            {
+                continue;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            Color previousColor = GUI.backgroundColor;
+            if (i == selectedEncounterAreaIndex)
+            {
+                GUI.backgroundColor = new Color(1f, 0.58f, 0.36f, 1f);
+            }
+
+            string label = string.IsNullOrEmpty(area.EncounterAreaId) ? "(empty id)" : area.EncounterAreaId;
+            if (GUILayout.Button(label, GUILayout.Height(22f)))
+            {
+                selectedEncounterAreaIndex = i;
+                RepaintSceneViews();
+            }
+
+            GUI.backgroundColor = previousColor;
+            EditorGUILayout.LabelField(area.Cells.Count + " cells", GUILayout.Width(72f));
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+
+    private void DrawSelectedEncounterAreaEditor()
+    {
+        IsoMapEncounterAreaData area = GetSelectedEncounterArea();
+        if (area == null)
+        {
+            return;
+        }
+
+        EditorGUI.BeginChangeCheck();
+        string nextAreaId = EditorGUILayout.TextField("Area Id", area.EncounterAreaId);
+        string nextEnemyGroupTableId = EditorGUILayout.TextField("Enemy Group Table Id", area.EnemyGroupTableId);
+        string nextBattleBackgroundId = EditorGUILayout.TextField("Battle Background Id", area.BattleBackgroundId);
+        string nextBattleBgmId = EditorGUILayout.TextField("Battle BGM Id", area.BattleBgmId);
+        int nextMinSteps = EditorGUILayout.IntField("Min Steps Before Encounter", area.MinStepsBeforeEncounter);
+        float nextChance = EditorGUILayout.Slider("Encounter Chance Per Step", area.EncounterChancePerStep, 0f, 1f);
+        int nextCooldownSteps = EditorGUILayout.IntField("Cooldown Steps After Battle", area.CooldownStepsAfterBattle);
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(mapData, "Edit Encounter Area");
+            area.EncounterAreaId = nextAreaId;
+            area.EnemyGroupTableId = nextEnemyGroupTableId;
+            area.BattleBackgroundId = nextBattleBackgroundId;
+            area.BattleBgmId = nextBattleBgmId;
+            area.MinStepsBeforeEncounter = nextMinSteps;
+            area.EncounterChancePerStep = nextChance;
+            area.CooldownStepsAfterBattle = nextCooldownSteps;
+            EditorUtility.SetDirty(mapData);
+            RepaintSceneViews();
+        }
+
+        Vector3Int cell = GetPlacementCell();
+        EditorGUILayout.LabelField("Selected Cell", FormatCell(cell));
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Add Selected Cell", GUILayout.Height(24f)))
+        {
+            AddCellToSelectedEncounterArea(cell);
+        }
+
+        if (GUILayout.Button("Remove Selected Cell", GUILayout.Height(24f)))
+        {
+            RemoveCellFromSelectedEncounterArea(cell);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.LabelField("Cells", EditorStyles.boldLabel);
+        for (int i = 0; i < area.Cells.Count; i++)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(FormatCell(area.Cells[i]), GUILayout.MinWidth(180f));
+            if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+            {
+                RemoveCellFromSelectedEncounterAreaAtIndex(area, i);
+                break;
+            }
+            EditorGUILayout.EndHorizontal();
+        }
     }
 
     private void DrawPreviewSection()
@@ -431,6 +570,152 @@ public sealed class IsoMapEditorWindow : EditorWindow
         Debug.Log("Saved IsoMapData: " + AssetDatabase.GetAssetPath(mapData));
     }
 
+    private void AddEncounterArea()
+    {
+        if (mapData == null)
+        {
+            return;
+        }
+
+        Undo.RecordObject(mapData, "Add Encounter Area");
+        IsoMapEncounterAreaData area = new IsoMapEncounterAreaData();
+        area.EncounterAreaId = NewEncounterAreaId();
+        area.EnemyGroupTableId = "sf_floating_test_group";
+        area.BattleBackgroundId = "sf_floating_test_bg";
+        area.BattleBgmId = "sf_floating_test_bgm";
+        area.MinStepsBeforeEncounter = 3;
+        area.EncounterChancePerStep = 0.20f;
+        area.CooldownStepsAfterBattle = 5;
+        mapData.EncounterAreas.Add(area);
+        selectedEncounterAreaIndex = mapData.EncounterAreas.Count - 1;
+        EditorUtility.SetDirty(mapData);
+        RefreshPreviewIfPresent();
+        RepaintSceneViews();
+    }
+
+    private void DeleteSelectedEncounterArea()
+    {
+        IsoMapEncounterAreaData area = GetSelectedEncounterArea();
+        if (area == null)
+        {
+            return;
+        }
+
+        Undo.RecordObject(mapData, "Delete Encounter Area");
+        mapData.EncounterAreas.RemoveAt(selectedEncounterAreaIndex);
+        selectedEncounterAreaIndex = Mathf.Clamp(selectedEncounterAreaIndex, -1, mapData.EncounterAreas.Count - 1);
+        if (mapData.EncounterAreas.Count == 0)
+        {
+            selectedEncounterAreaIndex = -1;
+        }
+
+        EditorUtility.SetDirty(mapData);
+        RefreshPreviewIfPresent();
+        RepaintSceneViews();
+    }
+
+    private IsoMapEncounterAreaData GetSelectedEncounterArea()
+    {
+        if (mapData == null
+            || selectedEncounterAreaIndex < 0
+            || selectedEncounterAreaIndex >= mapData.EncounterAreas.Count)
+        {
+            return null;
+        }
+
+        return mapData.EncounterAreas[selectedEncounterAreaIndex];
+    }
+
+    private void AddCellToSelectedEncounterArea(Vector3Int cell)
+    {
+        IsoMapEncounterAreaData area = GetSelectedEncounterArea();
+        if (area == null)
+        {
+            return;
+        }
+
+        if (!mapData.IsInsideBounds(cell))
+        {
+            Debug.LogWarning("EncounterArea cell is outside map bounds: " + FormatCell(cell));
+            return;
+        }
+
+        if (area.Cells.Contains(cell))
+        {
+            return;
+        }
+
+        Undo.RecordObject(mapData, "Add Encounter Area Cell");
+        area.Cells.Add(cell);
+        EditorUtility.SetDirty(mapData);
+        RefreshPreviewIfPresent();
+        RepaintSceneViews();
+    }
+
+    private void RemoveCellFromSelectedEncounterArea(Vector3Int cell)
+    {
+        IsoMapEncounterAreaData area = GetSelectedEncounterArea();
+        if (area == null)
+        {
+            return;
+        }
+
+        Undo.RecordObject(mapData, "Remove Encounter Area Cell");
+        if (area.Cells.Remove(cell))
+        {
+            EditorUtility.SetDirty(mapData);
+            RefreshPreviewIfPresent();
+            RepaintSceneViews();
+        }
+    }
+
+    private void RemoveCellFromSelectedEncounterAreaAtIndex(IsoMapEncounterAreaData area, int index)
+    {
+        if (area == null || index < 0 || index >= area.Cells.Count)
+        {
+            return;
+        }
+
+        Undo.RecordObject(mapData, "Remove Encounter Area Cell");
+        area.Cells.RemoveAt(index);
+        EditorUtility.SetDirty(mapData);
+        RefreshPreviewIfPresent();
+        RepaintSceneViews();
+    }
+
+    private string NewEncounterAreaId()
+    {
+        int nextIndex = mapData != null ? mapData.EncounterAreas.Count + 1 : 1;
+        string candidate;
+        do
+        {
+            candidate = "encounter_area_" + nextIndex.ToString("00");
+            nextIndex++;
+        }
+        while (HasEncounterAreaId(candidate));
+
+        return candidate;
+    }
+
+    private bool HasEncounterAreaId(string encounterAreaId)
+    {
+        if (mapData == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < mapData.EncounterAreas.Count; i++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[i];
+            if (area != null && string.Equals(area.EncounterAreaId, encounterAreaId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void PlaceSelectedPrefabAtCell(Vector3Int cell)
     {
         if (mapData == null || prefabCatalog == null)
@@ -608,8 +893,40 @@ public sealed class IsoMapEditorWindow : EditorWindow
             }
         }
 
+        CreateEncounterAreaPreviewInstances(root.transform);
+
         Selection.activeGameObject = root;
         RepaintSceneViews();
+    }
+
+    private void CreateEncounterAreaPreviewInstances(Transform parent)
+    {
+        if (prefabCatalog == null || prefabCatalog.FindEntry("EncounterAreaMarker") == null)
+        {
+            return;
+        }
+
+        for (int areaIndex = 0; areaIndex < mapData.EncounterAreas.Count; areaIndex++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[areaIndex];
+            if (area == null)
+            {
+                continue;
+            }
+
+            for (int cellIndex = 0; cellIndex < area.Cells.Count; cellIndex++)
+            {
+                Vector3Int cell = area.Cells[cellIndex];
+                CreatePreviewInstance(
+                    parent,
+                    "EncounterAreaMarker",
+                    area.EncounterAreaId + "_" + cell.x + "_" + cell.y + "_" + cell.z,
+                    cell,
+                    prefabCatalog.FindEntry("EncounterAreaMarker").DefaultOffset,
+                    0,
+                    "Encounter");
+            }
+        }
     }
 
     private void ClearPreview()
@@ -729,6 +1046,43 @@ public sealed class IsoMapEditorWindow : EditorWindow
             }
         }
 
+        HashSet<string> encounterAreaIds = new HashSet<string>();
+        for (int i = 0; i < mapData.EncounterAreas.Count; i++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[i];
+            if (area == null)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(area.EncounterAreaId))
+            {
+                AddValidationWarning("EncounterArea has an empty id.", ref warningCount);
+            }
+            else if (!encounterAreaIds.Add(area.EncounterAreaId))
+            {
+                AddValidationWarning("Duplicate EncounterArea id: " + area.EncounterAreaId, ref warningCount);
+            }
+
+            if (area.Cells.Count == 0)
+            {
+                AddValidationWarning("EncounterArea has no cells: " + area.EncounterAreaId, ref warningCount);
+            }
+
+            for (int cellIndex = 0; cellIndex < area.Cells.Count; cellIndex++)
+            {
+                Vector3Int cell = area.Cells[cellIndex];
+                if (!mapData.IsInsideBounds(cell))
+                {
+                    AddValidationWarning("EncounterArea cell is outside map bounds: " + area.EncounterAreaId + " " + FormatCell(cell), ref warningCount);
+                }
+                else if (!HasAnyWalkableTileAtCell(cell))
+                {
+                    AddValidationWarning("EncounterArea cell has no walkable tile: " + area.EncounterAreaId + " " + FormatCell(cell), ref warningCount);
+                }
+            }
+        }
+
         if (warningCount == 0)
         {
             validationMessages.Add("OK: validation passed.");
@@ -760,6 +1114,25 @@ public sealed class IsoMapEditorWindow : EditorWindow
         {
             IsoMapTileInstanceData instance = mapData.TileInstances[i];
             if (instance != null && instance.Cell == cell && string.Equals(instance.PrefabId, prefabId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool HasAnyWalkableTileAtCell(Vector3Int cell)
+    {
+        if (mapData == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < mapData.TileInstances.Count; i++)
+        {
+            IsoMapTileInstanceData instance = mapData.TileInstances[i];
+            if (instance != null && instance.Cell == cell && instance.Walkable)
             {
                 return true;
             }
@@ -834,6 +1207,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
         }
 
         DrawSceneGrid();
+        DrawEncounterAreaHandles();
         HandleSceneViewInput(sceneView);
     }
 
@@ -879,6 +1253,60 @@ public sealed class IsoMapEditorWindow : EditorWindow
 
         Handles.DrawSolidRectangleWithOutline(corners, new Color(1f, 0.86f, 0.18f, 0.12f), new Color(1f, 0.86f, 0.18f, 0.95f));
         Handles.Label(center + new Vector3(0f, 0.22f, 0f), FormatCell(cell));
+    }
+
+    private void DrawEncounterAreaHandles()
+    {
+        if (mapData == null || mapData.EncounterAreas.Count == 0)
+        {
+            return;
+        }
+
+        Color previousColor = Handles.color;
+        float half = mapData.CellSize * 0.5f;
+        for (int areaIndex = 0; areaIndex < mapData.EncounterAreas.Count; areaIndex++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[areaIndex];
+            if (area == null)
+            {
+                continue;
+            }
+
+            bool selected = areaIndex == selectedEncounterAreaIndex;
+            Color fillColor = selected
+                ? new Color(1f, 0.42f, 0.18f, 0.20f)
+                : new Color(1f, 0.16f, 0.16f, 0.10f);
+            Color outlineColor = selected
+                ? new Color(1f, 0.70f, 0.26f, 0.95f)
+                : new Color(1f, 0.22f, 0.22f, 0.65f);
+
+            for (int i = 0; i < area.Cells.Count; i++)
+            {
+                Vector3Int cell = area.Cells[i];
+                if (!mapData.IsInsideBounds(cell))
+                {
+                    continue;
+                }
+
+                Vector3 center = mapData.CellToWorld(cell);
+                float y = center.y + 0.045f;
+                Vector3[] corners =
+                {
+                    new Vector3(center.x - half, y, center.z - half),
+                    new Vector3(center.x - half, y, center.z + half),
+                    new Vector3(center.x + half, y, center.z + half),
+                    new Vector3(center.x + half, y, center.z - half)
+                };
+
+                Handles.DrawSolidRectangleWithOutline(corners, fillColor, outlineColor);
+                if (selected)
+                {
+                    Handles.Label(center + new Vector3(0f, 0.30f, 0f), area.EncounterAreaId);
+                }
+            }
+        }
+
+        Handles.color = previousColor;
     }
 
     private void HandleSceneViewInput(SceneView sceneView)
