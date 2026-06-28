@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public sealed class IsoMapEditorWindow : EditorWindow
 {
@@ -12,6 +14,8 @@ public sealed class IsoMapEditorWindow : EditorWindow
 
     private static readonly string[] RotationLabels = { "0", "90", "180", "270" };
     private static readonly int[] RotationValues = { 0, 90, 180, 270 };
+    private static readonly string[] PlaytestDirectionLabels = { "Up", "Right", "Down", "Left" };
+    private static readonly Vector2Int[] PlaytestDirectionValues = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
 
     private IsoMapData mapData;
     private IsoMapPrefabCatalog prefabCatalog;
@@ -24,6 +28,10 @@ public sealed class IsoMapEditorWindow : EditorWindow
     private int placementLevel;
     private int rotationY;
     private int selectedEncounterAreaIndex = -1;
+    private int playtestDirectionIndex = 2;
+    private bool playtestReturnToPreviousScene;
+    private string playtestStatusMessage;
+    private MessageType playtestStatusType = MessageType.None;
     private List<string> validationMessages = new List<string>();
 
     [MenuItem("Tools/NeonCardia/2.5D Map Editor", false, 41080)]
@@ -64,6 +72,8 @@ public sealed class IsoMapEditorWindow : EditorWindow
         EditorGUILayout.Space(6f);
         DrawPlacementSection();
         EditorGUILayout.Space(6f);
+        DrawPlaytestSection();
+        EditorGUILayout.Space(6f);
         DrawEncounterAreaSection();
         EditorGUILayout.Space(6f);
         DrawPreviewSection();
@@ -84,6 +94,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
             mapData = nextMapData;
             selectedInstanceId = null;
             ClampPlacementCell();
+            ClearPlaytestStatus();
             RepaintSceneViews();
         }
 
@@ -154,6 +165,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
         if (nextCatalog != prefabCatalog)
         {
             prefabCatalog = nextCatalog;
+            ClearPlaytestStatus();
             if (prefabCatalog == null || prefabCatalog.FindEntry(selectedPrefabId) == null)
             {
                 selectedPrefabId = null;
@@ -236,6 +248,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
         if (EditorGUI.EndChangeCheck())
         {
             ClampPlacementCell();
+            ClearPlaytestStatus();
             RepaintSceneViews();
         }
 
@@ -257,6 +270,85 @@ public sealed class IsoMapEditorWindow : EditorWindow
         }
         EditorGUI.EndDisabledGroup();
         EditorGUI.EndDisabledGroup();
+        EditorGUILayout.EndVertical();
+    }
+
+    private void DrawPlaytestSection()
+    {
+        EditorGUILayout.LabelField("Play From Here", EditorStyles.boldLabel);
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+        Vector3Int selectedCell = GetPlacementCell();
+        SelectedCellStatus selectedCellStatus = GetSelectedCellStatus(selectedCell);
+        EditorGUILayout.LabelField("Selected Cell", FormatCell(selectedCell));
+        if (mapData != null)
+        {
+            EditorGUILayout.LabelField("Default Spawn", FormatCell(mapData.DefaultSpawnCell));
+        }
+        else
+        {
+            EditorGUILayout.HelpBox("Assign or create an IsoMapData asset before playtesting.", MessageType.Info);
+        }
+
+        EditorGUI.BeginDisabledGroup(mapData == null);
+        if (GUILayout.Button("Frame Map In Scene View", GUILayout.Height(24f)))
+        {
+            FrameMapInSceneView();
+        }
+
+        if (GUILayout.Button("Select Cell From Fields", GUILayout.Height(24f)))
+        {
+            SelectCellFromFields();
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Select Default Spawn", GUILayout.Height(24f)))
+        {
+            SelectDefaultSpawnCell();
+        }
+
+        if (GUILayout.Button("Set Selected As Spawn", GUILayout.Height(24f)))
+        {
+            SetSelectedCellAsDefaultSpawn();
+        }
+        EditorGUILayout.EndHorizontal();
+        EditorGUI.EndDisabledGroup();
+
+        playtestDirectionIndex = Mathf.Clamp(playtestDirectionIndex, 0, PlaytestDirectionValues.Length - 1);
+        playtestDirectionIndex = EditorGUILayout.Popup("Start Direction", playtestDirectionIndex, PlaytestDirectionLabels);
+        playtestReturnToPreviousScene = EditorGUILayout.Toggle("Return To Previous Scene", playtestReturnToPreviousScene);
+
+        bool playtestDisabled = mapData == null || prefabCatalog == null || EditorApplication.isPlayingOrWillChangePlaymode;
+        bool selectedCellPlaytestDisabled = playtestDisabled || selectedCellStatus != SelectedCellStatus.Walkable;
+        EditorGUILayout.HelpBox("Selected Cell Status: " + GetSelectedCellStatusLabel(selectedCellStatus), GetSelectedCellStatusMessageType(selectedCellStatus));
+
+        EditorGUI.BeginDisabledGroup(playtestDisabled);
+        if (GUILayout.Button("Play From Default Spawn", GUILayout.Height(28f)))
+        {
+            StartMapPlaytest(mapData.DefaultSpawnCell, string.Empty, "Default Spawn");
+        }
+        EditorGUI.EndDisabledGroup();
+
+        EditorGUI.BeginDisabledGroup(selectedCellPlaytestDisabled);
+        if (GUILayout.Button("Play From Selected Cell", GUILayout.Height(28f)))
+        {
+            StartMapPlaytest(selectedCell, string.Empty, "Selected Cell");
+        }
+        EditorGUI.EndDisabledGroup();
+
+        IsoMapEncounterAreaData selectedArea = GetSelectedEncounterArea();
+        EditorGUI.BeginDisabledGroup(playtestDisabled || selectedArea == null);
+        if (GUILayout.Button("Play From Selected Encounter Area", GUILayout.Height(26f)))
+        {
+            PlayFromSelectedEncounterArea(selectedArea);
+        }
+        EditorGUI.EndDisabledGroup();
+
+        if (!string.IsNullOrEmpty(playtestStatusMessage))
+        {
+            EditorGUILayout.HelpBox(playtestStatusMessage, playtestStatusType);
+        }
+
         EditorGUILayout.EndVertical();
     }
 
@@ -568,6 +660,577 @@ public sealed class IsoMapEditorWindow : EditorWindow
         EditorUtility.SetDirty(mapData);
         AssetDatabase.SaveAssets();
         Debug.Log("Saved IsoMapData: " + AssetDatabase.GetAssetPath(mapData));
+    }
+
+    private enum SelectedCellStatus
+    {
+        Walkable,
+        NotFound,
+        Blocked,
+        NoIsoMapData,
+        NoPrefabCatalog
+    }
+
+    private void FrameMapInSceneView()
+    {
+        if (mapData == null)
+        {
+            SetPlaytestStatus("Cannot frame SceneView because IsoMapData is not assigned.", MessageType.Warning);
+            return;
+        }
+
+        SceneView sceneView = GetTargetSceneView();
+        if (sceneView == null)
+        {
+            SetPlaytestStatus("No SceneView is available to frame the map.", MessageType.Warning);
+            return;
+        }
+
+        Bounds mapBounds = GetMapWorldBounds();
+        Quaternion rotation = Quaternion.Euler(35f, 45f, 0f);
+        float viewSize = Mathf.Max(4f, Mathf.Max(mapBounds.size.x, mapBounds.size.z) * 0.9f + mapBounds.size.y * 0.35f);
+
+        sceneView.in2DMode = false;
+        sceneView.LookAt(mapBounds.center, rotation, viewSize, false, true);
+        sceneView.Repaint();
+
+        SetPlaytestStatus("SceneView framed for map: " + mapData.MapId, MessageType.Info);
+    }
+
+    private void SelectCellFromFields()
+    {
+        Vector3Int requestedCell = new Vector3Int(placementX, placementLevel, placementZ);
+        SetPlacementCell(requestedCell);
+        SelectedCellStatus status = GetSelectedCellStatus(GetPlacementCell());
+        SetPlaytestStatus("Selected cell set from fields: " + FormatCell(GetPlacementCell())
+            + "\nSelected Cell Status: " + GetSelectedCellStatusLabel(status), GetSelectedCellStatusMessageType(status));
+    }
+
+    private void SelectDefaultSpawnCell()
+    {
+        if (mapData == null)
+        {
+            return;
+        }
+
+        SetPlacementCell(mapData.DefaultSpawnCell);
+        FocusCellInSceneView(mapData.DefaultSpawnCell);
+
+        SelectedCellStatus status = GetSelectedCellStatus(mapData.DefaultSpawnCell);
+        SetPlaytestStatus("Selected cell moved to Default Spawn: " + FormatCell(mapData.DefaultSpawnCell)
+            + "\nSelected Cell Status: " + GetSelectedCellStatusLabel(status), GetSelectedCellStatusMessageType(status));
+    }
+
+    private void SetSelectedCellAsDefaultSpawn()
+    {
+        if (mapData == null)
+        {
+            return;
+        }
+
+        Vector3Int selectedCell = GetPlacementCell();
+        if (!mapData.IsInsideBounds(selectedCell))
+        {
+            SetPlaytestStatus("Cannot set Default Spawn outside map bounds: " + FormatCell(selectedCell), MessageType.Warning);
+            return;
+        }
+
+        Undo.RecordObject(mapData, "Set Default Spawn Cell");
+        mapData.DefaultSpawnCell = selectedCell;
+        EditorUtility.SetDirty(mapData);
+        RepaintSceneViews();
+
+        MessageType messageType = IsRuntimeWalkableCell(selectedCell) ? MessageType.Info : MessageType.Warning;
+        string suffix = messageType == MessageType.Info ? string.Empty : "\nWarning: selected cell is not runtime-walkable yet.";
+        SetPlaytestStatus("Default Spawn set to " + FormatCell(selectedCell) + suffix, messageType);
+    }
+
+    private void PlayFromSelectedEncounterArea(IsoMapEncounterAreaData selectedArea)
+    {
+        if (selectedArea == null)
+        {
+            SetPlaytestStatus("No EncounterArea is selected.", MessageType.Warning);
+            return;
+        }
+
+        Vector3Int startCell;
+        if (!TryFindFirstWalkableCellInEncounterArea(selectedArea, out startCell))
+        {
+            SetPlaytestStatus("Selected EncounterArea has no runtime-walkable cell: " + selectedArea.EncounterAreaId, MessageType.Warning);
+            return;
+        }
+
+        SetPlacementCell(startCell);
+        StartMapPlaytest(startCell, selectedArea.EncounterAreaId, "Selected Encounter Area");
+    }
+
+    private void StartMapPlaytest(Vector3Int startCell, string forceEncounterAreaId, string modeLabel)
+    {
+        if (!ValidatePlaytestRequest(startCell, forceEncounterAreaId))
+        {
+            return;
+        }
+
+        if (!ConfirmAndSaveMapDataForPlaytest())
+        {
+            return;
+        }
+
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+        {
+            SetPlaytestStatus("Play From Here canceled because the current Scene was not saved.", MessageType.Warning);
+            return;
+        }
+
+        Scene previousScene = SceneManager.GetActiveScene();
+        string mapDataPath = AssetDatabase.GetAssetPath(mapData);
+        string prefabCatalogPath = AssetDatabase.GetAssetPath(prefabCatalog);
+        IsoMapPlaytestSettings settings = new IsoMapPlaytestSettings
+        {
+            MapDataGuid = AssetDatabase.AssetPathToGUID(mapDataPath),
+            PrefabCatalogGuid = AssetDatabase.AssetPathToGUID(prefabCatalogPath),
+            StartCell = startCell,
+            StartDirection = GetPlaytestStartDirection(),
+            ForceEncounterAreaId = string.IsNullOrEmpty(forceEncounterAreaId) ? string.Empty : forceEncounterAreaId,
+            ReturnToPreviousScene = playtestReturnToPreviousScene,
+            PreviousScenePath = previousScene.path,
+            PreviousSceneName = previousScene.name,
+            RuntimeScenePath = IsoMapRuntimeTestSceneBuilder.ScenePath,
+            StartedAtUtc = DateTime.UtcNow.ToString("o")
+        };
+
+        IsoMapPlaytestSettings.Save(settings);
+        Debug.Log("[IsoMapPlaytest] Play From " + modeLabel + ". cell=" + FormatCell(startCell)
+            + " mapId=" + mapData.MapId
+            + " mapData=" + mapDataPath
+            + " prefabCatalog=" + prefabCatalogPath
+            + " startDirection=" + settings.StartDirection
+            + " forceEncounterAreaId=" + (string.IsNullOrEmpty(settings.ForceEncounterAreaId) ? "(none)" : settings.ForceEncounterAreaId)
+            + " runtimeScene=" + settings.RuntimeScenePath
+            + " previousScene=" + (string.IsNullOrEmpty(settings.PreviousSceneName) ? "(none)" : settings.PreviousSceneName));
+
+        try
+        {
+            EditorSceneManager.OpenScene(IsoMapRuntimeTestSceneBuilder.ScenePath, OpenSceneMode.Single);
+        }
+        catch (Exception exception)
+        {
+            IsoMapPlaytestSettings.Clear();
+            SetPlaytestStatus("Failed to open RuntimeTest Scene: " + exception.Message, MessageType.Error);
+            Debug.LogError("[IsoMapPlaytest] Failed to open RuntimeTest Scene. " + exception);
+            return;
+        }
+
+        SetPlaytestStatus("PlayMode starting from " + FormatCell(startCell), MessageType.Info);
+        EditorApplication.isPlaying = true;
+    }
+
+    private bool ConfirmAndSaveMapDataForPlaytest()
+    {
+        if (mapData == null)
+        {
+            return false;
+        }
+
+        if (EditorUtility.IsDirty(mapData)
+            && !EditorUtility.DisplayDialog(
+                "Save IsoMapData",
+                "IsoMapData has unsaved changes. Save before Play From Here?",
+                "Save and Play",
+                "Cancel"))
+        {
+            SetPlaytestStatus("Play From Here canceled. IsoMapData was not saved.", MessageType.Warning);
+            return false;
+        }
+
+        SaveMapData();
+        return true;
+    }
+
+    private bool ValidatePlaytestRequest(Vector3Int startCell, string forceEncounterAreaId)
+    {
+        List<string> issues = new List<string>();
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            issues.Add("Unity is already entering or running PlayMode.");
+        }
+
+        if (mapData == null)
+        {
+            issues.Add("MapData is not assigned.");
+        }
+
+        if (prefabCatalog == null)
+        {
+            issues.Add("PrefabCatalog is not assigned.");
+        }
+
+        string mapDataPath = mapData != null ? AssetDatabase.GetAssetPath(mapData) : string.Empty;
+        if (mapData != null && string.IsNullOrEmpty(mapDataPath))
+        {
+            issues.Add("MapData must be saved as an asset before playtesting.");
+        }
+
+        string prefabCatalogPath = prefabCatalog != null ? AssetDatabase.GetAssetPath(prefabCatalog) : string.Empty;
+        if (prefabCatalog != null && string.IsNullOrEmpty(prefabCatalogPath))
+        {
+            issues.Add("PrefabCatalog must be saved as an asset before playtesting.");
+        }
+
+        SceneAsset runtimeScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(IsoMapRuntimeTestSceneBuilder.ScenePath);
+        if (runtimeScene == null)
+        {
+            issues.Add("RuntimeTest Scene is missing: " + IsoMapRuntimeTestSceneBuilder.ScenePath);
+        }
+
+        if (!IsSceneEnabledInBuildSettings("BattleScene"))
+        {
+            issues.Add("BattleScene is not enabled in Build Settings.");
+        }
+
+        if (mapData != null)
+        {
+            if (!mapData.IsInsideBounds(startCell))
+            {
+                issues.Add("Start cell is outside map bounds: " + FormatCell(startCell));
+            }
+            else if (!IsRuntimeWalkableCell(startCell))
+            {
+                issues.Add("Start cell is not runtime-walkable: " + FormatCell(startCell));
+            }
+        }
+
+        if (!string.IsNullOrEmpty(forceEncounterAreaId) && FindEncounterAreaById(forceEncounterAreaId) == null)
+        {
+            issues.Add("Selected EncounterArea was not found: " + forceEncounterAreaId);
+        }
+
+        if (issues.Count > 0)
+        {
+            string message = string.Join("\n", issues.ToArray());
+            SetPlaytestStatus(message, MessageType.Warning);
+            Debug.LogWarning("[IsoMapPlaytest] Play From Here validation failed:\n" + message);
+            return false;
+        }
+
+        LogEncounterAreaPlaytestInfo(startCell, forceEncounterAreaId);
+        return true;
+    }
+
+    private void LogEncounterAreaPlaytestInfo(Vector3Int startCell, string forceEncounterAreaId)
+    {
+        IsoMapEncounterAreaData startArea = FindEncounterAreaContainingCell(startCell);
+        if (startArea != null && !string.IsNullOrWhiteSpace(startArea.EnemyGroupTableId))
+        {
+            Debug.Log("[IsoMapPlaytest] Start cell EncounterArea. areaId=" + startArea.EncounterAreaId
+                + " enemyGroupTableId=" + startArea.EnemyGroupTableId);
+        }
+
+        IsoMapEncounterAreaData forcedArea = FindEncounterAreaById(forceEncounterAreaId);
+        if (forcedArea != null && !string.IsNullOrWhiteSpace(forcedArea.EnemyGroupTableId))
+        {
+            Debug.Log("[IsoMapPlaytest] Selected EncounterArea. areaId=" + forcedArea.EncounterAreaId
+                + " enemyGroupTableId=" + forcedArea.EnemyGroupTableId);
+        }
+    }
+
+    private bool IsSceneEnabledInBuildSettings(string sceneName)
+    {
+        for (int i = 0; i < EditorBuildSettings.scenes.Length; i++)
+        {
+            EditorBuildSettingsScene scene = EditorBuildSettings.scenes[i];
+            if (scene != null
+                && scene.enabled
+                && string.Equals(Path.GetFileNameWithoutExtension(scene.path), sceneName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool TryFindFirstWalkableCellInEncounterArea(IsoMapEncounterAreaData area, out Vector3Int startCell)
+    {
+        startCell = Vector3Int.zero;
+        if (area == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < area.Cells.Count; i++)
+        {
+            Vector3Int candidate = area.Cells[i];
+            if (IsRuntimeWalkableCell(candidate))
+            {
+                startCell = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsRuntimeWalkableCell(Vector3Int cell)
+    {
+        if (mapData == null || !mapData.IsInsideBounds(cell))
+        {
+            return false;
+        }
+
+        bool hasWalkableTile = false;
+        for (int i = 0; i < mapData.TileInstances.Count; i++)
+        {
+            IsoMapTileInstanceData tile = mapData.TileInstances[i];
+            if (tile == null || tile.Cell != cell)
+            {
+                continue;
+            }
+
+            IsoMapPrefabCatalogEntry entry = prefabCatalog != null ? prefabCatalog.FindEntry(tile.PrefabId) : null;
+            bool entryWalkable = entry == null || entry.Walkable;
+            bool entryBlocksMovement = entry != null && entry.BlocksMovement;
+            if (tile.Walkable && entryWalkable && !entryBlocksMovement)
+            {
+                hasWalkableTile = true;
+            }
+        }
+
+        if (!hasWalkableTile)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < mapData.PropInstances.Count; i++)
+        {
+            IsoMapPropInstanceData prop = mapData.PropInstances[i];
+            if (prop == null || prop.Cell != cell)
+            {
+                continue;
+            }
+
+            IsoMapPrefabCatalogEntry entry = prefabCatalog != null ? prefabCatalog.FindEntry(prop.PrefabId) : null;
+            if (prop.BlocksMovement || (entry != null && entry.BlocksMovement))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private SelectedCellStatus GetSelectedCellStatus(Vector3Int cell)
+    {
+        if (mapData == null)
+        {
+            return SelectedCellStatus.NoIsoMapData;
+        }
+
+        if (prefabCatalog == null)
+        {
+            return SelectedCellStatus.NoPrefabCatalog;
+        }
+
+        if (!mapData.IsInsideBounds(cell))
+        {
+            return SelectedCellStatus.NotFound;
+        }
+
+        bool foundCellContent = false;
+        bool hasWalkableTile = false;
+        for (int i = 0; i < mapData.TileInstances.Count; i++)
+        {
+            IsoMapTileInstanceData tile = mapData.TileInstances[i];
+            if (tile == null || tile.Cell != cell)
+            {
+                continue;
+            }
+
+            foundCellContent = true;
+            IsoMapPrefabCatalogEntry entry = prefabCatalog.FindEntry(tile.PrefabId);
+            bool entryWalkable = entry == null || entry.Walkable;
+            bool entryBlocksMovement = entry != null && entry.BlocksMovement;
+            if (tile.Walkable && entryWalkable && !entryBlocksMovement)
+            {
+                hasWalkableTile = true;
+            }
+        }
+
+        bool blocked = false;
+        for (int i = 0; i < mapData.PropInstances.Count; i++)
+        {
+            IsoMapPropInstanceData prop = mapData.PropInstances[i];
+            if (prop == null || prop.Cell != cell)
+            {
+                continue;
+            }
+
+            foundCellContent = true;
+            IsoMapPrefabCatalogEntry entry = prefabCatalog.FindEntry(prop.PrefabId);
+            if (prop.BlocksMovement || (entry != null && entry.BlocksMovement))
+            {
+                blocked = true;
+            }
+        }
+
+        if (!foundCellContent)
+        {
+            return SelectedCellStatus.NotFound;
+        }
+
+        if (!hasWalkableTile || blocked)
+        {
+            return SelectedCellStatus.Blocked;
+        }
+
+        return SelectedCellStatus.Walkable;
+    }
+
+    private static string GetSelectedCellStatusLabel(SelectedCellStatus status)
+    {
+        switch (status)
+        {
+            case SelectedCellStatus.Walkable:
+                return "Walkable";
+            case SelectedCellStatus.NotFound:
+                return "Not found";
+            case SelectedCellStatus.Blocked:
+                return "Blocked";
+            case SelectedCellStatus.NoIsoMapData:
+                return "No IsoMapData";
+            case SelectedCellStatus.NoPrefabCatalog:
+                return "No PrefabCatalog";
+            default:
+                return "Unknown";
+        }
+    }
+
+    private static MessageType GetSelectedCellStatusMessageType(SelectedCellStatus status)
+    {
+        return status == SelectedCellStatus.Walkable ? MessageType.Info : MessageType.Warning;
+    }
+
+    private SceneView GetTargetSceneView()
+    {
+        if (SceneView.lastActiveSceneView != null)
+        {
+            return SceneView.lastActiveSceneView;
+        }
+
+        if (SceneView.sceneViews != null && SceneView.sceneViews.Count > 0)
+        {
+            return SceneView.sceneViews[0] as SceneView;
+        }
+
+        return null;
+    }
+
+    private Bounds GetMapWorldBounds()
+    {
+        float cellSize = mapData != null ? mapData.CellSize : 1f;
+        float width = Mathf.Max(1, mapData.Width) * cellSize;
+        float depth = Mathf.Max(1, mapData.Depth) * cellSize;
+        float height = Mathf.Max(1, mapData.MaxLevel + 1) * cellSize;
+        Vector3 center = new Vector3(
+            (mapData.Width - 1) * cellSize * 0.5f,
+            mapData.MaxLevel * cellSize * 0.5f,
+            (mapData.Depth - 1) * cellSize * 0.5f);
+
+        return new Bounds(center, new Vector3(width, height, depth));
+    }
+
+    private void FocusCellInSceneView(Vector3Int cell)
+    {
+        if (mapData == null)
+        {
+            return;
+        }
+
+        SceneView sceneView = GetTargetSceneView();
+        if (sceneView == null)
+        {
+            return;
+        }
+
+        Vector3 center = mapData.CellToWorld(cell);
+        Quaternion rotation = Quaternion.Euler(35f, 45f, 0f);
+        float viewSize = Mathf.Max(3f, mapData.CellSize * 4f);
+        sceneView.in2DMode = false;
+        sceneView.LookAt(center, rotation, viewSize, false, true);
+        sceneView.Repaint();
+    }
+
+    private IsoMapEncounterAreaData FindEncounterAreaContainingCell(Vector3Int cell)
+    {
+        if (mapData == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < mapData.EncounterAreas.Count; i++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[i];
+            if (area != null && area.Cells.Contains(cell))
+            {
+                return area;
+            }
+        }
+
+        return null;
+    }
+
+    private IsoMapEncounterAreaData FindEncounterAreaById(string encounterAreaId)
+    {
+        if (mapData == null || string.IsNullOrEmpty(encounterAreaId))
+        {
+            return null;
+        }
+
+        for (int i = 0; i < mapData.EncounterAreas.Count; i++)
+        {
+            IsoMapEncounterAreaData area = mapData.EncounterAreas[i];
+            if (area != null && string.Equals(area.EncounterAreaId, encounterAreaId, StringComparison.Ordinal))
+            {
+                return area;
+            }
+        }
+
+        return null;
+    }
+
+    private void SetPlacementCell(Vector3Int cell)
+    {
+        placementX = cell.x;
+        placementZ = cell.z;
+        placementLevel = cell.y;
+        ClampPlacementCell();
+        Repaint();
+        RepaintSceneViews();
+    }
+
+    private Vector2Int GetPlaytestStartDirection()
+    {
+        playtestDirectionIndex = Mathf.Clamp(playtestDirectionIndex, 0, PlaytestDirectionValues.Length - 1);
+        return PlaytestDirectionValues[playtestDirectionIndex];
+    }
+
+    private void SetPlaytestStatus(string message, MessageType messageType)
+    {
+        playtestStatusMessage = message;
+        playtestStatusType = messageType;
+        Repaint();
+    }
+
+    private void ClearPlaytestStatus()
+    {
+        if (string.IsNullOrEmpty(playtestStatusMessage))
+        {
+            return;
+        }
+
+        playtestStatusMessage = string.Empty;
+        playtestStatusType = MessageType.None;
+        Repaint();
     }
 
     private void AddEncounterArea()
@@ -1234,6 +1897,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
             Handles.DrawLine(new Vector3(xMin, y, worldZ), new Vector3(xMax, y, worldZ));
         }
 
+        DrawDefaultSpawnHandle(y);
         DrawSelectedCellHandle(y);
         Handles.color = previousColor;
     }
@@ -1253,6 +1917,28 @@ public sealed class IsoMapEditorWindow : EditorWindow
 
         Handles.DrawSolidRectangleWithOutline(corners, new Color(1f, 0.86f, 0.18f, 0.12f), new Color(1f, 0.86f, 0.18f, 0.95f));
         Handles.Label(center + new Vector3(0f, 0.22f, 0f), FormatCell(cell));
+    }
+
+    private void DrawDefaultSpawnHandle(float y)
+    {
+        Vector3Int spawnCell = mapData.DefaultSpawnCell;
+        if (!mapData.IsInsideBounds(spawnCell))
+        {
+            return;
+        }
+
+        Vector3 center = mapData.CellToWorld(spawnCell);
+        float half = mapData.CellSize * 0.5f;
+        Vector3[] corners =
+        {
+            new Vector3(center.x - half, y + 0.006f, center.z - half),
+            new Vector3(center.x - half, y + 0.006f, center.z + half),
+            new Vector3(center.x + half, y + 0.006f, center.z + half),
+            new Vector3(center.x + half, y + 0.006f, center.z - half)
+        };
+
+        Handles.DrawSolidRectangleWithOutline(corners, new Color(0.20f, 1f, 0.48f, 0.08f), new Color(0.20f, 1f, 0.48f, 0.85f));
+        Handles.Label(center + new Vector3(0f, 0.44f, 0f), "Default Spawn");
     }
 
     private void DrawEncounterAreaHandles()
@@ -1311,7 +1997,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
 
     private void HandleSceneViewInput(SceneView sceneView)
     {
-        if (focusedWindow != this)
+        if (!IsSceneViewInputAllowed(sceneView))
         {
             return;
         }
@@ -1331,12 +2017,14 @@ public sealed class IsoMapEditorWindow : EditorWindow
         Vector3Int cell;
         if (!TryGetCellFromSceneMouse(current.mousePosition, out cell))
         {
+            SetPlaytestStatus("SceneView click did not hit the map plane. Use Frame Map In Scene View, then click a visible floor face.", MessageType.Warning);
             return;
         }
 
         placementX = cell.x;
         placementZ = cell.z;
         placementLevel = cell.y;
+        ClearPlaytestStatus();
         Repaint();
         sceneView.Repaint();
 
@@ -1346,6 +2034,15 @@ public sealed class IsoMapEditorWindow : EditorWindow
         }
 
         current.Use();
+    }
+
+    private bool IsSceneViewInputAllowed(SceneView sceneView)
+    {
+        EditorWindow focused = EditorWindow.focusedWindow;
+        EditorWindow mouseOver = EditorWindow.mouseOverWindow;
+        return focused == this
+            || focused == sceneView
+            || mouseOver == sceneView;
     }
 
     private bool TryGetCellFromSceneMouse(Vector2 mousePosition, out Vector3Int cell)
