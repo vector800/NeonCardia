@@ -16,6 +16,16 @@ public sealed class IsoMapEditorWindow : EditorWindow
     private static readonly int[] RotationValues = { 0, 90, 180, 270 };
     private static readonly string[] PlaytestDirectionLabels = { "Up", "Right", "Down", "Left" };
     private static readonly Vector2Int[] PlaytestDirectionValues = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
+    private static readonly IsoMapPrefabCategory[] PrefabPaletteCategoryOrder =
+    {
+        IsoMapPrefabCategory.Floor,
+        IsoMapPrefabCategory.Bridge,
+        IsoMapPrefabCategory.Stair,
+        IsoMapPrefabCategory.Wall,
+        IsoMapPrefabCategory.Railing,
+        IsoMapPrefabCategory.Prop,
+        IsoMapPrefabCategory.Marker
+    };
 
     private IsoMapData mapData;
     private IsoMapPrefabCatalog prefabCatalog;
@@ -187,6 +197,13 @@ public sealed class IsoMapEditorWindow : EditorWindow
         EditorGUI.EndDisabledGroup();
         EditorGUILayout.EndHorizontal();
 
+        if (GUILayout.Button("Import Generated PNG Pack", GUILayout.Height(24f)))
+        {
+            prefabCatalog = IsoMapGeneratedMapAssetImporter.ImportPackWithFolderPanel(prefabCatalog);
+            ClearPlaytestStatus();
+            RepaintSceneViews();
+        }
+
         DrawPrefabPalette();
         EditorGUILayout.EndVertical();
     }
@@ -206,33 +223,93 @@ public sealed class IsoMapEditorWindow : EditorWindow
         }
 
         EditorGUILayout.LabelField("Prefab Palette", EditorStyles.boldLabel);
+        bool drewAnyCategory = false;
+        for (int i = 0; i < PrefabPaletteCategoryOrder.Length; i++)
+        {
+            drewAnyCategory |= DrawPrefabPaletteCategory(PrefabPaletteCategoryOrder[i]);
+        }
+
+        if (!drewAnyCategory)
+        {
+            EditorGUILayout.HelpBox("The catalog has entries, but none match the supported prefab categories.", MessageType.Warning);
+        }
+
+        IsoMapPrefabCatalogEntry selectedEntry = prefabCatalog.FindEntry(selectedPrefabId);
+        string selectedLabel = selectedEntry == null
+            ? (string.IsNullOrEmpty(selectedPrefabId) ? "(none)" : selectedPrefabId + " (missing)")
+            : selectedEntry.DisplayName + " (" + selectedEntry.PrefabId + ")";
+        EditorGUILayout.LabelField("Selected Prefab", selectedLabel);
+    }
+
+    private bool DrawPrefabPaletteCategory(IsoMapPrefabCategory category)
+    {
+        int count = CountPrefabPaletteEntries(category);
+        if (count == 0)
+        {
+            return false;
+        }
+
+        EditorGUILayout.Space(2f);
+        EditorGUILayout.LabelField(category.ToString() + " (" + count + ")", EditorStyles.miniBoldLabel);
         for (int i = 0; i < prefabCatalog.Entries.Count; i++)
         {
             IsoMapPrefabCatalogEntry entry = prefabCatalog.Entries[i];
-            if (entry == null)
+            if (entry != null && entry.Category == category)
             {
-                continue;
+                DrawPrefabPaletteEntry(entry);
             }
-
-            EditorGUILayout.BeginHorizontal();
-            Color previousColor = GUI.backgroundColor;
-            if (string.Equals(selectedPrefabId, entry.PrefabId, StringComparison.Ordinal))
-            {
-                GUI.backgroundColor = new Color(0.55f, 0.85f, 1f, 1f);
-            }
-
-            if (GUILayout.Button(entry.PrefabId, GUILayout.Height(22f)))
-            {
-                selectedPrefabId = entry.PrefabId;
-            }
-
-            GUI.backgroundColor = previousColor;
-            EditorGUILayout.LabelField(entry.Category.ToString(), GUILayout.Width(62f));
-            EditorGUILayout.ObjectField(entry.Prefab, typeof(GameObject), false, GUILayout.Width(120f));
-            EditorGUILayout.EndHorizontal();
         }
 
-        EditorGUILayout.LabelField("Selected PrefabId", string.IsNullOrEmpty(selectedPrefabId) ? "(none)" : selectedPrefabId);
+        return true;
+    }
+
+    private int CountPrefabPaletteEntries(IsoMapPrefabCategory category)
+    {
+        int count = 0;
+        for (int i = 0; i < prefabCatalog.Entries.Count; i++)
+        {
+            IsoMapPrefabCatalogEntry entry = prefabCatalog.Entries[i];
+            if (entry != null && entry.Category == category)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private void DrawPrefabPaletteEntry(IsoMapPrefabCatalogEntry entry)
+    {
+        EditorGUILayout.BeginHorizontal();
+        Color previousColor = GUI.backgroundColor;
+        if (string.Equals(selectedPrefabId, entry.PrefabId, StringComparison.Ordinal))
+        {
+            GUI.backgroundColor = new Color(0.55f, 0.85f, 1f, 1f);
+        }
+
+        if (GUILayout.Button(entry.DisplayName, GUILayout.Height(22f), GUILayout.MinWidth(118f)))
+        {
+            selectedPrefabId = entry.PrefabId;
+            rotationY = entry.DefaultRotationY;
+            ClearPlaytestStatus();
+            RepaintSceneViews();
+        }
+
+        GUI.backgroundColor = previousColor;
+        EditorGUILayout.LabelField(entry.PrefabId, GUILayout.MinWidth(108f));
+        EditorGUILayout.LabelField(GetPrefabDefaultsLabel(entry), GUILayout.Width(92f));
+        EditorGUILayout.ObjectField(entry.Prefab, typeof(GameObject), false, GUILayout.Width(92f));
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private static string GetPrefabDefaultsLabel(IsoMapPrefabCatalogEntry entry)
+    {
+        string blocksMovementLabel = entry.DefaultBlocksMovementConfigured
+            ? (entry.DefaultBlocksMovement ? "Y" : "N")
+            : "?";
+        return "W:" + (entry.DefaultWalkable ? "Y" : "N")
+            + " B:" + blocksMovementLabel
+            + " R" + entry.DefaultRotationY;
     }
 
     private void DrawPlacementSection()
@@ -1399,24 +1476,32 @@ public sealed class IsoMapEditorWindow : EditorWindow
             return;
         }
 
-        if (entry.Category == IsoMapPrefabCategory.Tile && HasSameTileAtCell(cell, entry.PrefabId))
+        bool placesAsTile = IsTilePlacementCategory(entry.Category);
+        if (placesAsTile && HasSameTileAtCell(cell, entry.PrefabId))
         {
             Debug.LogWarning("Skipped duplicate tile placement at " + FormatCell(cell) + ": " + entry.PrefabId);
             return;
         }
 
         Undo.RecordObject(mapData, "Place Iso Map Prefab");
-        if (entry.Category == IsoMapPrefabCategory.Tile)
+        if (placesAsTile)
         {
-            mapData.TileInstances.Add(new IsoMapTileInstanceData(NewInstanceId(entry.PrefabId), entry.PrefabId, cell, rotationY, entry.Walkable, string.Empty));
+            mapData.TileInstances.Add(new IsoMapTileInstanceData(NewInstanceId(entry.PrefabId), entry.PrefabId, cell, rotationY, entry.DefaultWalkable, string.Empty));
         }
         else
         {
-            mapData.PropInstances.Add(new IsoMapPropInstanceData(NewInstanceId(entry.PrefabId), entry.PrefabId, cell, entry.DefaultOffset, rotationY, entry.BlocksMovement));
+            mapData.PropInstances.Add(new IsoMapPropInstanceData(NewInstanceId(entry.PrefabId), entry.PrefabId, cell, entry.DefaultOffset, rotationY, entry.DefaultBlocksMovement));
         }
 
         EditorUtility.SetDirty(mapData);
         RefreshPreviewIfPresent();
+    }
+
+    private static bool IsTilePlacementCategory(IsoMapPrefabCategory category)
+    {
+        return category == IsoMapPrefabCategory.Floor
+            || category == IsoMapPrefabCategory.Bridge
+            || category == IsoMapPrefabCategory.Stair;
     }
 
     private void DeleteInstancesAtCell(Vector3Int cell)
@@ -1655,10 +1740,12 @@ public sealed class IsoMapEditorWindow : EditorWindow
     {
         validationMessages.Clear();
         int warningCount = 0;
+        ValidatePrefabCatalog(ref warningCount);
 
         if (mapData == null)
         {
             AddValidationWarning("IsoMapData is not assigned.", ref warningCount);
+            FinishValidation(warningCount);
             return;
         }
 
@@ -1746,15 +1833,7 @@ public sealed class IsoMapEditorWindow : EditorWindow
             }
         }
 
-        if (warningCount == 0)
-        {
-            validationMessages.Add("OK: validation passed.");
-            Debug.Log("IsoMapData validation passed: " + mapData.MapId);
-        }
-        else
-        {
-            Debug.LogWarning("IsoMapData validation found " + warningCount + " issue(s): " + mapData.MapId);
-        }
+        FinishValidation(warningCount);
     }
 
     private void ValidatePrefabId(string prefabId, ref int warningCount)
@@ -1763,6 +1842,74 @@ public sealed class IsoMapEditorWindow : EditorWindow
         {
             AddValidationWarning("prefabId is missing from the catalog: " + prefabId, ref warningCount);
         }
+    }
+
+    private void ValidatePrefabCatalog(ref int warningCount)
+    {
+        if (prefabCatalog == null)
+        {
+            AddValidationWarning("PrefabCatalog is not assigned.", ref warningCount);
+            return;
+        }
+
+        HashSet<string> prefabIds = new HashSet<string>();
+        for (int i = 0; i < prefabCatalog.Entries.Count; i++)
+        {
+            IsoMapPrefabCatalogEntry entry = prefabCatalog.Entries[i];
+            if (entry == null)
+            {
+                AddValidationWarning("PrefabCatalog has a null entry at index " + i + ".", ref warningCount);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(entry.PrefabId))
+            {
+                AddValidationWarning("PrefabCatalog entry has an empty prefabId at index " + i + ".", ref warningCount);
+            }
+            else if (!prefabIds.Add(entry.PrefabId))
+            {
+                AddValidationWarning("Duplicate prefabId in PrefabCatalog: " + entry.PrefabId, ref warningCount);
+            }
+
+            if (entry.Prefab == null)
+            {
+                AddValidationWarning("PrefabCatalog entry has an empty prefab reference: " + GetCatalogEntryLabel(entry, i), ref warningCount);
+            }
+
+            if ((entry.Category == IsoMapPrefabCategory.Floor || entry.Category == IsoMapPrefabCategory.Bridge) && !entry.DefaultWalkable)
+            {
+                AddValidationWarning(entry.Category + " must be walkable by default: " + GetCatalogEntryLabel(entry, i), ref warningCount);
+            }
+
+            if (entry.Category == IsoMapPrefabCategory.Prop && !entry.DefaultBlocksMovementConfigured)
+            {
+                AddValidationWarning("Prop must explicitly set defaultBlocksMovement: " + GetCatalogEntryLabel(entry, i), ref warningCount);
+            }
+        }
+    }
+
+    private void FinishValidation(int warningCount)
+    {
+        if (warningCount == 0)
+        {
+            validationMessages.Add("OK: validation passed.");
+            Debug.Log("IsoMap editor validation passed" + (mapData != null ? ": " + mapData.MapId : "."));
+        }
+        else
+        {
+            Debug.LogWarning("IsoMap editor validation found " + warningCount + " issue(s)"
+                + (mapData != null ? ": " + mapData.MapId : "."));
+        }
+    }
+
+    private static string GetCatalogEntryLabel(IsoMapPrefabCatalogEntry entry, int index)
+    {
+        if (entry == null || string.IsNullOrWhiteSpace(entry.PrefabId))
+        {
+            return "entry index " + index;
+        }
+
+        return entry.PrefabId;
     }
 
     private void AddValidationWarning(string message, ref int warningCount)

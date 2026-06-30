@@ -218,21 +218,40 @@ public static class IsoMapPlaceholderPrefabBuilder
         }
 
         catalog.Entries.Clear();
-        AddCatalogEntry(catalog, "PlatformTile_1x1", IsoMapPrefabCategory.Tile, true, false, Vector3.zero);
-        AddCatalogEntry(catalog, "Bridge_1x1", IsoMapPrefabCategory.Tile, true, false, Vector3.zero);
-        AddCatalogEntry(catalog, "Stair_Up", IsoMapPrefabCategory.Tile, true, false, Vector3.zero);
-        AddCatalogEntry(catalog, "Wall", IsoMapPrefabCategory.Prop, false, true, Vector3.zero);
-        AddCatalogEntry(catalog, "Railing", IsoMapPrefabCategory.Prop, true, true, Vector3.zero);
-        AddCatalogEntry(catalog, "SpawnMarker", IsoMapPrefabCategory.Marker, true, false, new Vector3(0f, 0.08f, 0f));
-        AddCatalogEntry(catalog, "EncounterAreaMarker", IsoMapPrefabCategory.Marker, true, false, new Vector3(0f, 0.05f, 0f));
-        AddCatalogEntry(catalog, "TransitionMarker", IsoMapPrefabCategory.Marker, true, false, new Vector3(0f, 0.08f, 0f));
+        AddCatalogEntry(catalog, "PlatformTile_1x1", "Floor 1x1", IsoMapPrefabCategory.Floor, true, false, 0, Vector3.zero, "Base walkable floor tile.");
+        AddCatalogEntry(catalog, "Bridge_1x1", "Bridge 1x1", IsoMapPrefabCategory.Bridge, true, false, 0, Vector3.zero, "Walkable narrow connector tile.");
+        AddCatalogEntry(catalog, "Stair_Up", "Stair Up", IsoMapPrefabCategory.Stair, true, false, 0, Vector3.zero, "Walkable level connector.");
+        AddCatalogEntry(catalog, "Wall", "Wall", IsoMapPrefabCategory.Wall, false, true, 0, Vector3.zero, "Blocking vertical boundary prop.");
+        AddCatalogEntry(catalog, "Railing", "Railing", IsoMapPrefabCategory.Railing, false, true, 0, Vector3.zero, "Blocking edge guard prop.");
+        AddCatalogEntry(catalog, "SpawnMarker", "Spawn Marker", IsoMapPrefabCategory.Marker, true, false, 0, new Vector3(0f, 0.08f, 0f), "Editor/runtime marker. Not final map art.");
+        AddCatalogEntry(catalog, "EncounterAreaMarker", "Encounter Area Marker", IsoMapPrefabCategory.Marker, true, false, 0, new Vector3(0f, 0.05f, 0f), "Editor preview marker for encounter cells.");
+        AddCatalogEntry(catalog, "TransitionMarker", "Transition Marker", IsoMapPrefabCategory.Marker, true, false, 0, new Vector3(0f, 0.08f, 0f), "Editor/runtime marker for map exits.");
         EditorUtility.SetDirty(catalog);
     }
 
-    private static void AddCatalogEntry(IsoMapPrefabCatalog catalog, string prefabId, IsoMapPrefabCategory category, bool walkable, bool blocksMovement, Vector3 defaultOffset)
+    private static void AddCatalogEntry(
+        IsoMapPrefabCatalog catalog,
+        string prefabId,
+        string displayName,
+        IsoMapPrefabCategory category,
+        bool defaultWalkable,
+        bool defaultBlocksMovement,
+        int defaultRotationY,
+        Vector3 defaultOffset,
+        string notes)
     {
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + "/" + prefabId + ".prefab");
-        catalog.Entries.Add(new IsoMapPrefabCatalogEntry(prefabId, prefab, category, walkable, blocksMovement, defaultOffset));
+        catalog.Entries.Add(new IsoMapPrefabCatalogEntry(
+            prefabId,
+            displayName,
+            prefab,
+            category,
+            defaultWalkable,
+            defaultBlocksMovement,
+            true,
+            defaultRotationY,
+            defaultOffset,
+            notes));
     }
 
     private static void EnsureFolderPath(string path)
